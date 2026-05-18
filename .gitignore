@@ -1,0 +1,10 @@
+# Alpaca runtime files — do not commit
+pending_approval.json
+alpaca_stop.ps1
+alpaca_launch.ps1
+alpaca_schedule_setup.ps1
+*.env
+.env
+
+# alpaca_state.json IS committed by CI (git add -f) to persist state across runs
+# alpaca_dashboard.html IS committed by CI

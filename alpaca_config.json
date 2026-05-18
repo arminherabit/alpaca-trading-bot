@@ -1,0 +1,24 @@
+{
+  "api_key":           "FROM_ENV",
+  "api_secret":        "FROM_ENV",
+  "anthropic_api_key": "FROM_ENV",
+
+  "paper_trading": true,
+
+  "base_url_paper": "https://paper-api.alpaca.markets",
+  "base_url_live":  "https://api.alpaca.markets",
+  "data_url":       "https://data.alpaca.markets",
+
+  "watchlist": ["SPY", "QQQ", "AAPL", "NVDA", "TSLA", "MSFT", "AMD"],
+
+  "max_risk_pct":    1.0,
+  "min_rr_ratio":    2.5,
+  "max_positions":   3,
+
+  "orb_minutes":       15,
+  "no_trade_before":   "09:45",
+  "no_trade_after":    "15:30",
+  "scan_interval_sec": 60,
+
+  "require_approval": false
+}
