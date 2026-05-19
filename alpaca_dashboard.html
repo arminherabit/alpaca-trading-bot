@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="refresh" content="30">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alpaca Dashboard</title>
+<style>
+  :root {
+    --bg:      #0d1117; --bg2: #161b22; --bg3: #21262d;
+    --border:  #30363d; --text: #f0f6fc; --sub: #8b949e;
+    --green:   #3fb950; --red: #f85149; --yellow: #d29922;
+    --blue:    #58a6ff; --purple: #8957e5; --orange: #e85010;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', monospace; font-size: 14px; }
+
+  header { background: var(--bg2); border-bottom: 1px solid var(--border);
+           padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+  header h1 { font-size: 18px; font-weight: 700; letter-spacing: 1px; color: var(--blue); }
+  .badges { display: flex; gap: 10px; align-items: center; }
+  .badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;
+           border: 1px solid; letter-spacing: .5px; }
+  .gen-time { font-size: 11px; color: var(--sub); }
+
+  .grid-top { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; padding: 16px 24px; }
+  .stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+               padding: 14px 16px; }
+  .stat-card .label { font-size: 11px; color: var(--sub); text-transform: uppercase; letter-spacing: .8px; margin-bottom: 6px; }
+  .stat-card .value { font-size: 22px; font-weight: 700; }
+  .stat-card .sub   { font-size: 11px; color: var(--sub); margin-top: 4px; }
+
+  .section { padding: 0 24px 20px; }
+  .section h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 1px;
+                color: var(--sub); margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+
+  /* Position cards */
+  .pos-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 14px; }
+  .pos-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+  .pos-card.long  { border-left: 3px solid var(--green); }
+  .pos-card.short { border-left: 3px solid var(--red); }
+
+  .pos-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+  .pos-symbol { font-size: 22px; font-weight: 800; letter-spacing: 1px; }
+  .pos-side   { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 4px; }
+  .pos-side.long  { background: #3fb95022; color: var(--green); border: 1px solid var(--green); }
+  .pos-side.short { background: #f8514922; color: var(--red);   border: 1px solid var(--red); }
+  .pos-pnl { text-align: right; }
+  .pos-pnl .pnl-val { font-size: 20px; font-weight: 700; }
+  .pos-pnl .pnl-pct { font-size: 12px; color: var(--sub); }
+
+  .price-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+  .price-cell { background: var(--bg3); border-radius: 6px; padding: 8px 10px; }
+  .price-cell .p-label { font-size: 10px; color: var(--sub); text-transform: uppercase; margin-bottom: 3px; }
+  .price-cell .p-val   { font-size: 14px; font-weight: 700; }
+  .price-cell .p-sub   { font-size: 10px; color: var(--sub); }
+
+  /* Progress bar */
+  .progress-wrap { margin-bottom: 14px; }
+  .progress-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--sub); margin-bottom: 4px; }
+  .progress-track { background: var(--bg3); border-radius: 4px; height: 8px; position: relative; overflow: hidden; }
+  .progress-fill  { height: 100%; border-radius: 4px; transition: width .4s; }
+
+  .proj-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .proj-cell { background: var(--bg3); border-radius: 6px; padding: 8px 10px; text-align: center; }
+  .proj-cell .p-label { font-size: 10px; color: var(--sub); text-transform: uppercase; margin-bottom: 3px; }
+  .proj-cell .p-val   { font-size: 13px; font-weight: 700; }
+
+  /* Orders table */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { background: var(--bg3); color: var(--sub); font-size: 11px; text-transform: uppercase;
+       letter-spacing: .8px; padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+  td { padding: 9px 12px; border-bottom: 1px solid var(--border); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg3); }
+  .tag { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+  .tag.buy  { background: #3fb95022; color: var(--green); }
+  .tag.sell { background: #f8514922; color: var(--red); }
+
+  .empty { color: var(--sub); font-style: italic; padding: 20px; text-align: center; }
+  .green { color: var(--green); } .red { color: var(--red); }
+  .yellow { color: var(--yellow); } .blue { color: var(--blue); }
+
+  footer { text-align: center; padding: 16px; color: var(--sub); font-size: 11px;
+           border-top: 1px solid var(--border); margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>&#9650; ALPACA TRADING DASHBOARD</h1>
+  <div class="badges">
+    <span class="badge" style="color:#d29922; border-color:#d29922;">PAPER TRADING</span>
+    <span class="badge" style="color:#8b949e;  border-color:#8b949e;">CLOSED</span>
+    <span class="badge" style="color:var(--sub); border-color:var(--border);">Opens Tue 1:30 PM</span>
+  </div>
+  <span class="gen-time">Generated: 2026-05-19 04:20:36 &nbsp;|&nbsp; Auto-refresh: 30s</span>
+</header>
+
+<!-- Account Stats -->
+<div class="grid-top">
+  <div class="stat-card">
+    <div class="label">Equity</div>
+    <div class="value blue">$100,000.00</div>
+    <div class="sub">Paper account</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Day P&amp;L</div>
+    <div class="value green">$0.00</div>
+    <div class="sub">+0%</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Buying Power</div>
+    <div class="value">$200,000.00</div>
+    <div class="sub">Cash: $100,000.00</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Trades Today</div>
+    <div class="value">0</div>
+    <div class="sub">W: 0 &nbsp;/&nbsp; L: 0</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Open Positions</div>
+    <div class="value">0 <span style="font-size:14px;color:var(--sub)">/ 3</span></div>
+    <div class="sub">Max 3 allowed</div>
+  </div>
+  <div class="stat-card">
+    <div class="label">Risk Per Trade</div>
+    <div class="value yellow">1%</div>
+    <div class="sub">Min R:R 1:2.5</div>
+  </div>
+</div>
+
+<!-- Open Positions -->
+<div class="section">
+  <h2>Open Positions</h2>
+  <div class="pos-grid" id="posGrid"></div>
+</div>
+
+<!-- Closed Trades Today -->
+<div class="section">
+  <h2>Filled Orders Today</h2>
+  <table id="closedTable">
+    <thead>
+      <tr>
+        <th>Symbol</th><th>Side</th><th>Qty</th>
+        <th>Fill Price</th><th>Type</th><th>Time</th>
+      </tr>
+    </thead>
+    <tbody id="closedBody"></tbody>
+  </table>
+</div>
+
+<footer>
+  Alpaca Paper Trading &nbsp;|&nbsp; Strategies: ORB &bull; VWAP Bounce &bull; EMA Pullback
+  &nbsp;|&nbsp; Max Risk 1% equity per trade &nbsp;|&nbsp; Auto-refreshes every 30s
+</footer>
+
+<script>
+const positions = ;
+const closed    = ;
+
+function fmt(n, d=2) {
+  return (n >= 0 ? '+' : '') + Number(n).toFixed(d);
+}
+function fmtUSD(n) {
+  return (n < 0 ? '-$' : '$') + Math.abs(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+}
+
+// ── Position cards ──────────────────────────────────────────────────────────
+const grid = document.getElementById('posGrid');
+if (!positions || positions.length === 0) {
+  grid.innerHTML = '<div class="empty">No open positions</div>';
+} else {
+  positions.forEach(p => {
+    const pnlColor  = p.unrlPnl >= 0 ? '#3fb950' : '#f85149';
+    const fillColor = p.progress > 66 ? '#3fb950' : p.progress > 33 ? '#d29922' : '#f85149';
+    const isLong    = p.side === 'long';
+
+    grid.innerHTML += 
+    <div class="pos-card ">
+      <div class="pos-header">
+        <div>
+          <div class="pos-symbol"></div>
+          <div style="color:var(--sub);font-size:12px;margin-top:3px">
+             shares &nbsp;&bull;&nbsp; Value 
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+          <span class="pos-side "></span>
+          <div class="pos-pnl">
+            <div class="pnl-val" style="color:"></div>
+            <div class="pnl-pct">%</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="price-row">
+        <div class="price-cell">
+          <div class="p-label">Entry</div>
+          <div class="p-val"></div>
+          <div class="p-sub">Avg cost</div>
+        </div>
+        <div class="price-cell">
+          <div class="p-label">Current</div>
+          <div class="p-val" style="color:"></div>
+          <div class="p-sub">% vs entry</div>
+        </div>
+        <div class="price-cell">
+          <div class="p-label">Stop Loss</div>
+          <div class="p-val" style="color:#f85149"></div>
+          <div class="p-sub">% away</div>
+        </div>
+        <div class="price-cell">
+          <div class="p-label">Target T1</div>
+          <div class="p-val" style="color:#3fb950"></div>
+          <div class="p-sub">% away</div>
+        </div>
+      </div>
+
+      <div class="progress-wrap">
+        <div class="progress-labels">
+          <span style="color:#f85149">STOP </span>
+          <span style="color:var(--sub)">% to target</span>
+          <span style="color:#3fb950">TARGET </span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill" style="width:%;background:"></div>
+        </div>
+      </div>
+
+      <div class="proj-row">
+        <div class="proj-cell">
+          <div class="p-label">Proj. Profit (T1)</div>
+          <div class="p-val" style="color:#3fb950">+</div>
+        </div>
+        <div class="proj-cell">
+          <div class="p-label">Proj. Loss (Stop)</div>
+          <div class="p-val" style="color:#f85149">-</div>
+        </div>
+        <div class="proj-cell">
+          <div class="p-label">R:R Ratio</div>
+          <div class="p-val" style="color:">1:</div>
+        </div>
+      </div>
+    </div>;
+  });
+}
+
+// ── Closed trades table ──────────────────────────────────────────────────────
+const tbody = document.getElementById('closedBody');
+if (!closed || closed.length === 0) {
+  tbody.innerHTML = '<tr><td colspan="6" class="empty">No filled orders today</td></tr>';
+} else {
+  [...closed].reverse().forEach(o => {
+    const tagClass = o.side === 'buy' ? 'buy' : 'sell';
+    tbody.innerHTML += <tr>
+      <td><strong></strong></td>
+      <td><span class="tag "></span></td>
+      <td></td>
+      <td><strong></strong></td>
+      <td style="color:var(--sub)"></td>
+      <td style="color:var(--sub)"></td>
+    </tr>;
+  });
+}
+</script>
+</body>
+</html>
