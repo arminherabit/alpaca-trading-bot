@@ -60,27 +60,3 @@ jobs:
           git diff --staged --quiet || git commit -m "alpaca: state + dashboard $(date -u +%Y-%m-%dT%H:%M:%SZ) [skip ci]"
           git push || true
 
-      - name: Send SMS notification on trade
-        if: always()
-        env:
-          TWILIO_SID:   ${{ secrets.TWILIO_SID }}
-          TWILIO_TOKEN: ${{ secrets.TWILIO_TOKEN }}
-          TWILIO_FROM:  ${{ secrets.TWILIO_FROM }}
-          TWILIO_TO:    ${{ secrets.TWILIO_TO }}
-        run: |
-          STATE=$(cat alpaca_state.json 2>/dev/null || echo '{}')
-          TRADES=$(echo "$STATE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('trades_today',0))" 2>/dev/null || echo "0")
-          WINS=$(echo "$STATE"   | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('wins',0))"         2>/dev/null || echo "0")
-          LOSSES=$(echo "$STATE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('losses',0))"       2>/dev/null || echo "0")
-          PNL=$(echo "$STATE"    | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('pnl_today',0.0))"  2>/dev/null || echo "0")
-          SIGNAL=$(echo "$STATE" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('last_signal','WATCHING'))" 2>/dev/null || echo "WATCHING")
-
-          # Only send SMS if a trade was executed this run
-          if [ "$TRADES" -gt "0" ] 2>/dev/null; then
-            MSG="Alpaca [PAPER] | $SIGNAL | Trades: $TRADES | W/L: $WINS/$LOSSES | P&L: \$$PNL | Run #${{ github.run_id }}"
-            curl -s -X POST "https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json" \
-              --user "${TWILIO_SID}:${TWILIO_TOKEN}" \
-              --data-urlencode "From=${TWILIO_FROM}" \
-              --data-urlencode "To=${TWILIO_TO}" \
-              --data-urlencode "Body=${MSG}"
-          fi
