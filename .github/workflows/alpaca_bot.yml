@@ -2,23 +2,24 @@ name: Alpaca Day Trading Bot
 
 on:
   schedule:
-    # Every 5 minutes, 13:25–20:05 UTC = 9:25 AM–4:05 PM ET (Mon–Fri)
-    # Bot's own time checks filter to 09:45–15:30 ET trading window.
-    - cron: '*/5 13-20 * * 1-5'
+    # Every 10 minutes, 13:30–20:00 UTC = 9:30 AM–4:00 PM ET (Mon–Fri)
+    # Spread across two cron lines to improve GitHub scheduler reliability.
+    - cron: '0,10,20,30,40,50 13-20 * * 1-5'
   workflow_dispatch:   # Manual trigger from GitHub UI
 
 permissions:
   contents: write      # Needed to commit state back to repo
 
-# Cancel any queued run the moment a newer one is ready.
+# Do NOT use cancel-in-progress — it causes runner starvation on free tier.
+# Instead let each run complete; the bot itself is idempotent.
 concurrency:
   group: alpaca-bot
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 8   # Normal run is <60s; hard cap prevents stalls
+    timeout-minutes: 8   # Hard cap — fail fast if runner stalls
 
     steps:
       - name: Checkout repo
@@ -51,6 +52,7 @@ jobs:
           name: alpaca-dashboard
           path: alpaca_dashboard.html
           retention-days: 7
+          overwrite: true
 
       - name: Persist state to repo
         run: |
@@ -59,4 +61,3 @@ jobs:
           git add -f alpaca_state.json alpaca_dashboard.html 2>/dev/null || true
           git diff --staged --quiet || git commit -m "alpaca: state + dashboard $(date -u +%Y-%m-%dT%H:%M:%SZ) [skip ci]"
           git push || true
-
