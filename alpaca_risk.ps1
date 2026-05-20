@@ -11,7 +11,9 @@ function Get-PositionSize {
         [double]$equity,
         [double]$entry,
         [double]$stop,
-        [double]$maxRiskPct   # e.g. 1.0 for 1%
+        [double]$maxRiskPct,       # e.g. 1.0 for 1%
+        [double]$buyingPower = 0,  # cap position value to BP / max_positions
+        [int]$maxPositions   = 3
     )
 
     if ($entry -le 0 -or $stop -le 0) { return $null }
@@ -22,6 +24,16 @@ function Get-PositionSize {
     $rawShares     = $maxDollarRisk / $riskPerShare
     $shares        = [Math]::Floor($rawShares)   # always round down
     if ($shares -lt 1) { $shares = 1 }
+
+    # Cap shares so position value never exceeds per-slot buying power
+    # Use 80% of the per-slot allocation to leave cushion for other positions
+    if ($buyingPower -gt 0) {
+        $maxPositionValue = ($buyingPower / $maxPositions) * 0.80
+        $maxSharesByBP    = [Math]::Floor($maxPositionValue / $entry)
+        if ($maxSharesByBP -ge 1 -and $maxSharesByBP -lt $shares) {
+            $shares = $maxSharesByBP
+        }
+    }
 
     $actualRisk    = $shares * $riskPerShare
     $positionValue = $shares * $entry
@@ -82,8 +94,10 @@ function Validate-Trade {
     param($cfg, $signal)
 
     $equity  = Get-Equity $cfg
+    $bp      = Get-BuyingPower $cfg
     $sizing  = Get-PositionSize -equity $equity -entry $signal.Entry `
-                                -stop $signal.Stop -maxRiskPct $cfg.max_risk_pct
+                                -stop $signal.Stop -maxRiskPct $cfg.max_risk_pct `
+                                -buyingPower $bp -maxPositions ([int]$cfg.max_positions)
     $rrCheck = Test-RiskReward  -entry $signal.Entry -stop $signal.Stop `
                                 -target $signal.T1   -side $signal.Side `
                                 -minRR $cfg.min_rr_ratio
