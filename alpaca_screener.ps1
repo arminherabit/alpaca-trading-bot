@@ -274,6 +274,10 @@ function Get-DynamicWatchlist {
 
     $candidates = @()
 
+    # Build a local candidate pool (script-scope $UNIVERSE is immutable inside function)
+    $pool = [System.Collections.Generic.List[string]]::new()
+    foreach ($s in $UNIVERSE) { $pool.Add($s) }
+
     # ── Step 1: Try Alpaca most-actives API first ────────────────────────────
     $actives = Get-MostActives $cfg 30
     if ($null -ne $actives -and $actives.Count -gt 0) {
@@ -281,9 +285,7 @@ function Get-DynamicWatchlist {
         foreach ($a in $actives) {
             if ($a.symbol -match "[^A-Z]") { continue }  # skip non-standard symbols
             if ($a.symbol.Length -gt 5)    { continue }  # skip ETNs/warrants
-            if ($UNIVERSE -notcontains $a.symbol -and $CORE_TICKERS -notcontains $a.symbol) {
-                $UNIVERSE += $a.symbol   # dynamically expand universe
-            }
+            if (-not $pool.Contains($a.symbol)) { $pool.Add($a.symbol) }
         }
     }
 
@@ -297,13 +299,13 @@ function Get-DynamicWatchlist {
         foreach ($m in $allMovers) {
             if ($m.symbol -match "[^A-Z]") { continue }
             if ($m.symbol.Length -gt 5)    { continue }
-            if ($UNIVERSE -notcontains $m.symbol) { $UNIVERSE += $m.symbol }
+            if (-not $pool.Contains($m.symbol)) { $pool.Add($m.symbol) }
         }
     }
 
     # ── Step 3: Batch snapshot all candidates ───────────────────────────────
     # Split into batches of 40 (API limit per call)
-    $allSymbols = ($UNIVERSE | Select-Object -Unique)
+    $allSymbols = ($pool.ToArray() | Select-Object -Unique)
     Write-Host ("  [SCREENER] Fetching snapshots for {0} symbols..." -f $allSymbols.Count)
 
     $snapshots = [pscustomobject]@{}

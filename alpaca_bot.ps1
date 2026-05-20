@@ -133,6 +133,17 @@ function Run-Scan($cfg, $state) {
     $state = Sync-ClosedTrades $cfg $state
 
     # ── Dynamic watchlist: refresh once per trading day ─────────────────────
+    # Ensure new properties exist on state (backward compat with old state.json)
+    if (-not (Get-Member -InputObject $state -Name "watchlist_date"    -MemberType NoteProperty -ErrorAction SilentlyContinue)) {
+        $state | Add-Member -NotePropertyName "watchlist_date"    -NotePropertyValue "" -Force
+    }
+    if (-not (Get-Member -InputObject $state -Name "active_watchlist"  -MemberType NoteProperty -ErrorAction SilentlyContinue)) {
+        $state | Add-Member -NotePropertyName "active_watchlist"  -NotePropertyValue @() -Force
+    }
+    if (-not (Get-Member -InputObject $state -Name "recorded_exits"    -MemberType NoteProperty -ErrorAction SilentlyContinue)) {
+        $state | Add-Member -NotePropertyName "recorded_exits"    -NotePropertyValue @() -Force
+    }
+
     $etToday = (Get-EasternTime).ToString("yyyy-MM-dd")
     if ($state.watchlist_date -ne $etToday) {
         $maxW = if ($cfg.max_watchlist) { [int]$cfg.max_watchlist } else { 12 }
