@@ -1,10 +1,10 @@
 # Alpaca Day Trading Bot
-# Strategy: Scans watchlist every 60s during market hours.
+# Strategy: Scans dynamic watchlist every 10 min during market hours.
 #   Generates ORB / VWAP Bounce / EMA Pullback signals.
 #   Validates risk (1% rule, R:R >= 2.5, position limits).
-#   Writes trade proposals to pending_approval.json.
+#   Self-learning: dynamic screener refreshes watchlist each morning,
+#   memory tracks per-ticker win rate and adjusts selection scores.
 #   If require_approval=false AND paper_trading=true, auto-executes.
-#   Human must approve all live trades via: .\alpaca_bot.ps1 -Approve
 
 param(
     [switch]$Once,     # Run one scan cycle then exit
@@ -16,6 +16,7 @@ param(
 . (Join-Path $PSScriptRoot "alpaca_client.ps1")
 . (Join-Path $PSScriptRoot "alpaca_signals.ps1")
 . (Join-Path $PSScriptRoot "alpaca_risk.ps1")
+. (Join-Path $PSScriptRoot "alpaca_screener.ps1")
 
 $StatePath   = Join-Path $PSScriptRoot "alpaca_state.json"
 $PendingPath = Join-Path $PSScriptRoot "pending_approval.json"
@@ -24,15 +25,18 @@ $PendingPath = Join-Path $PSScriptRoot "pending_approval.json"
 
 function Load-State {
     if (Test-Path $StatePath) {
-        try { return Get-Content $StatePath | ConvertFrom-Json } catch {}
+        try { return Get-Content $StatePath -Raw | ConvertFrom-Json } catch {}
     }
     return [pscustomobject]@{
-        trades_today  = 0
-        wins          = 0
-        losses        = 0
-        pnl_today     = 0.0
-        last_scan     = ""
-        session_start = (Get-Date).ToString("o")
+        trades_today     = 0
+        wins             = 0
+        losses           = 0
+        pnl_today        = 0.0
+        last_scan        = ""
+        session_start    = (Get-Date).ToString("o")
+        watchlist_date   = ""    # date the dynamic watchlist was last built
+        active_watchlist = @()   # today's screened watchlist
+        recorded_exits   = @()   # order IDs already processed for memory
     }
 }
 
@@ -125,6 +129,27 @@ function Run-Scan($cfg, $state) {
             $cfg.no_trade_before, $cfg.no_trade_after) -ForegroundColor Yellow
     }
 
+    # ── Self-learning: sync closed trades -> update ticker memory ───────────
+    $state = Sync-ClosedTrades $cfg $state
+
+    # ── Dynamic watchlist: refresh once per trading day ─────────────────────
+    $etToday = (Get-EasternTime).ToString("yyyy-MM-dd")
+    if ($state.watchlist_date -ne $etToday) {
+        $maxW = if ($cfg.max_watchlist) { [int]$cfg.max_watchlist } else { 12 }
+        $dynamicList = Get-DynamicWatchlist $cfg $maxW
+        $state.active_watchlist = $dynamicList
+        $state.watchlist_date   = $etToday
+        Write-ScreenerReport @() $dynamicList
+        Save-State $state
+    }
+
+    # Use today's dynamic watchlist (fall back to config if empty)
+    $watchlist = if ($state.active_watchlist -and $state.active_watchlist.Count -gt 0) {
+        $state.active_watchlist
+    } else {
+        $cfg.watchlist
+    }
+
     # Account summary
     $equity = Get-Equity $cfg
     $bp     = Get-BuyingPower $cfg
@@ -161,8 +186,7 @@ function Run-Scan($cfg, $state) {
         return
     }
 
-    # Scan watchlist
-    $watchlist = $cfg.watchlist
+    # Scan watchlist (dynamic — refreshed each morning by screener)
     Write-Host ("  Scanning {0} symbols: {1}" -f $watchlist.Count, ($watchlist -join ", "))
     Write-Host ""
 

@@ -10,6 +10,7 @@
   "data_url":       "https://data.alpaca.markets",
 
   "watchlist": ["SPY", "QQQ", "AAPL", "NVDA", "TSLA", "MSFT", "AMD"],
+  "max_watchlist":  12,
 
   "max_risk_pct":    1.0,
   "min_rr_ratio":    2.5,
@@ -20,5 +21,6 @@
   "no_trade_after":    "15:30",
   "scan_interval_sec": 60,
 
-  "require_approval": false
+  "require_approval": false,
+  "screener_enabled": true
 }

@@ -8,3 +8,4 @@ alpaca_schedule_setup.ps1
 
 # alpaca_state.json IS committed by CI (git add -f) to persist state across runs
 # alpaca_dashboard.html IS committed by CI
+# alpaca_ticker_memory.json IS committed by CI (self-learning data)
