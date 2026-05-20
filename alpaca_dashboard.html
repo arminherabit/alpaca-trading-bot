@@ -94,34 +94,34 @@
     <span class="badge" style="color:#3fb950;  border-color:#3fb950;">OPEN</span>
     <span class="badge" style="color:var(--sub); border-color:var(--border);">Closes 8:00 PM</span>
   </div>
-  <span class="gen-time">Generated: 2026-05-20 16:41:08 &nbsp;|&nbsp; Auto-refresh: 30s</span>
+  <span class="gen-time">Generated: 2026-05-20 16:42:51 &nbsp;|&nbsp; Auto-refresh: 30s</span>
 </header>
 
 <!-- Account Stats -->
 <div class="grid-top">
   <div class="stat-card">
     <div class="label">Equity</div>
-    <div class="value blue">$100,000.00</div>
+    <div class="value blue">$99,995.29</div>
     <div class="sub">Paper account</div>
   </div>
   <div class="stat-card">
     <div class="label">Day P&amp;L</div>
-    <div class="value green">$0.00</div>
-    <div class="sub">+0%</div>
+    <div class="value red">$-4.71</div>
+    <div class="sub">+-0%</div>
   </div>
   <div class="stat-card">
     <div class="label">Buying Power</div>
-    <div class="value">$200,000.00</div>
-    <div class="sub">Cash: $100,000.00</div>
+    <div class="value">$58,239.94</div>
+    <div class="sub">Cash: $18,205.42</div>
   </div>
   <div class="stat-card">
     <div class="label">Trades Today</div>
-    <div class="value">0</div>
+    <div class="value">4</div>
     <div class="sub">W: 0 &nbsp;/&nbsp; L: 0</div>
   </div>
   <div class="stat-card">
     <div class="label">Open Positions</div>
-    <div class="value">0 <span style="font-size:14px;color:var(--sub)">/ 3</span></div>
+    <div class="value">2 <span style="font-size:14px;color:var(--sub)">/ 3</span></div>
     <div class="sub">Max 3 allowed</div>
   </div>
   <div class="stat-card">
@@ -157,8 +157,8 @@
 </footer>
 
 <script>
-const positions = ;
-const closed    = ;
+const positions = [{"symbol":"NVDA","side":"long","qty":127.0,"entry":224.870079,"current":224.86,"stop":222.62,"target":230.49,"rr":2.5,"unrlPnl":-1.28,"unrlPct":-0.0,"projProfit":713.73,"projLoss":285.76,"pctToTarget":2.5,"pctToStop":1.0,"progress":28,"value":28557.22},{"symbol":"SPY","side":"long","qty":72.0,"entry":739.39,"current":739.36,"stop":732.0,"target":757.87,"rr":2.5,"unrlPnl":-2.16,"unrlPct":-0.0,"projProfit":1330.56,"projLoss":532.08,"pctToTarget":2.5,"pctToStop":1.0,"progress":28,"value":53233.92}];
+const closed    = [{"symbol":"NVDA","side":"buy","qty":"127","fillPrice":224.87,"filledAt":"16:42:48","orderType":"limit"},{"symbol":"SPY","side":"buy","qty":"72","fillPrice":739.39,"filledAt":"16:42:47","orderType":"limit"}];
 
 function fmt(n, d=2) {
   return (n >= 0 ? '+' : '') + Number(n).toFixed(d);
