@@ -2,10 +2,12 @@ name: Alpaca Day Trading Bot
 
 on:
   schedule:
-    # Every 10 minutes, 13:30–20:00 UTC = 9:30 AM–4:00 PM ET (Mon–Fri)
-    # Spread across two cron lines to improve GitHub scheduler reliability.
-    - cron: '0,10,20,30,40,50 13-20 * * 1-5'
-  workflow_dispatch:   # Manual trigger from GitHub UI
+    # Backup cron — GitHub scheduler is unreliable; primary trigger is
+    # the external cron-job.org pinger via repository_dispatch below.
+    - cron: '0,20,40 13-20 * * 1-5'
+  workflow_dispatch:        # Manual trigger from GitHub UI
+  repository_dispatch:      # External trigger via GitHub API (cron-job.org)
+    types: [run-bot]
 
 permissions:
   contents: write      # Needed to commit state back to repo
