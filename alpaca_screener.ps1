@@ -186,7 +186,8 @@ function Get-TopMovers($cfg, [int]$top = 20) {
 
 function Get-Snapshots($cfg, [string[]]$symbols) {
     $joined = $symbols -join ","
-    $uri    = "https://data.alpaca.markets/v2/stocks/snapshots?symbols=$joined&feed=iex"
+    # No feed param — uses best available (SIP if subscribed, IEX fallback)
+    $uri    = "https://data.alpaca.markets/v2/stocks/snapshots?symbols=$joined"
     $headers = @{
         "APCA-API-KEY-ID"     = $cfg.api_key
         "APCA-API-SECRET-KEY" = $cfg.api_secret
@@ -225,31 +226,36 @@ function Score-Candidate {
     if ($price -ge 20 -and $price -le 300) { $score += 0.5; $reasons += "price sweet-spot" }
 
     # ── 2. Relative Volume — #1 signal for day traders ──────────────────────
-    if    ($rVol -ge 4.0) { $score += 3.0; $reasons += "RVOL ${rVol}x EXTREME" }
-    elseif($rVol -ge 2.5) { $score += 2.0; $reasons += "RVOL ${rVol}x HIGH" }
-    elseif($rVol -ge 1.5) { $score += 1.0; $reasons += "RVOL ${rVol}x elevated" }
+    $rVolStr = "{0:F2}" -f $rVol
+    if    ($rVol -ge 4.0) { $score += 3.0; $reasons += "RVOL ${rVolStr}x EXTREME" }
+    elseif($rVol -ge 2.5) { $score += 2.0; $reasons += "RVOL ${rVolStr}x HIGH" }
+    elseif($rVol -ge 1.5) { $score += 1.0; $reasons += "RVOL ${rVolStr}x elevated" }
     elseif($rVol -lt 0.8) { return $null }  # dead — no interest today
 
     # ── 3. Gap — catalyst/momentum signal ───────────────────────────────────
-    $absGap = [Math]::Abs($gapPct)
-    if    ($absGap -ge 5.0) { $score += 2.0; $reasons += "gap ${gapPct:F1}% LARGE" }
-    elseif($absGap -ge 2.0) { $score += 1.2; $reasons += "gap ${gapPct:F1}%" }
-    elseif($absGap -ge 0.8) { $score += 0.5; $reasons += "gap ${gapPct:F1}% small" }
+    $absGap    = [Math]::Abs($gapPct)
+    $gapStr    = "{0:F1}" -f $gapPct
+    if    ($absGap -ge 5.0) { $score += 2.0; $reasons += "gap ${gapStr}% LARGE" }
+    elseif($absGap -ge 2.0) { $score += 1.2; $reasons += "gap ${gapStr}%" }
+    elseif($absGap -ge 0.8) { $score += 0.5; $reasons += "gap ${gapStr}% small" }
 
     # ── 4. Intraday range — need movement to profit ──────────────────────────
-    if    ($dailyRangePct -ge 3.0) { $score += 1.5; $reasons += "range ${dailyRangePct:F1}% HIGH" }
-    elseif($dailyRangePct -ge 1.5) { $score += 1.0; $reasons += "range ${dailyRangePct:F1}% good" }
-    elseif($dailyRangePct -ge 0.5) { $score += 0.3; $reasons += "range ${dailyRangePct:F1}% ok" }
+    $rngStr = "{0:F1}" -f $dailyRangePct
+    if    ($dailyRangePct -ge 3.0) { $score += 1.5; $reasons += "range ${rngStr}% HIGH" }
+    elseif($dailyRangePct -ge 1.5) { $score += 1.0; $reasons += "range ${rngStr}% good" }
+    elseif($dailyRangePct -ge 0.5) { $score += 0.3; $reasons += "range ${rngStr}% ok" }
     else                           { return $null }  # too flat, no profit opportunity
 
     # ── 5. Directional momentum ─────────────────────────────────────────────
-    if ($changeAbs -ge 3.0) { $score += 0.8; $reasons += "moving ${changeAbs:F1}%" }
+    $chgStr = "{0:F1}" -f $changeAbs
+    if ($changeAbs -ge 3.0) { $score += 0.8; $reasons += "moving ${chgStr}%" }
 
     # ── 6. Historical performance memory ────────────────────────────────────
     $memScore = Get-TickerScore $symbol
-    if    ($memScore -ge 1.5) { $score += 1.0; $reasons += "memory score ${memScore} (proven)" }
+    $memStr   = "{0:F2}" -f $memScore
+    if    ($memScore -ge 1.5) { $score += 1.0; $reasons += "memory ${memStr} proven" }
     elseif($memScore -ge 1.0) { $score += 0.3 }
-    elseif($memScore -le 0.5) { $score -= 0.8; $reasons += "memory score ${memScore} (poor history)" }
+    elseif($memScore -le 0.5) { $score -= 0.8; $reasons += "memory ${memStr} poor" }
 
     return [pscustomobject]@{
         Symbol         = $symbol
@@ -324,27 +330,32 @@ function Get-DynamicWatchlist {
     foreach ($sym in ($snapshots | Get-Member -MemberType NoteProperty).Name) {
         $s = $snapshots.$sym
         try {
-            $daily    = $s.dailyBar
-            $prev     = $s.prevDailyBar
-            $latest   = $s.latestTrade
+            $daily  = $s.dailyBar
+            $prev   = $s.prevDailyBar
 
-            if ($null -eq $daily -or $null -eq $prev -or $null -eq $latest) { continue }
+            if ($null -eq $daily -or $null -eq $prev) { continue }
 
-            $price    = [double]$latest.p
-            $prevClose= [double]$prev.c
-            $dayOpen  = [double]$daily.o
-            $dayHigh  = [double]$daily.h
-            $dayLow   = [double]$daily.l
-            $dayClose = [double]$daily.c
-            $dayVol   = [double]$daily.v
-            $prevVol  = [double]$prev.v
+            # Price: prefer latestTrade, fall back to dailyBar close
+            $price = 0.0
+            if ($null -ne $s.latestTrade -and $s.latestTrade.p) {
+                $price = [double]$s.latestTrade.p
+            }
+            if ($price -le 0 -and $daily.c) { $price = [double]$daily.c }
+            if ($price -le 0) { continue }
 
-            if ($price -le 0 -or $prevClose -le 0) { continue }
+            $prevClose = if ($prev.c) { [double]$prev.c } else { continue }
+            $dayOpen   = if ($daily.o) { [double]$daily.o } else { $prevClose }
+            $dayHigh   = if ($daily.h) { [double]$daily.h } else { $price }
+            $dayLow    = if ($daily.l) { [double]$daily.l } else { $price }
+            $dayVol    = if ($daily.v) { [double]$daily.v } else { 0 }
+            $prevVol   = if ($prev.v)  { [double]$prev.v  } else { 0 }
+
+            if ($prevClose -le 0 -or $price -le 0) { continue }
 
             # Calculate metrics
             $gapPct        = ($dayOpen - $prevClose) / $prevClose * 100
-            $changePct     = ($price - $prevClose)   / $prevClose * 100
-            $dailyRangePct = ($dayHigh - $dayLow)    / $price * 100
+            $changePct     = ($price   - $prevClose) / $prevClose * 100
+            $dailyRangePct = if ($price -gt 0) { ($dayHigh - $dayLow) / $price * 100 } else { 0 }
             $rVol          = if ($prevVol -gt 0) { $dayVol / $prevVol } else { 1.0 }
 
             $c = Score-Candidate $sym $price $gapPct $rVol $dailyRangePct ([Math]::Abs($changePct))
