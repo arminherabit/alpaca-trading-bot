@@ -128,11 +128,15 @@ function Submit-LimitOrder($cfg, [string]$symbol, [string]$side, [int]$qty, [dou
 }
 
 function Submit-BracketOrder($cfg, [string]$symbol, [string]$side, [int]$qty,
-                             [double]$limitPrice, [double]$takeProfit, [double]$stopLoss) {
+                             [double]$limitPrice, [double]$takeProfit, [double]$stopLoss,
+                             [string]$strategyTag = "") {
     if ($cfg.paper_trading) {
         Write-Host ("  [PAPER] BRACKET {0} {1} x {2} entry=`${3} tp=`${4} sl=`${5}" -f `
             $side.ToUpper(), $qty, $symbol, $limitPrice, $takeProfit, $stopLoss) -ForegroundColor Cyan
     }
+    # Embed strategy name in client_order_id so memory can track per-strategy win rates
+    $tag = if ($strategyTag -ne "") { $strategyTag } else { "UNKNOWN" }
+    $clientId = "{0}_{1}_{2}" -f $tag, $symbol, (Get-Date -Format "HHmmss")
     $body = @{
         symbol              = $symbol
         qty                 = $qty.ToString()
@@ -143,6 +147,7 @@ function Submit-BracketOrder($cfg, [string]$symbol, [string]$side, [int]$qty,
         order_class         = "bracket"
         take_profit         = @{ limit_price = $takeProfit.ToString("F2") }
         stop_loss           = @{ stop_price  = $stopLoss.ToString("F2") }
+        client_order_id     = $clientId
     }
     return Invoke-AlpacaApi $cfg "POST" "/v2/orders" $body
 }
@@ -254,5 +259,17 @@ function Test-TradingWindow($cfg) {
     $noTradeAfterT  = [datetime]::ParseExact($cfg.no_trade_after,  "HH:mm", $null)
     $noBeforeToday  = $etNow.Date.Add($noTradeBeforeT.TimeOfDay)
     $noAfterToday   = $etNow.Date.Add($noTradeAfterT.TimeOfDay)
-    return ($etNow -ge $noBeforeToday -and $etNow -le $noAfterToday)
+
+    if ($etNow -lt $noBeforeToday -or $etNow -gt $noAfterToday) { return $false }
+
+    # Midday pause — low volume chop, not worth trading
+    if ($cfg.midday_pause_start -and $cfg.midday_pause_end) {
+        $pauseStartT = [datetime]::ParseExact($cfg.midday_pause_start, "HH:mm", $null)
+        $pauseEndT   = [datetime]::ParseExact($cfg.midday_pause_end,   "HH:mm", $null)
+        $pauseStart  = $etNow.Date.Add($pauseStartT.TimeOfDay)
+        $pauseEnd    = $etNow.Date.Add($pauseEndT.TimeOfDay)
+        if ($etNow -ge $pauseStart -and $etNow -le $pauseEnd) { return $false }
+    }
+
+    return $true
 }

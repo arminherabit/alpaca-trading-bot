@@ -18,7 +18,10 @@
 
   "orb_minutes":       15,
   "no_trade_before":   "09:45",
-  "no_trade_after":    "15:30",
+  "no_trade_after":    "15:00",
+  "midday_pause_start":"11:30",
+  "midday_pause_end":  "13:00",
+  "orb_cutoff":        "10:45",
   "scan_interval_sec": 60,
 
   "require_approval": false,

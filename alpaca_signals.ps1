@@ -24,6 +24,15 @@ function Get-ORBSignal($cfg, $bars1m) {
         $signal.Reason += "Not enough 1m bars"; return $signal
     }
 
+    # ORB is only relevant early in the session — don't chase stale breakouts
+    $etNowOrb  = Get-EasternTime
+    $orbCutoff = if ($cfg.orb_cutoff) { $cfg.orb_cutoff } else { "10:45" }
+    $cutoffT   = [datetime]::ParseExact($orbCutoff, "HH:mm", $null)
+    if ($etNowOrb -gt $etNowOrb.Date.Add($cutoffT.TimeOfDay)) {
+        $signal.Reason += ("ORB setups only valid before {0} ET -- skipping" -f $orbCutoff)
+        return $signal
+    }
+
     $orb = Get-OpeningRange $bars1m $cfg.orb_minutes
     if ($null -eq $orb -or $orb.Range -le 0) {
         $signal.Reason += "ORB not established yet"; return $signal
