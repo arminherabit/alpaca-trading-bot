@@ -1,6 +1,87 @@
 {
-  "tickers": {},
-  "last_updated": "2026-05-21T18:47:59.6052308+00:00",
-  "last_screened": "2026-05-21T18:47:59.6004895+00:00",
-  "total_trades": 0
+  "tickers": {
+    "SPY": {
+      "trades": 3,
+      "wins": 1,
+      "losses": 2,
+      "total_pnl": 23.33,
+      "avg_pnl": 7.78,
+      "win_rate": 0.333,
+      "score": 0.6,
+      "consecutive_losses": 1,
+      "best_strategy": "",
+      "strategy_wins": {
+        "be7ab4a5-2a9b-4902-ba79-5b7b4b65964c": 0,
+        "62e84b1c-0c99-4287-bd3d-a652bfaab3b7": 1,
+        "d3015edf-a24b-4381-a861-efa438f43e15": 0
+      },
+      "strategy_trades": {
+        "be7ab4a5-2a9b-4902-ba79-5b7b4b65964c": 1,
+        "62e84b1c-0c99-4287-bd3d-a652bfaab3b7": 1,
+        "d3015edf-a24b-4381-a861-efa438f43e15": 1
+      },
+      "last_trade": "2026-05-22T13:31:02.344615+00:00",
+      "added_count": 1
+    },
+    "QQQ": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_pnl": -18.7,
+      "avg_pnl": -18.7,
+      "win_rate": 0.0,
+      "score": 1.0,
+      "consecutive_losses": 1,
+      "best_strategy": "",
+      "strategy_wins": {
+        "f8556d8b-90ec-45e0-95f2-3aed90dd9149": 0
+      },
+      "strategy_trades": {
+        "f8556d8b-90ec-45e0-95f2-3aed90dd9149": 1
+      },
+      "last_trade": "2026-05-22T13:31:02.1787005+00:00",
+      "added_count": 1
+    },
+    "NVDA": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_pnl": -50.69,
+      "avg_pnl": -50.69,
+      "win_rate": 0.0,
+      "score": 0.85,
+      "consecutive_losses": 1,
+      "best_strategy": "",
+      "strategy_wins": {
+        "76864a89-0497-49b5-89ab-242300e33424": 0
+      },
+      "strategy_trades": {
+        "76864a89-0497-49b5-89ab-242300e33424": 1
+      },
+      "last_trade": "2026-05-22T13:31:02.2166713+00:00",
+      "added_count": 0
+    },
+    "AMD": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_pnl": -41.7,
+      "avg_pnl": -41.7,
+      "win_rate": 0.0,
+      "score": 0.85,
+      "consecutive_losses": 1,
+      "best_strategy": "",
+      "strategy_wins": {
+        "f118dc74-eed9-40fb-bf51-38a39be792b1": 0
+      },
+      "strategy_trades": {
+        "f118dc74-eed9-40fb-bf51-38a39be792b1": 1
+      },
+      "last_trade": "2026-05-22T13:31:02.2662871+00:00",
+      "added_count": 0
+    }
+  },
+  "last_updated": "2026-05-22T13:31:03.7186379+00:00",
+  "last_screened": "2026-05-22T13:31:03.7148623+00:00",
+  "total_trades": 6
 }
