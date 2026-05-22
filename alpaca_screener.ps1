@@ -430,56 +430,72 @@ function Write-ScreenerReport($candidates, $selected) {
 
 # ── Closed position tracker ────────────────────────────────────────────────────
 # Called each scan cycle to detect fills and update memory automatically.
+#
+# Design notes:
+#   - Looks back 7 days (not just today) so exits from prior sessions get caught.
+#   - Uses nested=true so each filled buy order carries its exit legs inline.
+#     Alpaca bracket structure: parent buy -> legs[take_profit sell, stop_loss sell]
+#     With nested=true the legs are embedded and NOT returned as top-level orders,
+#     which eliminates the symbol-based pairing ambiguity of flat queries.
+#   - Dedup guard: recorded_exits stores the sell-leg order ID; safe to re-run.
 
 function Sync-ClosedTrades {
     param($cfg, $state)
 
-    # Fetch all today's filled orders
-    $etNow = Get-EasternTime
-    $today = $etNow.ToString("yyyy-MM-dd")
-    $uri   = ("/v2/orders?status=closed&after={0}T04:00:00Z&direction=asc&limit=100" -f $today)
+    # Ensure recorded_exits exists (backward compat with old state files)
+    if (-not (Get-Member -InputObject $state -Name "recorded_exits" -MemberType NoteProperty -ErrorAction SilentlyContinue)) {
+        $state | Add-Member -NotePropertyName "recorded_exits" -NotePropertyValue @() -Force
+    }
+    if ($null -eq $state.recorded_exits) { $state.recorded_exits = @() }
 
-    $orders = @()
-    try { $orders = @(Invoke-AlpacaApi $cfg "GET" $uri) } catch {}
+    # Look back 7 days — recorded_exits prevents double-counting on repeat runs
+    $lookback = (Get-Date).ToUniversalTime().AddDays(-7).ToString("yyyy-MM-ddTHH:mm:ssZ")
+    $uri      = "/v2/orders?status=closed&after=$lookback&direction=asc&limit=500&nested=true"
+
+    $raw = $null
+    try { $raw = Invoke-AlpacaApi $cfg "GET" $uri } catch {}
+    if ($null -eq $raw) { return $state }
+
+    # Normalise: Invoke-RestMethod returns PSCustomObject for single item, array otherwise
+    $orders = if ($raw -is [System.Array]) { $raw } else { @($raw) }
     if ($orders.Count -eq 0) { return $state }
 
-    # Pair buy fills with subsequent sell fills per symbol
-    $buys  = @{}
-    foreach ($o in ($orders | Where-Object { $o.side -eq "buy"  -and $o.status -eq "filled" })) {
-        $buys[$o.symbol] = $o
-    }
-    foreach ($o in ($orders | Where-Object { $o.side -eq "sell" -and $o.status -eq "filled" })) {
-        $sym = $o.symbol
-        if (-not $buys.ContainsKey($sym)) { continue }
+    foreach ($o in $orders) {
+        if ($null -eq $o) { continue }
 
-        $buy  = $buys[$sym]
-        $entryPrice = [double]$buy.filled_avg_price
-        $exitPrice  = [double]$o.filled_avg_price
+        # We only care about filled buy (entry) orders that have bracket legs
+        if ($o.side -ne "buy" -or $o.status -ne "filled") { continue }
+        if (-not $o.filled_avg_price -or -not $o.filled_qty) { continue }
+        if (-not $o.legs -or $o.legs.Count -eq 0) { continue }
+
+        $sym        = $o.symbol
+        $entryPrice = [double]$o.filled_avg_price
         $qty        = [double]$o.filled_qty
-        $pnl        = [Math]::Round(($exitPrice - $entryPrice) * $qty, 2)
-        $won        = ($pnl -gt 0)
-        $strategy   = if ($buy.client_order_id) { $buy.client_order_id -replace "_.*","" } else { "UNKNOWN" }
+        $strategy   = if ($o.client_order_id) { $o.client_order_id -replace "_.*","" } else { "UNKNOWN" }
 
-        # Only update if not already recorded (use order ID as guard)
-        $recorded = $state.recorded_exits
-        if ($null -eq $recorded) {
-            $state | Add-Member -NotePropertyName "recorded_exits" -NotePropertyValue @() -Force
-            $recorded = @()
+        # Find whichever sell leg filled (take-profit or stop-loss; the other will be canceled)
+        foreach ($leg in $o.legs) {
+            if ($null -eq $leg) { continue }
+            if ($leg.side -ne "sell" -or $leg.status -ne "filled") { continue }
+            if (-not $leg.filled_avg_price) { continue }
+
+            $exitId    = $leg.id
+            if ($state.recorded_exits -contains $exitId) { continue }  # already processed
+
+            $exitPrice = [double]$leg.filled_avg_price
+            $pnl       = [Math]::Round(($exitPrice - $entryPrice) * $qty, 2)
+            $won       = ($pnl -gt 0)
+
+            Write-Host ("  [LEARN] {0,-6} {1}  entry=`${2:F2}  exit=`${3:F2}  qty={4}  PnL=`${5:F2}" -f `
+                $sym, (if ($won) { "WIN " } else { "LOSS" }), $entryPrice, $exitPrice, $qty, $pnl) `
+                -ForegroundColor (if ($won) { "Green" } else { "Red" })
+
+            Update-TickerMemory -symbol $sym -won $won -pnl $pnl -strategy $strategy
+
+            $state.recorded_exits += $exitId
+            if ($won) { $state.wins++ } else { $state.losses++ }
+            $state.pnl_today = [Math]::Round($state.pnl_today + $pnl, 2)
         }
-        if ($recorded -contains $o.id) { continue }
-
-        Write-Host ("  [LEARN] {0,-6} {1} `${2:F2} -> `${3:F2}  PnL=`${4:F2}" -f `
-            $sym, (if($won){"WIN "}else{"LOSS"}), $entryPrice, $exitPrice, $pnl) `
-            -ForegroundColor (if($won){"Green"}else{"Red"})
-
-        Update-TickerMemory -symbol $sym -won $won -pnl $pnl -strategy $strategy
-
-        $state.recorded_exits += $o.id
-        if ($won) { $state.wins++ } else { $state.losses++ }
-        $state.pnl_today = [Math]::Round($state.pnl_today + $pnl, 2)
-
-        # Remove from buys so we don't double-count
-        $buys.Remove($sym)
     }
 
     return $state

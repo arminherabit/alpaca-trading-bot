@@ -12,6 +12,10 @@ on:
 permissions:
   contents: write      # Needed to commit state back to repo
 
+# Opt into Node.js 24 now — GitHub forces this on June 2 2026 anyway.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 # Do NOT use cancel-in-progress — it causes runner starvation on free tier.
 # Instead let each run complete; the bot itself is idempotent.
 concurrency:

@@ -116,6 +116,27 @@ function Run-Scan($cfg, $state) {
     Write-Host ("  Mode: {0}  |  Interval: {1}s" -f $modeStr, $cfg.scan_interval_sec)
     Write-Host ("=" * 70)
 
+    # ── Daily counter reset ────────────────────────────────────────────────────
+    # Compare last-scan date (ET) to today; wipe P&L/trade counters each morning.
+    $etToday = (Get-EasternTime).ToString("yyyy-MM-dd")
+    $lastScanET = ""
+    if ($state.last_scan -and $state.last_scan -ne "") {
+        try {
+            $lastUtc = [datetime]::Parse($state.last_scan).ToUniversalTime()
+            try   { $tzReset = [System.TimeZoneInfo]::FindSystemTimeZoneById("Eastern Standard Time") }
+            catch { $tzReset = [System.TimeZoneInfo]::FindSystemTimeZoneById("America/New_York") }
+            $lastScanET = [System.TimeZoneInfo]::ConvertTimeFromUtc($lastUtc, $tzReset).ToString("yyyy-MM-dd")
+        } catch { $lastScanET = "" }
+    }
+    if ($lastScanET -ne "" -and $lastScanET -ne $etToday) {
+        Write-Host ("  [RESET] New trading day ({0}) -- resetting daily counters." -f $etToday) -ForegroundColor Cyan
+        $state.trades_today = 0
+        $state.wins         = 0
+        $state.losses       = 0
+        $state.pnl_today    = 0.0
+        Save-State $state
+    }
+
     # Market hours check
     if (-not (Test-MarketOpen $cfg)) {
         Write-Host "  Market closed -- waiting." -ForegroundColor DarkGray
@@ -144,7 +165,6 @@ function Run-Scan($cfg, $state) {
         $state | Add-Member -NotePropertyName "recorded_exits"    -NotePropertyValue @() -Force
     }
 
-    $etToday = (Get-EasternTime).ToString("yyyy-MM-dd")
     if ($state.watchlist_date -ne $etToday) {
         $maxW = if ($cfg.max_watchlist) { [int]$cfg.max_watchlist } else { 12 }
         $dynamicList = Get-DynamicWatchlist $cfg $maxW
