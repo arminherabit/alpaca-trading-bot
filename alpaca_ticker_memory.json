@@ -1,26 +1,28 @@
 {
   "tickers": {
     "SPY": {
-      "trades": 3,
+      "trades": 4,
       "wins": 1,
-      "losses": 2,
-      "total_pnl": 23.33,
-      "avg_pnl": 7.78,
-      "win_rate": 0.333,
-      "score": 0.6,
-      "consecutive_losses": 1,
+      "losses": 3,
+      "total_pnl": -12.43,
+      "avg_pnl": -3.11,
+      "win_rate": 0.25,
+      "score": 0.4,
+      "consecutive_losses": 2,
       "best_strategy": "",
       "strategy_wins": {
         "be7ab4a5-2a9b-4902-ba79-5b7b4b65964c": 0,
         "62e84b1c-0c99-4287-bd3d-a652bfaab3b7": 1,
-        "d3015edf-a24b-4381-a861-efa438f43e15": 0
+        "d3015edf-a24b-4381-a861-efa438f43e15": 0,
+        "fd682545-a13a-4374-99d2-0317a0e4d43e": 0
       },
       "strategy_trades": {
         "be7ab4a5-2a9b-4902-ba79-5b7b4b65964c": 1,
         "62e84b1c-0c99-4287-bd3d-a652bfaab3b7": 1,
-        "d3015edf-a24b-4381-a861-efa438f43e15": 1
+        "d3015edf-a24b-4381-a861-efa438f43e15": 1,
+        "fd682545-a13a-4374-99d2-0317a0e4d43e": 1
       },
-      "last_trade": "2026-05-22T13:31:02.344615+00:00",
+      "last_trade": "2026-05-22T16:40:27.9091793+00:00",
       "added_count": 1
     },
     "QQQ": {
@@ -81,7 +83,7 @@
       "added_count": 0
     }
   },
-  "last_updated": "2026-05-22T13:31:03.7186379+00:00",
+  "last_updated": "2026-05-22T16:40:27.9389349+00:00",
   "last_screened": "2026-05-22T13:31:03.7148623+00:00",
-  "total_trades": 6
+  "total_trades": 7
 }
