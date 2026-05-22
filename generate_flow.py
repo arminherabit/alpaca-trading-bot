@@ -1,470 +1,519 @@
 """
-Alpaca Day Trading Bot — Full Logic & Parameters Flow Diagram
-Generates: alpaca_bot_flow.png  (300 DPI, dark theme)
+Alpaca Day Trading Bot — Full Logic & Parameters Flow Diagram v2
+Includes: self-learning screener, cron-job.org trigger, memory system
+Generates: alpaca_bot_flow.png  (200 DPI, dark theme)
 """
 
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
-from matplotlib.patches import FancyBboxPatch, FancyArrowPatch
+from matplotlib.patches import FancyBboxPatch
 
-# ── Colour palette ────────────────────────────────────────────────────────────
-BG       = "#0d1117"
-C_START  = "#1f6feb"   # blue  – start / end
-C_CHECK  = "#9e6a03"   # amber – decision
-C_PROC   = "#1a3a2a"   # dark green – process
-C_PROC2  = "#1a2a3a"   # dark blue  – sub-process
-C_REJECT = "#3a1a1a"   # dark red   – reject / stop
-C_EXEC   = "#0d3320"   # deep green – execute
-C_PARAM  = "#161b22"   # panel bg
-TXT      = "#e6edf3"
-TXT_DIM  = "#8b949e"
-GREEN    = "#3fb950"
-AMBER    = "#d29922"
-RED      = "#f85149"
-BLUE     = "#58a6ff"
-PURPLE   = "#bc8cff"
-CYAN     = "#76e3ea"
+BG      = "#0d1117"
+C_START = "#1f6feb"
+C_CHECK = "#9e6a03"
+C_PROC  = "#1a3a2a"
+C_PROC2 = "#1a2a3a"
+C_KILL  = "#3a1a1a"
+C_EXEC  = "#0d3320"
+C_LEARN = "#2a1a3a"
+C_PARAM = "#161b22"
+TXT     = "#e6edf3"
+TXT_DIM = "#8b949e"
+GREEN   = "#3fb950"
+AMBER   = "#d29922"
+RED     = "#f85149"
+BLUE    = "#58a6ff"
+PURPLE  = "#bc8cff"
+CYAN    = "#76e3ea"
+ORANGE  = "#e3b341"
 
-fig = plt.figure(figsize=(28, 48), facecolor=BG)
+fig = plt.figure(figsize=(30, 56), facecolor=BG)
 ax  = fig.add_axes([0, 0, 1, 1])
-ax.set_xlim(0, 28)
-ax.set_ylim(0, 48)
+ax.set_xlim(0, 30)
+ax.set_ylim(0, 56)
 ax.axis("off")
 ax.set_facecolor(BG)
 
-# ── Drawing helpers ───────────────────────────────────────────────────────────
+# ── helpers ───────────────────────────────────────────────────────────────────
+def box(ax, x, y, w, h, label, sub=None, color=C_PROC, txt=TXT,
+        r=0.22, fs=9, sfs=7.5, bold=False):
+    p = FancyBboxPatch((x-w/2, y-h/2), w, h,
+                       boxstyle=f"round,pad=0.05,rounding_size={r}",
+                       facecolor=color, edgecolor="#30363d", linewidth=1.2, zorder=3)
+    ax.add_patch(p)
+    wt = "bold" if bold else "normal"
+    ty = y + (h*0.13 if sub else 0)
+    ax.text(x, ty, label, ha="center", va="center", fontsize=fs,
+            color=txt, weight=wt, zorder=4)
+    if sub:
+        ax.text(x, y-h*0.22, sub, ha="center", va="center",
+                fontsize=sfs, color=TXT_DIM, zorder=4, style="italic")
 
-def box(ax, x, y, w, h, label, sublabel=None, color=C_PROC, txt=TXT,
-        radius=0.25, fontsize=9, subfontsize=7.5, bold=False):
-    patch = FancyBboxPatch((x - w/2, y - h/2), w, h,
-                           boxstyle=f"round,pad=0.05,rounding_size={radius}",
-                           facecolor=color, edgecolor="#30363d", linewidth=1.2, zorder=3)
-    ax.add_patch(patch)
-    weight = "bold" if bold else "normal"
-    ty = y + (h * 0.12 if sublabel else 0)
-    ax.text(x, ty, label, ha="center", va="center", fontsize=fontsize,
-            color=txt, weight=weight, zorder=4, wrap=False)
-    if sublabel:
-        ax.text(x, y - h * 0.22, sublabel, ha="center", va="center",
-                fontsize=subfontsize, color=TXT_DIM, zorder=4, style="italic")
-
-def diamond(ax, x, y, w, h, label, color=C_CHECK, fontsize=8.5):
-    dx, dy = w/2, h/2
-    xs = [x,     x+dx, x,     x-dx, x    ]
-    ys = [y+dy,  y,    y-dy,  y,    y+dy ]
+def diamond(ax, x, y, w, h, label, color=C_CHECK, fs=8.5):
+    xs = [x, x+w/2, x, x-w/2, x]
+    ys = [y+h/2, y, y-h/2, y, y+h/2]
     ax.fill(xs, ys, color=color, zorder=3)
     ax.plot(xs, ys, color="#30363d", linewidth=1.2, zorder=4)
-    ax.text(x, y, label, ha="center", va="center", fontsize=fontsize,
+    ax.text(x, y, label, ha="center", va="center", fontsize=fs,
             color=TXT, weight="bold", zorder=5)
 
-def arrow(ax, x1, y1, x2, y2, label=None, color="#30363d", lw=1.5):
-    ax.annotate("", xy=(x2, y2), xytext=(x1, y1),
-                arrowprops=dict(arrowstyle="-|>", color=color,
-                                lw=lw, mutation_scale=14),
-                zorder=2)
-    if label:
-        mx, my = (x1+x2)/2, (y1+y2)/2
-        ax.text(mx+0.12, my, label, fontsize=7.5, color=AMBER, va="center", zorder=5)
+def arrow(ax, x1, y1, x2, y2, lbl=None, color="#30363d", lw=1.5):
+    ax.annotate("", xy=(x2,y2), xytext=(x1,y1),
+                arrowprops=dict(arrowstyle="-|>", color=color, lw=lw, mutation_scale=14), zorder=2)
+    if lbl:
+        ax.text((x1+x2)/2+0.12, (y1+y2)/2, lbl, fontsize=7.5, color=AMBER, va="center", zorder=5)
 
-def section_label(ax, x, y, text, color=BLUE):
-    ax.text(x, y, text, fontsize=8, color=color, weight="bold",
-            va="center", zorder=5,
-            bbox=dict(boxstyle="round,pad=0.3", facecolor="#161b22",
-                      edgecolor=color, linewidth=1))
+def side_box(ax, x, y, w, h, lbl, color=C_KILL, fs=8):
+    p = FancyBboxPatch((x-w/2, y-h/2), w, h,
+                       boxstyle="round,pad=0.05,rounding_size=0.15",
+                       facecolor=color, edgecolor="#30363d", linewidth=1, zorder=3)
+    ax.add_patch(p)
+    ax.text(x, y, lbl, ha="center", va="center", fontsize=fs, color=TXT, zorder=4)
 
-def param_panel(ax, x, y, w, h, title, lines, title_color=CYAN):
-    patch = FancyBboxPatch((x, y), w, h,
-                           boxstyle="round,pad=0.1,rounding_size=0.2",
-                           facecolor=C_PARAM, edgecolor="#30363d",
-                           linewidth=1, zorder=2)
-    ax.add_patch(patch)
-    ax.text(x + w/2, y + h - 0.28, title, ha="center", va="center",
-            fontsize=8.5, color=title_color, weight="bold", zorder=4)
-    # divider
-    ax.plot([x+0.15, x+w-0.15], [y+h-0.52, y+h-0.52],
-            color="#30363d", linewidth=0.8, zorder=3)
-    line_h = (h - 0.65) / max(len(lines), 1)
-    for i, (k, v) in enumerate(lines):
-        ly = y + h - 0.65 - (i + 0.5) * line_h
-        ax.text(x + 0.25, ly, k, fontsize=7.2, color=TXT_DIM, va="center", zorder=4)
-        ax.text(x + w - 0.2, ly, v,  fontsize=7.2, color=TXT,     va="center",
-                ha="right", zorder=4, weight="bold")
+def slabel(ax, x, y, txt, color=BLUE):
+    ax.text(x, y, txt, fontsize=8, color=color, weight="bold", va="center", zorder=5,
+            bbox=dict(boxstyle="round,pad=0.3", facecolor="#161b22", edgecolor=color, linewidth=1))
 
-# ═══════════════════════════════════════════════════════════════════════════════
-#  TITLE
-# ═══════════════════════════════════════════════════════════════════════════════
-ax.text(14, 47.4, "Alpaca Day Trading Bot", ha="center", va="center",
-        fontsize=20, color=TXT, weight="bold")
-ax.text(14, 46.9, "Full Logic & Parameters Flow  •  Paper Trading  •  GitHub Actions Automated",
-        ha="center", va="center", fontsize=10, color=TXT_DIM)
-ax.plot([0.5, 27.5], [46.55, 46.55], color="#30363d", linewidth=1)
+def panel(ax, x, y, w, h, title, lines, tc=CYAN):
+    p = FancyBboxPatch((x, y), w, h,
+                       boxstyle="round,pad=0.1,rounding_size=0.2",
+                       facecolor=C_PARAM, edgecolor="#30363d", linewidth=1, zorder=2)
+    ax.add_patch(p)
+    ax.text(x+w/2, y+h-0.28, title, ha="center", va="center",
+            fontsize=8.5, color=tc, weight="bold", zorder=4)
+    ax.plot([x+0.15, x+w-0.15], [y+h-0.52]*2, color="#30363d", linewidth=0.8, zorder=3)
+    lh = (h-0.65) / max(len(lines), 1)
+    for i,(k,v) in enumerate(lines):
+        ly = y+h-0.65-(i+0.5)*lh
+        ax.text(x+0.22, ly, k, fontsize=7.2, color=TXT_DIM, va="center", zorder=4)
+        ax.text(x+w-0.18, ly, v, fontsize=7.2, color=TXT, va="center", ha="right", zorder=4, weight="bold")
 
-# ═══════════════════════════════════════════════════════════════════════════════
-#  COLUMN LAYOUT  (main flow centre=10, right panels x=19–27)
-# ═══════════════════════════════════════════════════════════════════════════════
-CX = 10   # centre x of main flow
+CX = 10.5   # main flow centre x
 
-# ── 1. GITHUB ACTIONS TRIGGER ─────────────────────────────────────────────────
-Y = 45.8
-box(ax, CX, Y, 7, 0.8, "GitHub Actions Cron Trigger",
-    "Every 10 min  |  Mon–Fri  |  13:30–20:00 UTC  (6:30 AM–1 PM PT)",
-    color=C_START, fontsize=10, subfontsize=8, bold=True)
+# ══════════════════════════════════════════════════════════════════════════════
+# TITLE
+# ══════════════════════════════════════════════════════════════════════════════
+ax.text(15, 55.3, "Alpaca Day Trading Bot  —  Full Architecture", ha="center",
+        fontsize=21, color=TXT, weight="bold")
+ax.text(15, 54.75, "Self-Learning Screener  •  Dynamic Watchlist  •  GitHub Actions + cron-job.org  •  Paper Trading",
+        ha="center", fontsize=10, color=TXT_DIM)
+ax.plot([0.5, 29.5], [54.4, 54.4], color="#30363d", linewidth=1)
 
-arrow(ax, CX, Y-0.4, CX, Y-1.05, color=BLUE)
+# ══════════════════════════════════════════════════════════════════════════════
+# SECTION A — TRIGGER LAYER
+# ══════════════════════════════════════════════════════════════════════════════
+slabel(ax, 0.6, 53.8, "  TRIGGER LAYER  ", color=BLUE)
 
-# ── 2. INSTALL PWSH & CHECKOUT ────────────────────────────────────────────────
-Y = 44.6
-box(ax, CX, Y, 7, 0.7, "Checkout Repo  →  Install PowerShell",
-    "ubuntu-latest runner  •  timeout 8 min",
-    color=C_PROC2, subfontsize=7.5)
+# Two trigger sources side by side
+box(ax, CX-3.2, 53.1, 5.5, 0.85,
+    "cron-job.org  (PRIMARY)",
+    "Every 10 min  |  Mon-Fri  |  6:30 AM-1 PM PT",
+    color=C_START, fs=9.5, bold=True)
+box(ax, CX+3.2, 53.1, 4.8, 0.85,
+    "GitHub Cron  (BACKUP)",
+    "Every 20 min  |  flaky fallback",
+    color="#1a2040", fs=9, sfs=7.5)
 
-arrow(ax, CX, Y-0.35, CX, Y-1.0, color=BLUE)
+# Both arrows merge down
+arrow(ax, CX-3.2, 52.65, CX-0.6, 52.05, color=BLUE)
+arrow(ax, CX+3.2, 52.65, CX+0.6, 52.05, color="#30363d")
 
-# ── 3. MARKET OPEN CHECK ─────────────────────────────────────────────────────
-Y = 43.3
-diamond(ax, CX, Y, 6, 0.9, "Market Open?\n(Alpaca Clock API)")
+box(ax, CX, 51.7, 7.5, 0.6,
+    "GitHub Actions Runner  (ubuntu-latest  •  timeout 8 min)",
+    color=C_PROC2, fs=9)
 
-arrow(ax, CX, Y-0.45, CX, Y-1.1, color=GREEN, label="YES")
-ax.annotate("", xy=(CX+5.5, Y), xytext=(CX+3, Y),
+arrow(ax, CX, 51.4, CX, 50.75, color=BLUE)
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SECTION B — MARKET GATE
+# ══════════════════════════════════════════════════════════════════════════════
+slabel(ax, 0.6, 50.4, "  MARKET GATE  ", color=AMBER)
+
+diamond(ax, CX, 50.1, 6.2, 0.85, "Market Open?\n(Alpaca Clock API)")
+arrow(ax, CX, 49.67, CX, 49.02, color=GREEN, lbl="YES")
+ax.annotate("", xy=(CX+5.8,50.1), xytext=(CX+3.1,50.1),
             arrowprops=dict(arrowstyle="-|>", color=RED, lw=1.5, mutation_scale=12), zorder=2)
-box(ax, CX+6.8, Y, 2.4, 0.55, "EXIT — Save State",
-    color=C_REJECT, fontsize=8)
-ax.text(CX+4.5, Y+0.12, "NO", fontsize=7.5, color=RED)
+side_box(ax, CX+7.1, 50.1, 2.3, 0.55, "EXIT\nSave State")
+ax.text(CX+4.3, 50.22, "NO", fontsize=7.5, color=RED)
 
-# ── 4. TRADING WINDOW CHECK ──────────────────────────────────────────────────
-Y = 41.95
-diamond(ax, CX, Y, 6.2, 0.9, "Within Trading Window?\n09:45 – 15:30 ET")
-
-arrow(ax, CX, Y-0.45, CX, Y-1.1, color=GREEN, label="YES")
-ax.annotate("", xy=(CX+5.5, Y), xytext=(CX+3.1, Y),
+diamond(ax, CX, 48.65, 6.5, 0.85, "Trading Window?\n09:45 – 15:30 ET")
+arrow(ax, CX, 48.22, CX, 47.57, color=GREEN, lbl="YES")
+ax.annotate("", xy=(CX+5.8,48.65), xytext=(CX+3.25,48.65),
             arrowprops=dict(arrowstyle="-|>", color=RED, lw=1.5, mutation_scale=12), zorder=2)
-box(ax, CX+6.8, Y, 2.4, 0.55, "Monitor Only\nSave State",
-    color=C_REJECT, fontsize=8)
-ax.text(CX+4.5, Y+0.12, "NO", fontsize=7.5, color=RED)
+side_box(ax, CX+7.1, 48.65, 2.3, 0.55, "Monitor Only\nSave State")
+ax.text(CX+4.3, 48.77, "NO", fontsize=7.5, color=RED)
 
-# ── 5. MAX POSITIONS CHECK ───────────────────────────────────────────────────
-Y = 40.6
-diamond(ax, CX, Y, 6, 0.9, "Open Positions < 3?\n(Max Positions Check)")
-
-arrow(ax, CX, Y-0.45, CX, Y-1.1, color=GREEN, label="YES")
-ax.annotate("", xy=(CX+5.5, Y), xytext=(CX+3, Y),
+diamond(ax, CX, 47.2, 6, 0.85, "Positions < 3 max?")
+arrow(ax, CX, 46.77, CX, 46.12, color=GREEN, lbl="YES")
+ax.annotate("", xy=(CX+5.8,47.2), xytext=(CX+3.0,47.2),
             arrowprops=dict(arrowstyle="-|>", color=RED, lw=1.5, mutation_scale=12), zorder=2)
-box(ax, CX+6.8, Y, 2.4, 0.55, "Max Positions\nReached — Skip",
-    color=C_REJECT, fontsize=8)
-ax.text(CX+4.5, Y+0.12, "NO", fontsize=7.5, color=RED)
+side_box(ax, CX+7.1, 47.2, 2.3, 0.55, "Max Positions\nReached")
+ax.text(CX+4.3, 47.32, "NO", fontsize=7.5, color=RED)
 
-# ── 6. WATCHLIST LOOP ────────────────────────────────────────────────────────
-Y = 39.2
-box(ax, CX, Y, 7, 0.75,
-    "Iterate Watchlist: SPY  QQQ  AAPL  NVDA  TSLA  MSFT  AMD",
-    color=C_PROC2, fontsize=9)
+# ══════════════════════════════════════════════════════════════════════════════
+# SECTION C — SELF-LEARNING SCREENER
+# ══════════════════════════════════════════════════════════════════════════════
+slabel(ax, 0.6, 45.8, "  SELF-LEARNING SCREENER  (once per trading day)  ", color=PURPLE)
 
-arrow(ax, CX, Y-0.38, CX, Y-1.0, color=BLUE)
+diamond(ax, CX, 45.75, 7, 0.85, "Watchlist fresh today?\n(watchlist_date == ET date)")
+arrow(ax, CX+3.5, 45.75, CX+5.5, 45.75, color=GREEN, lbl="YES →")
+side_box(ax, CX+7.1, 45.75, 2.3, 0.55, "Use cached\nwatchlist", color=C_PROC2)
+arrow(ax, CX, 45.32, CX, 44.62, color=RED, lbl="NO")
 
-# ── 7. FETCH BAR DATA ────────────────────────────────────────────────────────
-Y = 37.95
-box(ax, CX, Y, 7, 0.75, "Fetch Intraday Bars",
-    "1-Min + 5-Min bars  •  Today 09:30 ET → Now  (Alpaca Data API)",
-    color=C_PROC, subfontsize=7.5)
+# Screener pipeline
+box(ax, CX-3.5, 44.2, 5.2, 0.75,
+    "Alpaca Most-Actives API",
+    "top 30 by volume today", color="#1a1a3a", fs=8.5, sfs=7.5)
+box(ax, CX+3.5, 44.2, 5.2, 0.75,
+    "Alpaca Top Movers API",
+    "gainers + losers top 20", color="#1a1a3a", fs=8.5, sfs=7.5)
+arrow(ax, CX-3.5, 43.82, CX-0.8, 43.42, color=PURPLE)
+arrow(ax, CX+3.5, 43.82, CX+0.8, 43.42, color=PURPLE)
 
-arrow(ax, CX, Y-0.38, CX, Y-1.0, color=BLUE)
+box(ax, CX, 43.1, 7.5, 0.55,
+    "Merge + curated universe (~60 liquid names)  →  ~90 candidates",
+    color="#1a1a3a", fs=8.5)
 
-# ── 8. SUFFICIENT DATA? ──────────────────────────────────────────────────────
-Y = 36.65
-diamond(ax, CX, Y, 6, 0.85, "Sufficient Data?\n≥20 x 1-min bars  |  ≥10 x 5-min bars")
+arrow(ax, CX, 42.82, CX, 42.17, color=PURPLE)
 
-arrow(ax, CX, Y-0.43, CX, Y-1.05, color=GREEN, label="YES")
-ax.annotate("", xy=(CX+5.5, Y), xytext=(CX+3, Y),
-            arrowprops=dict(arrowstyle="-|>", color=RED, lw=1.5, mutation_scale=12), zorder=2)
-box(ax, CX+6.8, Y, 2.4, 0.5, "SKIP Symbol", color=C_REJECT, fontsize=8)
-ax.text(CX+4.5, Y+0.12, "NO", fontsize=7.5, color=RED)
+box(ax, CX, 41.85, 7.5, 0.55,
+    "Batch Snapshot Fetch  (Alpaca Data API  •  batches of 40)",
+    color=C_PROC2, fs=8.5)
 
-# ── 9. COMPUTE INDICATORS ────────────────────────────────────────────────────
-Y = 35.3
-box(ax, CX, Y, 7.5, 1.15, "Compute Technical Indicators",
-    "EMA9 • EMA21 • RSI(14) • MACD • ATR(14) • VWAP • Opening Range (15-min ORB)",
-    color=C_PROC, fontsize=9.5, subfontsize=8)
+arrow(ax, CX, 41.57, CX, 40.92, color=PURPLE)
 
-arrow(ax, CX, Y-0.58, CX, Y-1.2, color=BLUE)
-
-# ── 10. STRATEGY SIGNALS ─────────────────────────────────────────────────────
-Y = 33.65
-section_label(ax, CX-3.5, Y+0.6, "  STRATEGY EVALUATION  ", color=PURPLE)
-
-# Three strategy boxes side by side
-bw = 3.8
-for i, (sx, strat, detail) in enumerate([
-    (CX-4.3, "ORB  (Opening Range Breakout)",
-     "Price breaks 15-min high/low\nVolume > 1.5× avg  •  ATR filter"),
-    (CX,     "VWAP Bounce",
-     "Price dips to VWAP, reclaims\nRSI 35–60  •  Volume spike"),
-    (CX+4.3, "EMA Pullback",
-     "EMA9 > EMA21 (uptrend)\nPullback to EMA9, bounce candle"),
-]):
-    box(ax, sx, Y, bw-0.1, 1.0, strat, detail,
-        color="#1a1a3a", fontsize=8.5, subfontsize=7.5)
-
-arrow(ax, CX, Y-0.5, CX, Y-1.15, color=BLUE)
-
-# ── 11. VALID SIGNAL? ────────────────────────────────────────────────────────
-Y = 32.15
-diamond(ax, CX, Y, 6, 0.85, "Valid Signal Found?\n(Confidence ≥ 65%  •  Entry / Stop / T1 / T2)")
-
-arrow(ax, CX, Y-0.43, CX, Y-1.05, color=GREEN, label="YES")
-ax.annotate("", xy=(CX+5.5, Y), xytext=(CX+3, Y),
-            arrowprops=dict(arrowstyle="-|>", color=RED, lw=1.5, mutation_scale=12), zorder=2)
-box(ax, CX+6.8, Y, 2.4, 0.5, "WATCH\n(no setup)", color=C_REJECT, fontsize=8)
-ax.text(CX+4.5, Y+0.12, "NO", fontsize=7.5, color=RED)
-
-# ── 12. RISK MANAGEMENT ──────────────────────────────────────────────────────
-Y = 30.75
-section_label(ax, CX-3.5, Y+0.62, "  RISK MANAGEMENT  ", color=AMBER)
-box(ax, CX, Y, 7.5, 1.1, "Position Sizing  &  Risk Validation",
-    "Shares = min( (Equity × 1%) ÷ ATR ,  BuyingPower ÷ MaxPositions × 80% )",
-    color="#2a1a0a", fontsize=9.5, subfontsize=8)
-
-arrow(ax, CX, Y-0.55, CX, Y-1.15, color=BLUE)
-
-# ── 13. RISK CHECKS ──────────────────────────────────────────────────────────
-Y = 29.25
-# Four check boxes
-checks = [
-    (CX-5.25, "R:R Ratio\n≥ 2.5 : 1"),
-    (CX-1.75, "Buying Power\nSufficient"),
-    (CX+1.75, "Confidence\n≥ 65%"),
-    (CX+5.25, "Max Positions\n< 3"),
-]
-for cx2, lbl in checks:
-    box(ax, cx2, Y, 2.9, 0.75, lbl, color="#1a2a1a", fontsize=8.5)
-    arrow(ax, CX, Y-0.38, CX, Y-1.0, color=BLUE)
-
-arrow(ax, CX, Y-0.38, CX, Y-1.0, color=BLUE)
-
-# ── 14. ALL CHECKS PASS? ─────────────────────────────────────────────────────
-Y = 27.9
-diamond(ax, CX, Y, 6, 0.85, "All Risk Checks Pass?")
-
-arrow(ax, CX, Y-0.43, CX, Y-1.05, color=GREEN, label="YES")
-ax.annotate("", xy=(CX+5.5, Y), xytext=(CX+3, Y),
-            arrowprops=dict(arrowstyle="-|>", color=RED, lw=1.5, mutation_scale=12), zorder=2)
-box(ax, CX+6.8, Y, 2.4, 0.55, "REJECTED\nLog reason", color=C_REJECT, fontsize=8)
-ax.text(CX+4.5, Y+0.12, "NO", fontsize=7.5, color=RED)
-
-# ── 15. AUTO-EXECUTE ─────────────────────────────────────────────────────────
-Y = 26.5
-box(ax, CX, Y, 7.5, 1.0,
-    "AUTO-EXECUTE  (paper_trading=true, require_approval=false)",
-    "Submit Bracket Order to Alpaca Paper API",
-    color=C_EXEC, fontsize=9.5, subfontsize=8, bold=True, txt=GREEN)
-
-arrow(ax, CX, Y-0.5, CX, Y-1.1, color=GREEN)
-
-# ── 16. BRACKET ORDER ────────────────────────────────────────────────────────
-Y = 25.05
-section_label(ax, CX-3.5, Y+0.62, "  BRACKET ORDER  ", color=GREEN)
-bw2 = 4.5
+# Scoring boxes
 for bx2, lbl, detail in [
-    (CX-4.0, "Entry Order", "Limit Buy @ Signal Entry\nGTD (Good-Till-Day)"),
-    (CX,     "Take Profit", "Limit Sell @ T1 target\nR:R ≥ 2.5 × risk"),
-    (CX+4.0, "Stop Loss",   "Stop Sell @ Stop price\nATR-based distance"),
+    (CX-4.5, "Relative Volume", "0–3 pts\nRVOL >1.5x / >2.5x / >4x"),
+    (CX-1.5, "Gap %",           "0–2 pts\n>0.8% / >2% / >5%"),
+    (CX+1.5, "Intraday Range",  "0–1.5 pts\n>0.5% / >1.5% / >3%"),
+    (CX+4.5, "Memory Score",    "±1 pt\nWin rate history"),
 ]:
-    box(ax, bx2, Y, bw2-0.2, 0.95, lbl, detail,
-        color="#0d2818" if "Profit" in lbl else
-              "#2a1010" if "Stop"   in lbl else "#0d1f35",
-        fontsize=8.5, subfontsize=7.5)
+    box(ax, bx2, 40.55, 2.65, 0.9, lbl, detail,
+        color="#20103a", fs=8, sfs=7)
 
-arrow(ax, CX, Y-0.48, CX, Y-1.05, color=BLUE)
+arrow(ax, CX, 40.1, CX, 39.45, color=PURPLE)
 
-# ── 17. ORDER LIFECYCLE ──────────────────────────────────────────────────────
-Y = 23.65
-box(ax, CX, Y, 7.5, 0.85, "Alpaca Manages Order Lifecycle",
-    "Fills entry → monitors price → auto-triggers TP or SL when hit",
-    color=C_PROC2, fontsize=9, subfontsize=8)
+box(ax, CX, 39.15, 7.5, 0.55,
+    "Rank by score  →  Top 10 + SPY / QQQ anchors  =  Today's Watchlist",
+    color=C_PROC, fs=8.5, txt=GREEN)
 
-arrow(ax, CX, Y-0.43, CX, Y-1.05, color=BLUE)
+arrow(ax, CX, 38.87, CX, 38.22, color=BLUE)
 
-# ── 18. TRADE OUTCOME ────────────────────────────────────────────────────────
-Y = 22.25
-for ox2, lbl, detail, col in [
-    (CX-3.0, "WIN", "Take-profit filled\nP&L > 0", C_EXEC),
-    (CX+3.0, "LOSS", "Stop-loss filled\nP&L < 0", C_REJECT),
+# ══════════════════════════════════════════════════════════════════════════════
+# SECTION D — SYMBOL SCAN LOOP
+# ══════════════════════════════════════════════════════════════════════════════
+slabel(ax, 0.6, 37.9, "  SYMBOL SCAN LOOP  ", color=CYAN)
+
+box(ax, CX, 37.8, 8, 0.7,
+    "Iterate Dynamic Watchlist  (up to 12 symbols)",
+    "SPY  QQQ  +  top screened names for today",
+    color=C_PROC2, fs=9, sfs=7.5)
+
+arrow(ax, CX, 37.45, CX, 36.8, color=BLUE)
+
+box(ax, CX, 36.5, 7.5, 0.55,
+    "Fetch 1-Min + 5-Min Intraday Bars  (Alpaca Data API)",
+    color=C_PROC, fs=8.5)
+
+arrow(ax, CX, 36.22, CX, 35.57, color=BLUE)
+
+diamond(ax, CX, 35.2, 6.5, 0.72, "Sufficient data?\n≥20 x 1-min  |  ≥10 x 5-min bars")
+arrow(ax, CX, 34.84, CX, 34.19, color=GREEN, lbl="YES")
+ax.annotate("", xy=(CX+5.8,35.2), xytext=(CX+3.25,35.2),
+            arrowprops=dict(arrowstyle="-|>", color=RED, lw=1.5, mutation_scale=12), zorder=2)
+side_box(ax, CX+7.1, 35.2, 2.3, 0.5, "SKIP symbol", color=C_KILL)
+ax.text(CX+4.3, 35.32, "NO", fontsize=7.5, color=RED)
+
+# Indicators
+box(ax, CX, 33.87, 8, 0.65,
+    "Compute Indicators",
+    "EMA9  EMA21  RSI(14)  ATR(14)  VWAP  MACD  Opening Range (15-min ORB)",
+    color=C_PROC, fs=9, sfs=7.5)
+
+arrow(ax, CX, 33.54, CX, 32.89, color=BLUE)
+
+# 3 strategies
+slabel(ax, 0.6, 32.65, "  STRATEGY ENGINE  ", color=PURPLE)
+for sx2, st, det in [
+    (CX-4.3, "ORB Breakout",    "Price breaks 15-min H/L\nVol >1.5× avg  •  ATR filter"),
+    (CX,     "VWAP Bounce",     "Dip to VWAP, reclaim\nRSI 35–60  •  Vol spike"),
+    (CX+4.3, "EMA Pullback",    "EMA9>EMA21 uptrend\nBounce off EMA9"),
 ]:
-    box(ax, ox2, Y, 4.8, 0.85, lbl, detail, color=col, fontsize=10, bold=True)
+    box(ax, sx2, 32.3, 3.8, 0.95, st, det, color="#1a1030", fs=8.5, sfs=7.5)
 
-arrow(ax, CX, Y-0.43, CX, Y-1.05, color=BLUE)
+arrow(ax, CX, 31.82, CX, 31.17, color=BLUE)
 
-# ── 19. STATE UPDATE ─────────────────────────────────────────────────────────
-Y = 20.9
-box(ax, CX, Y, 7.5, 0.85, "Update State  →  Commit to GitHub",
-    "alpaca_state.json  •  trades_today  wins  losses  pnl_today  last_scan",
-    color=C_PROC, fontsize=9, subfontsize=7.5)
+diamond(ax, CX, 30.8, 6.2, 0.72, "Valid signal?\nConfidence ≥ 65%  •  Entry / Stop / T1 / T2")
+arrow(ax, CX, 30.44, CX, 29.79, color=GREEN, lbl="YES")
+ax.annotate("", xy=(CX+5.8,30.8), xytext=(CX+3.1,30.8),
+            arrowprops=dict(arrowstyle="-|>", color=RED, lw=1.5, mutation_scale=12), zorder=2)
+side_box(ax, CX+7.1, 30.8, 2.3, 0.5, "WATCH\nno setup", color=C_KILL)
+ax.text(CX+4.3, 30.92, "NO", fontsize=7.5, color=RED)
 
-arrow(ax, CX, Y-0.43, CX, Y-1.05, color=BLUE)
+# ══════════════════════════════════════════════════════════════════════════════
+# SECTION E — RISK ENGINE
+# ══════════════════════════════════════════════════════════════════════════════
+slabel(ax, 0.6, 29.5, "  RISK ENGINE  ", color=AMBER)
 
-# ── 20. DASHBOARD ────────────────────────────────────────────────────────────
-Y = 19.5
-box(ax, CX, Y, 7.5, 0.85, "Generate HTML Dashboard",
-    "alpaca_dashboard.html  →  GitHub Artifact  →  Commit to repo",
-    color=C_PROC2, fontsize=9, subfontsize=7.5)
+box(ax, CX, 29.42, 8, 0.65,
+    "Position Sizing",
+    "Shares = min( Equity×1% ÷ ATR ,  BuyingPower÷3×80% ÷ Entry )",
+    color="#2a1a0a", fs=9, sfs=7.5)
 
-arrow(ax, CX, Y-0.43, CX, Y-1.0, color=BLUE)
+arrow(ax, CX, 29.1, CX, 28.45, color=BLUE)
 
-# ── 21. NEXT SYMBOL LOOP ─────────────────────────────────────────────────────
-Y = 18.15
-box(ax, CX, Y, 7, 0.75, "Next Symbol in Watchlist  (continue loop)",
-    color=C_PROC2, fontsize=9)
+for bx2, lbl in [
+    (CX-4.5, "R:R ≥ 2.5:1"),
+    (CX-1.5, "BP sufficient"),
+    (CX+1.5, "Confidence ≥65%"),
+    (CX+4.5, "Positions < 3"),
+]:
+    box(ax, bx2, 28.1, 2.65, 0.6, lbl, color="#1a2a1a", fs=8)
 
-# Loop-back arrow
-ax.annotate("", xy=(CX-5.5, 39.2), xytext=(CX-5.5, Y),
-            arrowprops=dict(arrowstyle="-|>", color="#30363d",
-                            lw=1.2, mutation_scale=12,
-                            connectionstyle="arc3,rad=0.0"), zorder=2)
-ax.plot([CX-3.5, CX-5.5], [Y, Y], color="#30363d", lw=1.2, zorder=2)
-ax.plot([CX-5.5, CX-5.5], [Y, 39.2], color="#30363d", lw=1.2, zorder=2)
-ax.text(CX-6.3, (Y+39.2)/2, "next\nsymbol", fontsize=7, color=TXT_DIM,
-        ha="center", va="center")
+arrow(ax, CX, 27.8, CX, 27.15, color=BLUE)
 
-arrow(ax, CX, Y-0.38, CX, Y-1.0, color=BLUE)
+diamond(ax, CX, 26.78, 6, 0.72, "All risk checks pass?")
+arrow(ax, CX, 26.42, CX, 25.77, color=GREEN, lbl="YES")
+ax.annotate("", xy=(CX+5.8,26.78), xytext=(CX+3.0,26.78),
+            arrowprops=dict(arrowstyle="-|>", color=RED, lw=1.5, mutation_scale=12), zorder=2)
+side_box(ax, CX+7.1, 26.78, 2.3, 0.5, "REJECTED\nlog reason", color=C_KILL)
+ax.text(CX+4.3, 26.9, "NO", fontsize=7.5, color=RED)
 
-# ── 22. WAIT FOR NEXT CRON ───────────────────────────────────────────────────
-Y = 16.85
-box(ax, CX, Y, 7, 0.75, "Runner Exits  •  Wait for Next Cron Fire  (10 min)",
-    color=C_START, fontsize=9)
+# ══════════════════════════════════════════════════════════════════════════════
+# SECTION F — EXECUTION
+# ══════════════════════════════════════════════════════════════════════════════
+slabel(ax, 0.6, 25.45, "  ORDER EXECUTION  ", color=GREEN)
 
-# ═══════════════════════════════════════════════════════════════════════════════
-#  RIGHT PANEL — PARAMETERS
-# ═══════════════════════════════════════════════════════════════════════════════
-PX = 18.8   # left edge of panels
-PW = 8.5
+box(ax, CX, 25.4, 8, 0.65,
+    "AUTO-EXECUTE  (paper_trading=true  require_approval=false)",
+    "Submit Bracket Order → Alpaca Paper API",
+    color=C_EXEC, fs=9.5, sfs=8, bold=True, txt=GREEN)
 
-# Panel 1 – Account / Config
-param_panel(ax, PX, 42.5, PW, 3.8, "ACCOUNT & CONFIG",
-    [("Mode",             "Paper Trading"),
-     ("Paper API URL",    "paper-api.alpaca.markets"),
-     ("Data API URL",     "data.alpaca.markets"),
-     ("Auth",             "APCA-API-KEY-ID headers"),
-     ("Scheduler",        "GitHub Actions cron"),
-     ("Runner",           "ubuntu-latest"),
-     ("Timeout",          "8 minutes"),
-     ("Concurrency",      "cancel-in-progress: false"),
-    ], title_color=BLUE)
+arrow(ax, CX, 25.07, CX, 24.42, color=GREEN)
 
-# Panel 2 – Watchlist
-param_panel(ax, PX, 39.1, PW, 3.1, "WATCHLIST  (7 symbols)",
-    [("1", "SPY  —  S&P 500 ETF"),
-     ("2", "QQQ  —  Nasdaq ETF"),
-     ("3", "AAPL — Apple"),
-     ("4", "NVDA — Nvidia"),
-     ("5", "TSLA — Tesla"),
-     ("6", "MSFT — Microsoft"),
-     ("7", "AMD  — AMD"),
-    ], title_color=CYAN)
+for bx2, lbl, det, col in [
+    (CX-4.2, "Entry Order",  "Limit Buy\n@ signal entry price", "#0d1f35"),
+    (CX,     "Take Profit",  "Limit Sell\n@ T1  (R:R ×2.5)", "#0d2818"),
+    (CX+4.2, "Stop Loss",    "Stop Sell\n@ ATR-based stop",   "#2a1010"),
+]:
+    box(ax, bx2, 24.05, 3.8, 0.88, lbl, det, color=col, fs=8.5, sfs=7.5)
 
-# Panel 3 – Risk Parameters
-param_panel(ax, PX, 35.8, PW, 3.0, "RISK PARAMETERS",
-    [("Max risk / trade",  "1.0% of equity"),
-     ("Min R:R ratio",     "2.5 : 1"),
-     ("Max positions",     "3 simultaneous"),
-     ("Max position value","BP ÷ 3 × 80%  (~$53K)"),
-     ("Stop type",         "ATR-based distance"),
-     ("Order type",        "Bracket (entry+TP+SL)"),
-    ], title_color=AMBER)
+arrow(ax, CX, 23.61, CX, 22.96, color=BLUE)
 
-# Panel 4 – Trading Window
-param_panel(ax, PX, 32.8, PW, 2.7, "TRADING WINDOW  (ET)",
-    [("No trade before",   "09:45 AM ET"),
-     ("No trade after",    "03:30 PM ET"),
-     ("Cron window",       "09:25 AM–04:05 PM ET"),
-     ("ORB period",        "First 15 minutes"),
-     ("Scan interval",     "Every 10 minutes"),
-    ], title_color=GREEN)
+box(ax, CX, 22.65, 8, 0.65,
+    "Alpaca Manages Lifecycle",
+    "fills entry → monitors → auto-triggers TP or SL",
+    color=C_PROC2, fs=9, sfs=7.5)
 
-# Panel 5 – Indicators
-param_panel(ax, PX, 29.5, PW, 3.0, "TECHNICAL INDICATORS",
-    [("EMA Fast",          "EMA 9"),
-     ("EMA Slow",          "EMA 21"),
-     ("RSI period",        "14  (range 35–60 ideal)"),
-     ("ATR period",        "14  (stop sizing)"),
-     ("VWAP",              "Intraday (09:30 reset)"),
-     ("MACD",              "12 / 26 / 9"),
-    ], title_color=PURPLE)
+arrow(ax, CX, 22.32, CX, 21.62, color=BLUE)
 
-# Panel 6 – ORB Strategy
-param_panel(ax, PX, 26.5, PW, 2.7, "STRATEGY: ORB",
-    [("ORB period",        "First 15 min candles"),
-     ("Breakout trigger",  "Close > ORB high/low"),
-     ("Volume filter",     "≥ 1.5× avg volume"),
-     ("Entry",             "Limit @ breakout level"),
-     ("Stop",              "Opposite ORB boundary"),
-    ], title_color=PURPLE)
+for bx2, lbl, col in [
+    (CX-2.8, "WIN  —  Take Profit Hit\nPnL > 0", C_EXEC),
+    (CX+2.8, "LOSS  —  Stop Loss Hit\nPnL < 0", C_KILL),
+]:
+    box(ax, bx2, 21.3, 4.8, 0.85, lbl, color=col, fs=9.5, bold=True)
 
-# Panel 7 – VWAP Strategy
-param_panel(ax, PX, 23.6, PW, 2.6, "STRATEGY: VWAP BOUNCE",
-    [("Signal",            "Price dips to VWAP"),
-     ("Confirmation",      "Reclaim + RSI 35–60"),
-     ("Volume",            "Spike on bounce"),
-     ("Entry",             "Limit @ VWAP level"),
-     ("Stop",              "Below VWAP - ATR"),
-    ], title_color=PURPLE)
+arrow(ax, CX, 20.87, CX, 20.22, color=BLUE)
 
-# Panel 8 – EMA Strategy
-param_panel(ax, PX, 20.7, PW, 2.6, "STRATEGY: EMA PULLBACK",
-    [("Trend filter",      "EMA9 > EMA21"),
-     ("Signal",            "Price pulls to EMA9"),
-     ("Confirmation",      "Green bounce candle"),
-     ("RSI zone",          "45–65 (healthy zone)"),
-     ("Entry",             "Limit @ EMA9 level"),
-    ], title_color=PURPLE)
+# ══════════════════════════════════════════════════════════════════════════════
+# SECTION G — SELF-LEARNING FEEDBACK LOOP
+# ══════════════════════════════════════════════════════════════════════════════
+slabel(ax, 0.6, 19.9, "  SELF-LEARNING FEEDBACK LOOP  ", color=PURPLE)
 
-# Panel 9 – Position Sizing Formula
-param_panel(ax, PX, 17.8, PW, 2.6, "POSITION SIZING FORMULA",
-    [("Risk $ / trade",    "Equity × 1%"),
-     ("Risk shares",       "Risk$ ÷ ATR"),
-     ("BP cap shares",     "(BP ÷ 3) × 80% ÷ Entry"),
-     ("Final shares",      "min(risk shares, BP cap)"),
-     ("Actual risk",       "Shares × (Entry − Stop)"),
-    ], title_color=AMBER)
+box(ax, CX, 19.85, 8, 0.75,
+    "Sync-ClosedTrades  (every scan cycle)",
+    "Detects newly filled exits  →  calculates PnL per trade",
+    color=C_LEARN, fs=9, sfs=7.5)
 
-# Panel 10 – GitHub Actions
-param_panel(ax, PX, 14.9, PW, 2.6, "GITHUB ACTIONS WORKFLOW",
-    [("Repo",              "arminherabit/alpaca-trading-bot"),
-     ("Workflow",          "alpaca_bot.yml"),
-     ("Trigger",           "schedule + workflow_dispatch"),
-     ("Cron (UTC)",        "0,10,20,30,40,50 13-20 * * 1-5"),
-     ("Persists",          "state.json + dashboard.html"),
-    ], title_color=BLUE)
+arrow(ax, CX, 19.47, CX, 18.82, color=PURPLE)
 
-# ═══════════════════════════════════════════════════════════════════════════════
-#  LEGEND
-# ═══════════════════════════════════════════════════════════════════════════════
-leg_x, leg_y = 0.5, 15.8
-ax.text(leg_x, leg_y, "LEGEND", fontsize=8, color=TXT_DIM, weight="bold")
-for i, (col, lbl) in enumerate([
-    (C_START,  "Trigger / Terminal"),
-    (C_CHECK,  "Decision"),
-    (C_PROC,   "Process"),
-    (C_PROC2,  "Sub-process"),
-    (C_EXEC,   "Execute Trade"),
-    (C_REJECT, "Reject / Stop"),
-]):
-    lx = leg_x + (i % 3) * 2.8
-    ly = leg_y - 0.55 - (i // 3) * 0.55
-    rect = FancyBboxPatch((lx, ly-0.18), 0.4, 0.35,
-                          boxstyle="round,pad=0.04", facecolor=col,
-                          edgecolor="#30363d", linewidth=0.8, zorder=3)
-    ax.add_patch(rect)
-    ax.text(lx+0.55, ly, lbl, fontsize=7.2, color=TXT_DIM, va="center", zorder=4)
+box(ax, CX, 18.55, 8, 0.55,
+    "Update-TickerMemory  (symbol, won, pnl, strategy)",
+    color=C_LEARN, fs=8.5)
 
-# Footer
-ax.plot([0.5, 27.5], [0.55, 0.55], color="#30363d", linewidth=0.8)
-ax.text(14, 0.3, "Alpaca Day Trading Bot  •  Paper Mode  •  Auto-generated diagram  •  arminherabit/alpaca-trading-bot",
-        ha="center", va="center", fontsize=7.5, color=TXT_DIM)
+arrow(ax, CX, 18.27, CX, 17.62, color=PURPLE)
 
-# ── Save ──────────────────────────────────────────────────────────────────────
+for bx2, lbl, det in [
+    (CX-3.8, "Win / Loss count",    "trades  wins  losses\nconsecutive_losses"),
+    (CX,     "Score recalculated",  "WR≥70%: +0.6\nWR<35%: -0.4\nstreak≥3: -0.3"),
+    (CX+3.8, "Strategy tracking",   "per-strategy WR\nbest_strategy"),
+]:
+    box(ax, bx2, 17.3, 3.5, 0.85, lbl, det, color="#1e103a", fs=8, sfs=7)
+
+arrow(ax, CX, 16.87, CX, 16.22, color=PURPLE)
+
+box(ax, CX, 15.95, 8, 0.55,
+    "alpaca_ticker_memory.json  →  committed to GitHub after every run",
+    color=C_LEARN, fs=8.5, txt=PURPLE)
+
+# Loop-back arrow — memory feeds next morning's screener
+ax.plot([CX-7.5, CX-7.5], [15.95, 38.9], color=PURPLE, lw=1.5, zorder=2, linestyle="--")
+ax.annotate("", xy=(CX-4.0, 38.9), xytext=(CX-7.5, 38.9),
+            arrowprops=dict(arrowstyle="-|>", color=PURPLE, lw=1.5, mutation_scale=13), zorder=2)
+ax.text(CX-8.2, 28.0, "Memory\nfeeds\nnext day\nscreener", fontsize=7.5, color=PURPLE,
+        ha="center", va="center", style="italic")
+
+arrow(ax, CX, 15.67, CX, 15.02, color=BLUE)
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SECTION H — PERSIST & LOOP
+# ══════════════════════════════════════════════════════════════════════════════
+box(ax, CX, 14.75, 8, 0.55,
+    "Update State  →  Generate Dashboard  →  Commit to GitHub",
+    color=C_PROC, fs=8.5)
+
+arrow(ax, CX, 14.47, CX, 13.82, color=BLUE)
+
+box(ax, CX, 13.55, 7.5, 0.55,
+    "Next Symbol in Watchlist  (continue loop)",
+    color=C_PROC2, fs=8.5)
+
+# loop-back
+ax.plot([CX-5.5, CX-5.5], [13.55, 37.8], color="#30363d", lw=1.2, zorder=2)
+ax.annotate("", xy=(CX-4.0, 37.8), xytext=(CX-5.5, 37.8),
+            arrowprops=dict(arrowstyle="-|>", color="#30363d", lw=1.2, mutation_scale=12), zorder=2)
+ax.text(CX-6.2, 26.0, "next\nsymbol", fontsize=7.5, color=TXT_DIM, ha="center", va="center")
+
+arrow(ax, CX, 13.27, CX, 12.62, color=BLUE)
+
+box(ax, CX, 12.35, 7.5, 0.55,
+    "Runner exits  •  cron-job.org fires again in 10 min",
+    color=C_START, fs=9)
+
+# ══════════════════════════════════════════════════════════════════════════════
+# RIGHT PANELS
+# ══════════════════════════════════════════════════════════════════════════════
+PX = 20.5
+PW = 9.0
+
+panel(ax, PX, 50.5, PW, 3.6, "TRIGGER INFRASTRUCTURE", [
+    ("Primary",        "cron-job.org (external)"),
+    ("Reliability",    "99.9% — SLA-backed"),
+    ("Frequency",      "Every 10 min"),
+    ("Method",         "POST GitHub API workflow_dispatch"),
+    ("Auth",           "BOT_TRIGGER_PAT secret"),
+    ("Backup",         "GitHub cron 0,20,40 13-20 UTC"),
+    ("Runner",         "ubuntu-latest  •  timeout 8 min"),
+], tc=BLUE)
+
+panel(ax, PX, 47.0, PW, 3.2, "SELF-LEARNING SCREENER", [
+    ("Universe",       "~60 curated + API additions"),
+    ("APIs",           "most-actives + movers (Alpaca)"),
+    ("Snapshot batch", "40 symbols per call"),
+    ("Score range",    "0 – 9+ points"),
+    ("Refresh",        "Once per trading day (9:45 AM ET)"),
+    ("Watchlist cap",  "12 symbols (10 screened + 2 anchors)"),
+], tc=PURPLE)
+
+panel(ax, PX, 43.6, PW, 3.1, "SCORING WEIGHTS", [
+    ("RVOL > 4×",      "+3.0 pts  EXTREME"),
+    ("RVOL > 2.5×",    "+2.0 pts  HIGH"),
+    ("RVOL > 1.5×",    "+1.0 pts  elevated"),
+    ("Gap > 5%",       "+2.0 pts  LARGE catalyst"),
+    ("Range > 3%",     "+1.5 pts  HIGH movement"),
+    ("Memory proven",  "+1.0 pts  WR ≥ 1.5 score"),
+], tc=PURPLE)
+
+panel(ax, PX, 40.3, PW, 3.0, "MEMORY SYSTEM", [
+    ("File",           "alpaca_ticker_memory.json"),
+    ("Tracks",         "trades  wins  losses  avg_pnl"),
+    ("Score range",    "0.1 (avoid) – 3.0 (elite)"),
+    ("WR ≥ 70%",       "score +0.6"),
+    ("WR < 35%",       "score -0.4"),
+    ("Loss streak ≥3", "score -0.3  (cool-off)"),
+], tc=PURPLE)
+
+panel(ax, PX, 37.1, PW, 2.9, "TRADING PARAMETERS", [
+    ("Anchors",        "SPY  QQQ  (always included)"),
+    ("Max positions",  "3 simultaneous"),
+    ("Max risk/trade", "1.0% of equity"),
+    ("Min R:R",        "2.5 : 1"),
+    ("Window",         "09:45 – 15:30 ET"),
+    ("Mode",           "Paper trading (auto-execute)"),
+], tc=AMBER)
+
+panel(ax, PX, 34.1, PW, 2.8, "STRATEGIES", [
+    ("ORB",            "15-min opening range breakout"),
+    ("VWAP Bounce",    "Dip to VWAP + reclaim"),
+    ("EMA Pullback",   "EMA9 > EMA21 bounce"),
+    ("Confidence min", "65%  to qualify"),
+    ("Best strategy",  "tracked per ticker in memory"),
+], tc=PURPLE)
+
+panel(ax, PX, 31.2, PW, 2.7, "POSITION SIZING", [
+    ("Risk$ per trade", "Equity × 1%"),
+    ("Shares (risk)",   "Risk$ ÷ ATR"),
+    ("Shares (BP cap)", "(BP ÷ 3) × 80% ÷ Entry"),
+    ("Final shares",    "min(risk, BP cap)"),
+    ("Max pos value",   "~$53K on $100K account"),
+], tc=AMBER)
+
+panel(ax, PX, 28.3, PW, 2.7, "INDICATORS", [
+    ("EMA Fast / Slow", "9 / 21"),
+    ("RSI period",      "14  (zone 35–65)"),
+    ("ATR period",      "14  (stop distance)"),
+    ("VWAP",            "Intraday reset 09:30 ET"),
+    ("ORB",             "First 15-min candle range"),
+], tc=CYAN)
+
+panel(ax, PX, 25.4, PW, 2.7, "ORDER STRUCTURE", [
+    ("Type",            "Bracket order (3 legs)"),
+    ("Leg 1",           "Limit buy @ entry"),
+    ("Leg 2",           "Limit sell @ T1 (take profit)"),
+    ("Leg 3",           "Stop sell @ stop loss"),
+    ("Duration",        "GTD (Good-Till-Day)"),
+], tc=GREEN)
+
+panel(ax, PX, 22.5, PW, 2.7, "ACCOUNT (PAPER)", [
+    ("Account #",       "PA3YCA5A39KV"),
+    ("Starting equity", "$100,000.00"),
+    ("API endpoint",    "paper-api.alpaca.markets"),
+    ("Data endpoint",   "data.alpaca.markets"),
+    ("Auth headers",    "APCA-API-KEY-ID / SECRET"),
+], tc=BLUE)
+
+panel(ax, PX, 19.6, PW, 2.7, "GITHUB ACTIONS WORKFLOW", [
+    ("Repo",            "arminherabit/alpaca-trading-bot"),
+    ("File",            ".github/workflows/alpaca_bot.yml"),
+    ("Triggers",        "repository_dispatch + schedule"),
+    ("Persists",        "state.json + memory.json + dashboard"),
+    ("Concurrency",     "cancel-in-progress: false"),
+], tc=BLUE)
+
+panel(ax, PX, 16.7, PW, 2.7, "SECRETS CONFIGURED", [
+    ("ALPACA_API_KEY",    "Paper trading key"),
+    ("ALPACA_API_SECRET", "Paper trading secret"),
+    ("BOT_TRIGGER_PAT",   "cron-job.org dispatch auth"),
+    ("GitHub GITHUB_TOKEN","auto-provided by Actions"),
+], tc=AMBER)
+
+# ══════════════════════════════════════════════════════════════════════════════
+# LEGEND
+# ══════════════════════════════════════════════════════════════════════════════
+lx, ly = 0.5, 11.8
+ax.text(lx, ly, "LEGEND", fontsize=8, color=TXT_DIM, weight="bold")
+items = [
+    (C_START,  "Trigger/Terminal"), (C_CHECK, "Decision"),
+    (C_PROC,   "Process"),          (C_PROC2, "Sub-process"),
+    (C_EXEC,   "Execute Trade"),    (C_KILL,  "Reject/Stop"),
+    (C_LEARN,  "Learning/Memory"),  ("#1a1030","Strategy"),
+]
+for i, (col, lbl) in enumerate(items):
+    lx2 = lx + (i % 4) * 3.5
+    ly2 = ly - 0.55 - (i // 4) * 0.55
+    p = FancyBboxPatch((lx2, ly2-0.18), 0.4, 0.35,
+                       boxstyle="round,pad=0.04", facecolor=col,
+                       edgecolor="#30363d", linewidth=0.8, zorder=3)
+    ax.add_patch(p)
+    ax.text(lx2+0.55, ly2, lbl, fontsize=7.2, color=TXT_DIM, va="center", zorder=4)
+
+ax.plot([0.5, 29.5], [0.6, 0.6], color="#30363d", linewidth=0.8)
+ax.text(15, 0.32, "Alpaca Day Trading Bot  v2  •  Self-Learning  •  Paper Mode  •  arminherabit/alpaca-trading-bot",
+        ha="center", fontsize=7.5, color=TXT_DIM)
+
 out = "D:/Claude-code/Alpaca/alpaca_bot_flow.png"
-plt.savefig(out, dpi=200, bbox_inches="tight",
-            facecolor=BG, edgecolor="none")
+plt.savefig(out, dpi=200, bbox_inches="tight", facecolor=BG, edgecolor="none")
 plt.close()
 print(f"Saved: {out}")
