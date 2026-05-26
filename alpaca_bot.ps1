@@ -18,6 +18,7 @@ param(
 . (Join-Path $PSScriptRoot "alpaca_risk.ps1")
 . (Join-Path $PSScriptRoot "alpaca_screener.ps1")
 . (Join-Path $PSScriptRoot "alpaca_indicators.ps1")
+. (Join-Path $PSScriptRoot "alpaca_regime.ps1")
 
 $StatePath   = Join-Path $PSScriptRoot "alpaca_state.json"
 $PendingPath = Join-Path $PSScriptRoot "pending_approval.json"
@@ -38,6 +39,8 @@ function Load-State {
         watchlist_date   = ""    # date the dynamic watchlist was last built
         active_watchlist = @()   # today's screened watchlist
         recorded_exits   = @()   # order IDs already processed for memory
+        equity_at_open   = 0.0   # snapshot at first scan of the day -- drives DD limit
+        equity_at_open_date = "" # ET date for the snapshot above
     }
 }
 
@@ -108,9 +111,9 @@ function Invoke-CancelAll($cfg) {
 # ── Market Bias (SPY 5-min trend) ─────────────────────────────────────────────
 # A seasoned trader never fights the tape.
 # Rule: only take long entries when SPY is in a confirmed uptrend on the 5-min chart.
-# BULL  = close > 9 EMA > 20 EMA        → allow longs
-# BEAR  = close < 9 EMA < 20 EMA        → block all new entries
-# NEUTRAL = mixed (e.g. recent reversal) → allow longs but with tighter confidence
+# BULL  = close > 9 EMA > 20 EMA        -> allow longs
+# BEAR  = close < 9 EMA < 20 EMA        -> block all new entries
+# NEUTRAL = mixed (e.g. recent reversal) -> allow longs but with tighter confidence
 
 function Get-MarketBias($cfg) {
     $spyBars = Get-IntradayBars $cfg "SPY" "5Min"
@@ -175,11 +178,38 @@ function Run-Scan($cfg, $state) {
     # ── Self-learning: sync closed trades -> update ticker memory ───────────
     $state = Sync-ClosedTrades $cfg $state
 
-    # ── Market bias filter (SPY 5-min trend) ───────────────────────────────
-    # Never fight the tape — skip longs entirely when SPY is in a downtrend.
-    $marketBias = Get-MarketBias $cfg
-    $biasColor  = switch ($marketBias) { "BULL" { "Green" } "BEAR" { "Red" } default { "Yellow" } }
-    Write-Host ("  Market Bias (SPY 5m EMA): {0}" -f $marketBias) -ForegroundColor $biasColor
+    # ── Backward-compat: ensure new state fields exist on old state.json ───
+    foreach ($f in @("equity_at_open","equity_at_open_date")) {
+        if (-not (Get-Member -InputObject $state -Name $f -MemberType NoteProperty -ErrorAction SilentlyContinue)) {
+            $default = if ($f -eq "equity_at_open") { 0.0 } else { "" }
+            $state | Add-Member -NotePropertyName $f -NotePropertyValue $default -Force
+        }
+    }
+
+    # ── Capture start-of-day equity ────────────────────────────────────────
+    # Done once per ET day so the drawdown limit has a stable reference point.
+    $equityNow = Get-Equity $cfg
+    if ($state.equity_at_open_date -ne $etToday -or $state.equity_at_open -le 0) {
+        $state.equity_at_open      = $equityNow
+        $state.equity_at_open_date = $etToday
+        Save-State $state
+        Write-Host ("  [DAY-OPEN] Equity baseline captured: `${0:N2}" -f $equityNow) -ForegroundColor Cyan
+    }
+
+    # ── Market regime ──────────────────────────────────────────────────────
+    # Replaces the prior simple BULL/BEAR/NEUTRAL bias with a richer 5-class
+    # regime + size multiplier + strategy preference hint.
+    $regime     = Get-MarketRegime $cfg
+    $marketBias = switch ($regime.Regime) {
+        "BULL_TREND" { "BULL" } "BEAR_TREND" { "BEAR" } default { "NEUTRAL" }
+    }
+    $biasColor = switch ($regime.Regime) {
+        "BULL_TREND" { "Green"  } "BEAR_TREND" { "Red"    }
+        "VOLATILE"   { "Magenta"} "RANGING"    { "Yellow" } default { "DarkYellow" }
+    }
+    Write-Host ("  Regime: {0,-11} | Vol: {1}% | 60m: {2}% | SizeMult: {3}x" -f `
+        $regime.Regime, $regime.Volatility, $regime.TrendStrength, $regime.SizeMult) -ForegroundColor $biasColor
+    Write-Host ("    -> {0}" -f $regime.Reason) -ForegroundColor DarkGray
 
     # ── Dynamic watchlist: refresh once per trading day ─────────────────────
     # Ensure new properties exist on state (backward compat with old state.json)
@@ -193,7 +223,7 @@ function Run-Scan($cfg, $state) {
         $state | Add-Member -NotePropertyName "recorded_exits"    -NotePropertyValue @() -Force
     }
 
-    # Screener runs once per day but NOT before 10:00 AM ET —
+    # Screener runs once per day but NOT before 10:00 AM ET --
     # snapshot data at 9:31 AM is too thin to score RVOL and range properly.
     $screenerReady = ($etNow -ge $etNow.Date.AddHours(10))
     if ($state.watchlist_date -ne $etToday -and $screenerReady) {
@@ -251,14 +281,40 @@ function Run-Scan($cfg, $state) {
         return
     }
 
-    # Market bias gate — no new longs when SPY is in a confirmed downtrend
+    # Market bias gate -- no new longs when SPY is in a confirmed downtrend
     if ($marketBias -eq "BEAR") {
         Write-Host "  SPY in BEAR trend (close < 9EMA < 20EMA) -- no new entries." -ForegroundColor Red
         $state.last_scan = (Get-Date).ToString("o"); Save-State $state
         return
     }
 
-    # Scan watchlist (dynamic — refreshed each morning by screener)
+    # ── Daily discipline gates ────────────────────────────────────────────
+    # A seasoned trader walks away after a fixed loss or trade count.
+    # These are non-negotiable -- the bot stops opening positions for the day.
+    $maxTrades = if ($cfg.max_trades_per_day) { [int]$cfg.max_trades_per_day } else { 5 }
+    $maxLosses = if ($cfg.max_losses_per_day) { [int]$cfg.max_losses_per_day } else { 2 }
+    $maxDDPct  = if ($cfg.max_daily_drawdown_pct) { [double]$cfg.max_daily_drawdown_pct } else { -3.0 }
+
+    if ($state.trades_today -ge $maxTrades) {
+        Write-Host ("  [LIMIT] Trade cap hit ({0}/{1}) -- monitoring exits only." -f `
+            $state.trades_today, $maxTrades) -ForegroundColor Yellow
+        $state.last_scan = (Get-Date).ToString("o"); Save-State $state; return
+    }
+    if ($state.losses -ge $maxLosses) {
+        Write-Host ("  [LIMIT] Loss cap hit ({0}/{1}) -- shutting down for the day." -f `
+            $state.losses, $maxLosses) -ForegroundColor Red
+        $state.last_scan = (Get-Date).ToString("o"); Save-State $state; return
+    }
+    if ($state.equity_at_open -gt 0) {
+        $ddPct = (($equityNow - $state.equity_at_open) / $state.equity_at_open) * 100
+        if ($ddPct -le $maxDDPct) {
+            Write-Host ("  [LIMIT] Daily drawdown {0:F2}% <= {1}% -- shutting down." -f `
+                $ddPct, $maxDDPct) -ForegroundColor Red
+            $state.last_scan = (Get-Date).ToString("o"); Save-State $state; return
+        }
+    }
+
+    # Scan watchlist (dynamic -- refreshed each morning by screener)
     Write-Host ("  Scanning {0} symbols: {1}" -f $watchlist.Count, ($watchlist -join ", "))
     Write-Host ""
 
@@ -292,15 +348,22 @@ function Run-Scan($cfg, $state) {
             continue
         }
 
-        # Validate risk — raise confidence bar in choppy/neutral market
+        # Validate risk -- raise confidence bar in choppy/neutral market
         if ($marketBias -eq "NEUTRAL" -and $signal.Confidence -lt 80) {
-            Write-Host ("  {0,-6} SKIP  (NEUTRAL market — need conf>=80, got {1}%)" -f `
+            Write-Host ("  {0,-6} SKIP  (NEUTRAL market -- need conf>=80, got {1}%)" -f `
                 $symbol, $signal.Confidence) -ForegroundColor DarkGray
             continue
         }
 
-        $validation = Validate-Trade $cfg $signal
+        $validation = Validate-Trade $cfg $signal $regime
         Write-TradeCard $signal $validation
+
+        # Surface the adaptive-sizing reasoning so it's auditable in the logs
+        if ($validation.EdgeInfo) {
+            Write-Host ("  [EDGE] {0}  trades={1}  WR={2:P0}  sizeMult={3}x  ({4})" -f `
+                $signal.Strategy, $validation.EdgeInfo.Trades, $validation.EdgeInfo.WinRate,
+                $validation.EdgeInfo.Mult, $validation.EdgeInfo.Reason) -ForegroundColor DarkCyan
+        }
 
         if (-not $validation.Valid) { continue }
 

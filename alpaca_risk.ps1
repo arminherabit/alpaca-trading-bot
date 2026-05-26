@@ -11,16 +11,33 @@ function Get-PositionSize {
         [double]$equity,
         [double]$entry,
         [double]$stop,
-        [double]$maxRiskPct,       # e.g. 1.0 for 1%
-        [double]$buyingPower = 0,  # cap position value to BP / max_positions
-        [int]$maxPositions   = 3
+        [double]$maxRiskPct,         # baseline e.g. 1.0 for 1%
+        [double]$buyingPower    = 0, # cap position value to BP / max_positions
+        [int]$maxPositions      = 3,
+        [double]$edgeMultiplier = 1.0,  # from Get-StrategyEdge -- proven setups get bigger size
+        [double]$regimeMultiplier = 1.0 # from Get-MarketRegime -- volatile tape gets smaller size
     )
 
     if ($entry -le 0 -or $stop -le 0) { return $null }
     $riskPerShare = [Math]::Abs($entry - $stop)
     if ($riskPerShare -le 0) { return $null }
 
-    $maxDollarRisk = $equity * ($maxRiskPct / 100.0)
+    # Effective risk = baseline × strategy edge × regime, capped at 1.5%.
+    # The cap matters: a "proven" strategy on a quiet day could compound multipliers
+    # to >2%, which violates the discipline rule. Never risk more than 1.5% on one trade.
+    $effectiveRiskPct = $maxRiskPct * $edgeMultiplier * $regimeMultiplier
+    if ($effectiveRiskPct -gt 1.5) { $effectiveRiskPct = 1.5 }
+    if ($effectiveRiskPct -lt 0.1) { $effectiveRiskPct = 0.0 }  # full-stop signal from regime
+
+    if ($effectiveRiskPct -le 0) {
+        return [pscustomobject]@{
+            Shares = 0; RiskPerShare = $riskPerShare; MaxDollarRisk = 0
+            ActualRisk = 0; ActualRiskPct = 0; PositionValue = 0
+            EffectiveRiskPct = 0; EdgeMult = $edgeMultiplier; RegimeMult = $regimeMultiplier
+        }
+    }
+
+    $maxDollarRisk = $equity * ($effectiveRiskPct / 100.0)
     $rawShares     = $maxDollarRisk / $riskPerShare
     $shares        = [Math]::Floor($rawShares)   # always round down
     if ($shares -lt 1) { $shares = 1 }
@@ -40,12 +57,15 @@ function Get-PositionSize {
     $actualRiskPct = ($actualRisk / $equity) * 100.0
 
     return [pscustomobject]@{
-        Shares         = [int]$shares
-        RiskPerShare   = [Math]::Round($riskPerShare,  4)
-        MaxDollarRisk  = [Math]::Round($maxDollarRisk, 2)
-        ActualRisk     = [Math]::Round($actualRisk,    2)
-        ActualRiskPct  = [Math]::Round($actualRiskPct, 3)
-        PositionValue  = [Math]::Round($positionValue, 2)
+        Shares            = [int]$shares
+        RiskPerShare      = [Math]::Round($riskPerShare,  4)
+        MaxDollarRisk     = [Math]::Round($maxDollarRisk, 2)
+        ActualRisk        = [Math]::Round($actualRisk,    2)
+        ActualRiskPct     = [Math]::Round($actualRiskPct, 3)
+        PositionValue     = [Math]::Round($positionValue, 2)
+        EffectiveRiskPct  = [Math]::Round($effectiveRiskPct, 3)
+        EdgeMult          = [Math]::Round($edgeMultiplier,   3)
+        RegimeMult        = [Math]::Round($regimeMultiplier, 3)
     }
 }
 
@@ -91,13 +111,23 @@ function Test-BuyingPower($cfg, [int]$shares, [double]$entry) {
 # ── Full Trade Validation ─────────────────────────────────────────────────────
 
 function Validate-Trade {
-    param($cfg, $signal)
+    param($cfg, $signal, $regime = $null)
 
     $equity  = Get-Equity $cfg
     $bp      = Get-BuyingPower $cfg
+
+    # Edge lookup -- bigger size on proven strategies, smaller on losing ones
+    $edgeMult   = 1.0; $edgeInfo = $null
+    if ($cfg.adaptive_sizing) {
+        $edgeInfo = Get-StrategyEdge $signal.Strategy
+        $edgeMult = $edgeInfo.Mult
+    }
+    $regimeMult = if ($null -ne $regime) { [double]$regime.SizeMult } else { 1.0 }
+
     $sizing  = Get-PositionSize -equity $equity -entry $signal.Entry `
                                 -stop $signal.Stop -maxRiskPct $cfg.max_risk_pct `
-                                -buyingPower $bp -maxPositions ([int]$cfg.max_positions)
+                                -buyingPower $bp -maxPositions ([int]$cfg.max_positions) `
+                                -edgeMultiplier $edgeMult -regimeMultiplier $regimeMult
     $rrCheck = Test-RiskReward  -entry $signal.Entry -stop $signal.Stop `
                                 -target $signal.T1   -side $signal.Side `
                                 -minRR $cfg.min_rr_ratio
@@ -107,19 +137,21 @@ function Validate-Trade {
     $posOk    = ($posCount -lt [int]$cfg.max_positions)
 
     $errors   = @()
-    if (-not $rrCheck.Valid)  { $errors += ("R:R {0} < min {1}" -f $rrCheck.RR, $cfg.min_rr_ratio) }
+    if (-not $rrCheck.Valid)      { $errors += ("R:R {0} < min {1}" -f $rrCheck.RR, $cfg.min_rr_ratio) }
     if (-not $bpCheck.Sufficient) { $errors += ("Need `${0}, have `${1}" -f $bpCheck.Required, $bpCheck.BuyingPower) }
-    if (-not $posOk)          { $errors += ("Max positions ({0}) reached" -f $cfg.max_positions) }
+    if (-not $posOk)              { $errors += ("Max positions ({0}) reached" -f $cfg.max_positions) }
     if ($signal.Confidence -lt 65) { $errors += ("Confidence {0}% below 65%" -f $signal.Confidence) }
+    if ($sizing.Shares -lt 1)     { $errors += "Sizing returned 0 shares (regime/edge cut to zero)" }
 
     return [pscustomobject]@{
-        Valid        = ($errors.Count -eq 0)
-        Errors       = $errors
-        Equity       = [Math]::Round($equity, 2)
-        Sizing       = $sizing
-        RRCheck      = $rrCheck
-        BPCheck      = $bpCheck
+        Valid         = ($errors.Count -eq 0)
+        Errors        = $errors
+        Equity        = [Math]::Round($equity, 2)
+        Sizing        = $sizing
+        RRCheck       = $rrCheck
+        BPCheck       = $bpCheck
         PositionCount = $posCount
+        EdgeInfo      = $edgeInfo
     }
 }
 

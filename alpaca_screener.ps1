@@ -13,10 +13,10 @@
 
 $MemoryPath = Join-Path $PSScriptRoot "alpaca_ticker_memory.json"
 
-# ── Core anchors — always in the list (market structure reference) ─────────────
+# ── Core anchors -- always in the list (market structure reference) ─────────────
 $CORE_TICKERS = @("SPY", "QQQ")
 
-# ── Broad liquid universe (~60 names) — fallback when screener API unavailable ─
+# ── Broad liquid universe (~60 names) -- fallback when screener API unavailable ─
 # Curated: mega-cap + high-beta tech + sector leaders + ETFs.
 # Each name passes minimum liquidity bar: avg daily volume > 2M shares.
 $UNIVERSE = @(
@@ -41,15 +41,76 @@ $UNIVERSE = @(
 # ── Memory ────────────────────────────────────────────────────────────────────
 
 function Load-TickerMemory {
+    $mem = $null
     if (Test-Path $MemoryPath) {
-        try { return Get-Content $MemoryPath -Raw | ConvertFrom-Json } catch {}
+        try { $mem = Get-Content $MemoryPath -Raw | ConvertFrom-Json } catch {}
     }
-    return [pscustomobject]@{
-        tickers        = [pscustomobject]@{}
-        last_updated   = ""
-        last_screened  = ""
-        total_trades   = 0
+    if ($null -eq $mem) {
+        $mem = [pscustomobject]@{
+            tickers        = [pscustomobject]@{}
+            last_updated   = ""
+            last_screened  = ""
+            total_trades   = 0
+        }
     }
+    # Backward compat -- ensure the new self-learning rollups exist
+    foreach ($prop in @("strategy_stats","hour_stats","regime_stats")) {
+        if (-not (Get-Member -InputObject $mem -Name $prop -MemberType NoteProperty -ErrorAction SilentlyContinue)) {
+            $mem | Add-Member -NotePropertyName $prop -NotePropertyValue ([pscustomobject]@{}) -Force
+        }
+    }
+    return $mem
+}
+
+# ── Self-learning rollup helpers ──────────────────────────────────────────────
+# These three blocks let the bot answer: "What's my edge right now?"
+#   strategy_stats  -> per-strategy global win rate
+#   hour_stats      -> per-hour-of-day (ET) global win rate
+#   regime_stats    -> per-regime global win rate
+
+function _Update-RollupBucket($container, [string]$key, [bool]$won, [double]$pnl) {
+    if (-not (Get-Member -InputObject $container -Name $key -MemberType NoteProperty -ErrorAction SilentlyContinue)) {
+        $container | Add-Member -NotePropertyName $key -NotePropertyValue ([pscustomobject]@{
+            trades = 0; wins = 0; losses = 0; total_pnl = 0.0; win_rate = 0.0; avg_pnl = 0.0
+        }) -Force
+    }
+    $b = $container.$key
+    $b.trades++
+    if ($won) { $b.wins++ } else { $b.losses++ }
+    $b.total_pnl = [Math]::Round($b.total_pnl + $pnl, 2)
+    $b.win_rate  = if ($b.trades -gt 0) { [Math]::Round($b.wins / $b.trades, 3) } else { 0.0 }
+    $b.avg_pnl   = if ($b.trades -gt 0) { [Math]::Round($b.total_pnl / $b.trades, 2) } else { 0.0 }
+}
+
+function Get-StrategyEdge {
+    # Returns a position-size multiplier (0.5-1.25x) based on the strategy's
+    # historical win rate. Cold-start (sample <5): cautious 0.75x.
+    param([string]$strategy)
+    $mem = Load-TickerMemory
+    if (-not (Get-Member -InputObject $mem.strategy_stats -Name $strategy -ErrorAction SilentlyContinue)) {
+        return [pscustomobject]@{ Trades = 0; WinRate = 0.0; Mult = 0.75; Reason = "cold-start" }
+    }
+    $s = $mem.strategy_stats.$strategy
+    if ($s.trades -lt 5) {
+        return [pscustomobject]@{ Trades = $s.trades; WinRate = $s.win_rate; Mult = 0.75; Reason = "sample<5" }
+    }
+    $wrStr = "{0:P0}" -f $s.win_rate
+    $mult = 1.0; $reason = "neutral edge"
+    if    ($s.win_rate -ge 0.60) { $mult = 1.25; $reason = "proven edge ($wrStr)" }
+    elseif($s.win_rate -ge 0.45) { $mult = 1.00; $reason = "marginal edge ($wrStr)" }
+    elseif($s.win_rate -ge 0.35) { $mult = 0.65; $reason = "weak edge ($wrStr) -- cut size" }
+    else                          { $mult = 0.40; $reason = "negative edge ($wrStr) -- minimal size" }
+    return [pscustomobject]@{ Trades = $s.trades; WinRate = $s.win_rate; Mult = $mult; Reason = $reason }
+}
+
+function Get-HourEdge {
+    param([int]$hour)
+    $mem = Load-TickerMemory
+    $key = "$hour"
+    if (-not (Get-Member -InputObject $mem.hour_stats -Name $key -ErrorAction SilentlyContinue)) {
+        return [pscustomobject]@{ Trades = 0; WinRate = 0.0 }
+    }
+    return [pscustomobject]@{ Trades = $mem.hour_stats.$key.trades; WinRate = $mem.hour_stats.$key.win_rate }
 }
 
 function Save-TickerMemory($mem) {
@@ -62,9 +123,18 @@ function Update-TickerMemory {
         [string]$symbol,
         [bool]$won,
         [double]$pnl,
-        [string]$strategy = "UNKNOWN"
+        [string]$strategy = "UNKNOWN",
+        [int]$hourET      = -1,        # ET hour the trade closed; -1 = skip hour rollup
+        [string]$regime   = ""          # market regime at entry; "" = skip regime rollup
     )
     $mem = Load-TickerMemory
+
+    # ── Self-learning rollups: strategy / hour / regime ─────────────────────
+    # These feed sizing and filtering. Update them BEFORE the per-ticker block
+    # so that even if the ticker block fails, the global edge stats are kept.
+    _Update-RollupBucket $mem.strategy_stats $strategy $won $pnl
+    if ($hourET -ge 0)        { _Update-RollupBucket $mem.hour_stats   "$hourET" $won $pnl }
+    if ($regime -ne "")       { _Update-RollupBucket $mem.regime_stats $regime    $won $pnl }
 
     # Init record if new ticker
     if ($null -eq $mem.tickers.$symbol) {
@@ -124,7 +194,7 @@ function Update-TickerMemory {
     }
     $t.best_strategy = $bestStrat
 
-    # ── Dynamic score (0.1 – 3.0) ──────────────────────────────────────────
+    # ── Dynamic score (0.1 - 3.0) ──────────────────────────────────────────
     # Based on win rate, avg P&L, and consistency.
     # A seasoned analyst would weight recent trades more, but with small N
     # we use overall record plus streak penalty.
@@ -145,7 +215,7 @@ function Update-TickerMemory {
     elseif($t.avg_pnl -le  -80) { $score -= 0.3 }
     elseif($t.avg_pnl -le  -40) { $score -= 0.15 }
 
-    # Losing streak — cool-off penalty
+    # Losing streak -- cool-off penalty
     if ($t.consecutive_losses -ge 4) { $score -= 0.5 }
     elseif ($t.consecutive_losses -ge 2) { $score -= 0.2 }
 
@@ -186,7 +256,7 @@ function Get-TopMovers($cfg, [int]$top = 20) {
 
 function Get-Snapshots($cfg, [string[]]$symbols) {
     $joined = $symbols -join ","
-    # No feed param — uses best available (SIP if subscribed, IEX fallback)
+    # No feed param -- uses best available (SIP if subscribed, IEX fallback)
     $uri    = "https://data.alpaca.markets/v2/stocks/snapshots?symbols=$joined"
     $headers = @{
         "APCA-API-KEY-ID"     = $cfg.api_key
@@ -200,11 +270,11 @@ function Get-Snapshots($cfg, [string[]]$symbols) {
 # ── Candidate scoring engine ───────────────────────────────────────────────────
 #
 # Analyst lens: a good day-trade candidate today needs:
-#   1. CATALYST  — volume spike signals institutional interest or news
-#   2. MOVEMENT  — enough ATR to profit after spread; not flat
-#   3. PRICE     — in the sweet spot ($15–$450) for position sizing
-#   4. GAP       — pre-market direction gives momentum context
-#   5. TRACK     — has the bot worked well with this ticker before?
+#   1. CATALYST  -- volume spike signals institutional interest or news
+#   2. MOVEMENT  -- enough ATR to profit after spread; not flat
+#   3. PRICE     -- in the sweet spot ($15-$450) for position sizing
+#   4. GAP       -- pre-market direction gives momentum context
+#   5. TRACK     -- has the bot worked well with this ticker before?
 
 function Score-Candidate {
     param(
@@ -212,7 +282,7 @@ function Score-Candidate {
         [double]$price,
         [double]$gapPct,        # % gap from prev close
         [double]$rVol,          # relative volume (today / avg)
-        [double]$dailyRangePct, # (H-L)/Close * 100  — ATR proxy
+        [double]$dailyRangePct, # (H-L)/Close * 100  -- ATR proxy
         [double]$changeAbs      # abs % change on day
     )
 
@@ -225,21 +295,21 @@ function Score-Candidate {
     # Sweet-spot bonus
     if ($price -ge 20 -and $price -le 300) { $score += 0.5; $reasons += "price sweet-spot" }
 
-    # ── 2. Relative Volume — #1 signal for day traders ──────────────────────
+    # ── 2. Relative Volume -- #1 signal for day traders ──────────────────────
     $rVolStr = "{0:F2}" -f $rVol
     if    ($rVol -ge 4.0) { $score += 3.0; $reasons += "RVOL ${rVolStr}x EXTREME" }
     elseif($rVol -ge 2.5) { $score += 2.0; $reasons += "RVOL ${rVolStr}x HIGH" }
     elseif($rVol -ge 1.5) { $score += 1.0; $reasons += "RVOL ${rVolStr}x elevated" }
-    elseif($rVol -lt 0.8) { return $null }  # dead — no interest today
+    elseif($rVol -lt 0.8) { return $null }  # dead -- no interest today
 
-    # ── 3. Gap — catalyst/momentum signal ───────────────────────────────────
+    # ── 3. Gap -- catalyst/momentum signal ───────────────────────────────────
     $absGap    = [Math]::Abs($gapPct)
     $gapStr    = "{0:F1}" -f $gapPct
     if    ($absGap -ge 5.0) { $score += 2.0; $reasons += "gap ${gapStr}% LARGE" }
     elseif($absGap -ge 2.0) { $score += 1.2; $reasons += "gap ${gapStr}%" }
     elseif($absGap -ge 0.8) { $score += 0.5; $reasons += "gap ${gapStr}% small" }
 
-    # ── 4. Intraday range — need movement to profit ──────────────────────────
+    # ── 4. Intraday range -- need movement to profit ──────────────────────────
     $rngStr = "{0:F1}" -f $dailyRangePct
     if    ($dailyRangePct -ge 3.0) { $score += 1.5; $reasons += "range ${rngStr}% HIGH" }
     elseif($dailyRangePct -ge 1.5) { $score += 1.0; $reasons += "range ${rngStr}% good" }
@@ -448,7 +518,7 @@ function Sync-ClosedTrades {
     }
     if ($null -eq $state.recorded_exits) { $state.recorded_exits = @() }
 
-    # Look back 7 days — recorded_exits prevents double-counting on repeat runs
+    # Look back 7 days -- recorded_exits prevents double-counting on repeat runs
     $lookback = (Get-Date).ToUniversalTime().AddDays(-7).ToString("yyyy-MM-ddTHH:mm:ssZ")
     $uri      = "/v2/orders?status=closed&after=$lookback&direction=asc&limit=500&nested=true"
 
@@ -486,11 +556,22 @@ function Sync-ClosedTrades {
             $pnl       = [Math]::Round(($exitPrice - $entryPrice) * $qty, 2)
             $won       = ($pnl -gt 0)
 
-            Write-Host ("  [LEARN] {0,-6} {1}  entry=`${2:F2}  exit=`${3:F2}  qty={4}  PnL=`${5:F2}" -f `
-                $sym, (if ($won) { "WIN " } else { "LOSS" }), $entryPrice, $exitPrice, $qty, $pnl) `
+            # Derive the ET hour the exit filled (drives hour_stats rollup)
+            $hourET = -1
+            if ($leg.filled_at) {
+                try {
+                    $filledUtc = [datetime]::Parse($leg.filled_at).ToUniversalTime()
+                    try   { $tzH = [System.TimeZoneInfo]::FindSystemTimeZoneById("Eastern Standard Time") }
+                    catch { $tzH = [System.TimeZoneInfo]::FindSystemTimeZoneById("America/New_York") }
+                    $hourET = [System.TimeZoneInfo]::ConvertTimeFromUtc($filledUtc, $tzH).Hour
+                } catch {}
+            }
+
+            Write-Host ("  [LEARN] {0,-6} {1}  entry=`${2:F2}  exit=`${3:F2}  qty={4}  PnL=`${5:F2}  hr={6}ET" -f `
+                $sym, (if ($won) { "WIN " } else { "LOSS" }), $entryPrice, $exitPrice, $qty, $pnl, $hourET) `
                 -ForegroundColor (if ($won) { "Green" } else { "Red" })
 
-            Update-TickerMemory -symbol $sym -won $won -pnl $pnl -strategy $strategy
+            Update-TickerMemory -symbol $sym -won $won -pnl $pnl -strategy $strategy -hourET $hourET
 
             $state.recorded_exits += $exitId
             if ($won) { $state.wins++ } else { $state.losses++ }

@@ -25,5 +25,11 @@
   "scan_interval_sec": 60,
 
   "require_approval": false,
-  "screener_enabled": true
+  "screener_enabled": true,
+
+  "max_trades_per_day":      5,
+  "max_losses_per_day":      2,
+  "max_daily_drawdown_pct": -3.0,
+  "adaptive_sizing":         true,
+  "min_trades_for_edge":     5
 }
