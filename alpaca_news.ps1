@@ -40,17 +40,19 @@ $BEAR_KEYWORDS = @(
 # ── Raw fetch ─────────────────────────────────────────────────────────────────
 
 function Get-RecentNews {
-    param($cfg, [int]$hoursBack = 24, [int]$limit = 100)
+    param($cfg, [int]$hoursBack = 24, [int]$limit = 50)
 
+    # Alpaca News API caps limit at 50 per call. Sort is uppercase.
+    if ($limit -gt 50) { $limit = 50 }
     $startUtc = (Get-Date).ToUniversalTime().AddHours(-$hoursBack).ToString("yyyy-MM-ddTHH:mm:ssZ")
-    $uri = "https://data.alpaca.markets/v1beta1/news?start=$startUtc&limit=$limit&sort=desc"
+    $uri = "https://data.alpaca.markets/v1beta1/news?start=$startUtc&limit=$limit&sort=DESC"
     $headers = @{
-        "APCA-API-KEY-ID"     = $cfg.api_key
-        "APCA-API-SECRET-KEY" = $cfg.api_secret
+        "Apca-Api-Key-Id"     = $cfg.api_key
+        "Apca-Api-Secret-Key" = $cfg.api_secret
         "Accept"              = "application/json"
     }
     try {
-        $r = Invoke-RestMethod -Uri $uri -Method GET -Headers $headers -UseBasicParsing
+        $r = Invoke-RestMethod -Uri $uri -Method GET -Headers $headers -UseBasicParsing -TimeoutSec 10
         if ($null -eq $r -or $null -eq $r.news) { return @() }
         return @($r.news)
     } catch {

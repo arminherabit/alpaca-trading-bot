@@ -24,13 +24,22 @@ $EarningsPath = Join-Path $PSScriptRoot "earnings_calendar.json"
 # ── Cache I/O ─────────────────────────────────────────────────────────────────
 
 function Load-EarningsCalendar {
+    $cal = $null
     if (Test-Path $EarningsPath) {
-        try { return Get-Content $EarningsPath -Raw | ConvertFrom-Json } catch {}
+        try { $cal = Get-Content $EarningsPath -Raw | ConvertFrom-Json } catch {}
     }
-    return [pscustomobject]@{
-        last_refreshed = ""
-        events         = @()
+    if ($null -eq $cal) {
+        $cal = [pscustomobject]@{
+            last_refreshed = ""
+            last_attempted = ""    # set on every refresh attempt, success or failure
+            events         = @()
+        }
     }
+    # Backward compat: add last_attempted if it doesn't exist
+    if (-not (Get-Member -InputObject $cal -Name "last_attempted" -MemberType NoteProperty -ErrorAction SilentlyContinue)) {
+        $cal | Add-Member -NotePropertyName "last_attempted" -NotePropertyValue "" -Force
+    }
+    return $cal
 }
 
 function Save-EarningsCalendar($cal) {
@@ -43,13 +52,16 @@ function Save-EarningsCalendar($cal) {
 function _Fetch-NasdaqEarningsForDate([datetime]$date) {
     $dateStr = $date.ToString("yyyy-MM-dd")
     $uri = "https://api.nasdaq.com/api/calendar/earnings?date=$dateStr"
+    # Realistic browser UA -- Nasdaq blocks generic bot agents from data center IPs
     $headers = @{
-        "User-Agent"      = "Mozilla/5.0 (compatible; alpaca-bot/1.0)"
-        "Accept"          = "application/json"
+        "User-Agent"      = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        "Accept"          = "application/json, text/plain, */*"
         "Accept-Language" = "en-US,en;q=0.9"
+        "Origin"          = "https://www.nasdaq.com"
+        "Referer"         = "https://www.nasdaq.com/market-activity/earnings"
     }
     try {
-        $r = Invoke-RestMethod -Uri $uri -Method GET -Headers $headers -UseBasicParsing -TimeoutSec 15
+        $r = Invoke-RestMethod -Uri $uri -Method GET -Headers $headers -UseBasicParsing -TimeoutSec 5
         if ($null -eq $r -or $null -eq $r.data -or $null -eq $r.data.rows) { return @() }
         $out = @()
         foreach ($row in $r.data.rows) {
@@ -87,17 +99,46 @@ function Refresh-EarningsCalendar {
         } catch {}
     }
 
-    Write-Host ("  [EARNINGS] refreshing from Nasdaq ({0} days forward)..." -f $lookaheadDays) -ForegroundColor Cyan
-    $all = @()
-    $today = (Get-Date).Date
-    for ($d = 0; $d -lt $lookaheadDays; $d++) {
-        $dayEvents = _Fetch-NasdaqEarningsForDate $today.AddDays($d)
-        if ($dayEvents.Count -gt 0) { $all += $dayEvents }
-        Start-Sleep -Milliseconds 250   # be polite to a public endpoint
+    # Back off attempts too: if we tried <4h ago and failed, don't retry yet.
+    # Without this, every 10-min screener run hammers Nasdaq for 70s.
+    if (-not $Force -and $cal.last_attempted -ne "") {
+        try {
+            $attemptAge = (Get-Date) - [datetime]::Parse($cal.last_attempted)
+            if ($attemptAge.TotalHours -lt 4) {
+                Write-Host ("  [EARNINGS] last attempt {0:F1}h ago failed -- backing off (cached events: {1})" -f `
+                    $attemptAge.TotalHours, @($cal.events).Count) -ForegroundColor DarkGray
+                return @($cal.events).Count
+            }
+        } catch {}
     }
 
+    Write-Host ("  [EARNINGS] refreshing from Nasdaq ({0} days forward, 5s timeout)..." -f $lookaheadDays) -ForegroundColor Cyan
+    $all = @()
+    $today = (Get-Date).Date
+    $consecutiveEmpty = 0
+    for ($d = 0; $d -lt $lookaheadDays; $d++) {
+        $dayEvents = _Fetch-NasdaqEarningsForDate $today.AddDays($d)
+        if ($dayEvents.Count -gt 0) {
+            $all += $dayEvents
+            $consecutiveEmpty = 0
+        } else {
+            $consecutiveEmpty++
+        }
+        # Abort early: 3 empty/failed days in a row means Nasdaq is broken or
+        # blocking us. Saves 50+ seconds of wasted timeouts per cycle.
+        if ($consecutiveEmpty -ge 3 -and $all.Count -eq 0) {
+            Write-Host "  [EARNINGS] 3 dates empty/failed in a row -- aborting (will retry in 4h)" -ForegroundColor DarkYellow
+            break
+        }
+        Start-Sleep -Milliseconds 250
+    }
+
+    # Always record the attempt so the back-off logic kicks in
+    $cal.last_attempted = (Get-Date).ToString("o")
+
     if ($all.Count -eq 0) {
-        Write-Host "  [EARNINGS] Nasdaq returned no rows -- keeping previous cache" -ForegroundColor DarkYellow
+        Save-EarningsCalendar $cal
+        Write-Host "  [EARNINGS] no rows returned -- keeping previous cache" -ForegroundColor DarkYellow
         return @($cal.events).Count
     }
 
