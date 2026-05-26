@@ -31,5 +31,13 @@
   "max_losses_per_day":      2,
   "max_daily_drawdown_pct": -3.0,
   "adaptive_sizing":         true,
-  "min_trades_for_edge":     5
+  "min_trades_for_edge":     5,
+
+  "news_catalyst_enabled":   true,
+  "news_lookback_hours":     24,
+  "news_min_mentions":       2,
+
+  "earnings_enabled":        true,
+  "earnings_blackout_days":  2,
+  "earnings_runup_days":     10
 }

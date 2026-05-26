@@ -19,6 +19,8 @@ param(
 . (Join-Path $PSScriptRoot "alpaca_screener.ps1")
 . (Join-Path $PSScriptRoot "alpaca_indicators.ps1")
 . (Join-Path $PSScriptRoot "alpaca_regime.ps1")
+. (Join-Path $PSScriptRoot "alpaca_news.ps1")
+. (Join-Path $PSScriptRoot "alpaca_earnings.ps1")
 
 $StatePath   = Join-Path $PSScriptRoot "alpaca_state.json"
 $PendingPath = Join-Path $PSScriptRoot "pending_approval.json"
@@ -232,6 +234,10 @@ function Run-Scan($cfg, $state) {
     $listUnderbuilt  = ($state.active_watchlist -isnot [array] -or $state.active_watchlist.Count -le 2)
     $needScreen      = ($state.watchlist_date -ne $etToday) -or $listUnderbuilt
     if ($needScreen -and $screenerReady) {
+        # Refresh earnings calendar first so the screener can hard-reject blackout
+        # names and score the run-up window. Internal 24h TTL avoids spam.
+        if ($cfg.earnings_enabled) { Refresh-EarningsCalendar $cfg | Out-Null }
+
         $maxW = if ($cfg.max_watchlist) { [int]$cfg.max_watchlist } else { 12 }
         $dynamicList = Get-DynamicWatchlist $cfg $maxW
         $state.active_watchlist = $dynamicList

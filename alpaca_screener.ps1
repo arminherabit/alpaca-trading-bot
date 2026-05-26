@@ -10,6 +10,8 @@
 # Persists learning to: alpaca_ticker_memory.json
 
 . (Join-Path $PSScriptRoot "alpaca_client.ps1")
+. (Join-Path $PSScriptRoot "alpaca_news.ps1")
+. (Join-Path $PSScriptRoot "alpaca_earnings.ps1")
 
 $MemoryPath = Join-Path $PSScriptRoot "alpaca_ticker_memory.json"
 
@@ -284,7 +286,11 @@ function Score-Candidate {
         [double]$rVol,          # relative volume (today / pace)
         [double]$dailyRangePct, # (H-L)/Close * 100  -- ATR proxy
         [double]$changeAbs,     # abs % change on day
-        [double]$sessionFrac = 1.0  # 0.0 at open, 1.0 at close -- scales early-session thresholds
+        [double]$sessionFrac  = 1.0,  # 0.0 at open, 1.0 at close
+        $newsInfo             = $null, # { Mentions, Sentiment, Lean, Headlines }
+        [int]$daysToEarnings  = -1,    # -1 = no upcoming earnings; >=0 days
+        [int]$blackoutDays    = 2,
+        [int]$runupDays       = 10
     )
 
     $score  = 0.0
@@ -295,6 +301,12 @@ function Score-Candidate {
 
     # Sweet-spot bonus
     if ($price -ge 20 -and $price -le 300) { $score += 0.5; $reasons += "price sweet-spot" }
+
+    # ── 1b. Earnings blackout (hard reject in +/- blackout window) ──────────
+    # Never hold through earnings -- the move is binary and unpredictable.
+    if ($daysToEarnings -ge 0 -and $daysToEarnings -le $blackoutDays) {
+        return $null
+    }
 
     # ── 2. Relative Volume -- #1 signal for day traders ──────────────────────
     $rVolStr = "{0:F2}" -f $rVol
@@ -325,7 +337,24 @@ function Score-Candidate {
     $chgStr = "{0:F1}" -f $changeAbs
     if ($changeAbs -ge 3.0) { $score += 0.8; $reasons += "moving ${chgStr}%" }
 
-    # ── 6. Historical performance memory ────────────────────────────────────
+    # ── 6. News catalyst ────────────────────────────────────────────────────
+    # Active news cycle = institutional eyes are on this name today.
+    if ($null -ne $newsInfo) {
+        $score += 1.5; $reasons += ("news cycle x{0}" -f $newsInfo.Mentions)
+        if ($newsInfo.Lean -eq "bull") {
+            $score += 0.5; $reasons += "headline lean BULL"
+        } elseif ($newsInfo.Lean -eq "bear") {
+            $score -= 0.5; $reasons += "headline lean BEAR"
+        }
+    }
+
+    # ── 7. Earnings run-up (3..runupDays before earnings) ──────────────────
+    # Institutions often position ahead of earnings; volume + range expand.
+    if ($daysToEarnings -gt $blackoutDays -and $daysToEarnings -le $runupDays) {
+        $score += 1.0; $reasons += ("earnings in ${daysToEarnings}d (run-up)")
+    }
+
+    # ── 8. Historical performance memory ────────────────────────────────────
     $memScore = Get-TickerScore $symbol
     $memStr   = "{0:F2}" -f $memScore
     if    ($memScore -ge 1.5) { $score += 1.0; $reasons += "memory ${memStr} proven" }
@@ -358,6 +387,21 @@ function Get-DynamicWatchlist {
     # Build a local candidate pool (script-scope $UNIVERSE is immutable inside function)
     $pool = [System.Collections.Generic.List[string]]::new()
     foreach ($s in $UNIVERSE) { $pool.Add($s) }
+
+    # ── News catalysts -- pull active-cycle tickers into the pool ───────────
+    $newsCatalysts = @{}
+    if ($cfg.news_catalyst_enabled) {
+        $lookback = if ($cfg.news_lookback_hours) { [int]$cfg.news_lookback_hours } else { 24 }
+        $minMent  = if ($cfg.news_min_mentions)   { [int]$cfg.news_min_mentions   } else { 2 }
+        $newsCatalysts = Get-NewsCatalysts $cfg $lookback $minMent
+        foreach ($sym in $newsCatalysts.Keys) {
+            if (-not $pool.Contains($sym)) { $pool.Add($sym) }
+        }
+    }
+
+    # ── Earnings calendar pre-load ──────────────────────────────────────────
+    $blackoutDays = if ($cfg.earnings_blackout_days) { [int]$cfg.earnings_blackout_days } else { 2 }
+    $runupDays    = if ($cfg.earnings_runup_days)    { [int]$cfg.earnings_runup_days    } else { 10 }
 
     # ── Step 1: Try Alpaca most-actives API first ────────────────────────────
     $actives = Get-MostActives $cfg 30
@@ -449,7 +493,15 @@ function Get-DynamicWatchlist {
             $expectedVol = $prevVol * $sessionFrac
             $rVol        = if ($expectedVol -gt 0) { $dayVol / $expectedVol } else { 1.0 }
 
-            $c = Score-Candidate $sym $price $gapPct $rVol $dailyRangePct ([Math]::Abs($changePct)) $sessionFrac
+            # Look up news + earnings context for this symbol
+            $newsInfo = if ($newsCatalysts.ContainsKey($sym)) { $newsCatalysts[$sym] } else { $null }
+            $daysToER = if ($cfg.earnings_enabled) {
+                $v = Get-DaysToEarnings $sym
+                if ($null -eq $v) { -1 } else { [int]$v }
+            } else { -1 }
+
+            $c = Score-Candidate $sym $price $gapPct $rVol $dailyRangePct ([Math]::Abs($changePct)) `
+                                 $sessionFrac $newsInfo $daysToER $blackoutDays $runupDays
             if ($null -ne $c) { $candidates += $c }
         } catch { continue }
     }
