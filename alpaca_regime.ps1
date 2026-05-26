@@ -32,7 +32,9 @@ function Get-MarketRegime($cfg) {
     }
 
     $spyBars = Get-IntradayBars $cfg "SPY" "5Min"
-    if ($null -eq $spyBars -or $spyBars.Count -lt 25) { return $default }
+    # 21 bars = ~105 min after open (10:15 AM ET). Below this, 9/20 EMA isn't
+    # meaningful so we return NEUTRAL with a cautious default size mult.
+    if ($null -eq $spyBars -or $spyBars.Count -lt 21) { return $default }
 
     [double[]]$closes = $spyBars | ForEach-Object { $_.Close }
     $ema9  = Get-EMA $closes 9

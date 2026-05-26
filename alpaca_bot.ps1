@@ -225,15 +225,20 @@ function Run-Scan($cfg, $state) {
 
     # Screener runs once per day but NOT before 10:00 AM ET --
     # snapshot data at 9:31 AM is too thin to score RVOL and range properly.
-    $screenerReady = ($etNow -ge $etNow.Date.AddHours(10))
-    if ($state.watchlist_date -ne $etToday -and $screenerReady) {
+    # Self-heal: if a same-day screener run already happened but produced an
+    # anaemic list (<=2 tickers = only the core anchors), allow one re-run
+    # because that means scoring failed and a code/data fix may have landed.
+    $screenerReady   = ($etNow -ge $etNow.Date.AddHours(10))
+    $listUnderbuilt  = ($state.active_watchlist -isnot [array] -or $state.active_watchlist.Count -le 2)
+    $needScreen      = ($state.watchlist_date -ne $etToday) -or $listUnderbuilt
+    if ($needScreen -and $screenerReady) {
         $maxW = if ($cfg.max_watchlist) { [int]$cfg.max_watchlist } else { 12 }
         $dynamicList = Get-DynamicWatchlist $cfg $maxW
         $state.active_watchlist = $dynamicList
         $state.watchlist_date   = $etToday
         Write-ScreenerReport @() $dynamicList
         Save-State $state
-    } elseif ($state.watchlist_date -ne $etToday -and -not $screenerReady) {
+    } elseif ($needScreen -and -not $screenerReady) {
         Write-Host ("  [SCREENER] Waiting until 10:00 AM ET for richer data (now {0} ET)" -f `
             $etNow.ToString("HH:mm")) -ForegroundColor DarkGray
     }
