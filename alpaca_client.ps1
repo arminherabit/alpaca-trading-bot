@@ -168,7 +168,9 @@ function Close-Position($cfg, [string]$symbol) {
 
 function Get-Bars($cfg, [string]$symbol, [string]$timeframe, [int]$limit = 100) {
     # timeframe: "1Min", "5Min", "15Min", "1Hour", "1Day"
-    $path = "/v2/stocks/{0}/bars?timeframe={1}&limit={2}&adjustment=raw&feed=iex" -f $symbol, $timeframe, $limit
+    # No feed param -- Alpaca picks the best feed available (SIP if subscribed, IEX fallback).
+    # IEX-only feed skips most prints for stocks not printed on IEX and starves the strategy engine.
+    $path = "/v2/stocks/{0}/bars?timeframe={1}&limit={2}&adjustment=raw" -f $symbol, $timeframe, $limit
     $r    = Invoke-AlpacaData $cfg $path
     if ($null -eq $r -or $null -eq $r.bars) { return @() }
     return $r.bars | ForEach-Object {
@@ -194,7 +196,8 @@ function Get-IntradayBars($cfg, [string]$symbol, [string]$timeframe = "1Min") {
     $offStr = "{0}{1:D2}:00" -f $sign, [Math]::Abs($offset.Hours)
     $today  = $etNow.ToString("yyyy-MM-dd")
     $start  = $today + "T09:30:00" + $offStr
-    $path   = "/v2/stocks/{0}/bars?timeframe={1}&start={2}&limit=400&adjustment=raw&feed=iex" -f $symbol, $timeframe, $start
+    # No feed param -- IEX-only starves bar coverage for non-IEX-listed stocks
+    $path   = "/v2/stocks/{0}/bars?timeframe={1}&start={2}&limit=400&adjustment=raw" -f $symbol, $timeframe, $start
     $r     = Invoke-AlpacaData $cfg $path
     if ($null -eq $r -or $null -eq $r.bars) { return @() }
     return $r.bars | ForEach-Object {
@@ -211,7 +214,7 @@ function Get-IntradayBars($cfg, [string]$symbol, [string]$timeframe = "1Min") {
 }
 
 function Get-Quote($cfg, [string]$symbol) {
-    $path = "/v2/stocks/{0}/quotes/latest?feed=iex" -f $symbol
+    $path = "/v2/stocks/{0}/quotes/latest" -f $symbol
     $r    = Invoke-AlpacaData $cfg $path
     if ($null -eq $r -or $null -eq $r.quote) { return $null }
     return [pscustomobject]@{
@@ -223,7 +226,7 @@ function Get-Quote($cfg, [string]$symbol) {
 }
 
 function Get-LatestTrade($cfg, [string]$symbol) {
-    $path = "/v2/stocks/{0}/trades/latest?feed=iex" -f $symbol
+    $path = "/v2/stocks/{0}/trades/latest" -f $symbol
     $r    = Invoke-AlpacaData $cfg $path
     if ($null -eq $r -or $null -eq $r.trade) { return $null }
     return [double]$r.trade.p
@@ -231,7 +234,7 @@ function Get-LatestTrade($cfg, [string]$symbol) {
 
 function Get-Snapshot($cfg, [string[]]$symbols) {
     $sym  = $symbols -join ","
-    $path = "/v2/stocks/snapshots?symbols={0}&feed=iex" -f $sym
+    $path = "/v2/stocks/snapshots?symbols={0}" -f $sym
     return Invoke-AlpacaData $cfg $path
 }
 

@@ -281,9 +281,10 @@ function Score-Candidate {
         [string]$symbol,
         [double]$price,
         [double]$gapPct,        # % gap from prev close
-        [double]$rVol,          # relative volume (today / avg)
+        [double]$rVol,          # relative volume (today / pace)
         [double]$dailyRangePct, # (H-L)/Close * 100  -- ATR proxy
-        [double]$changeAbs      # abs % change on day
+        [double]$changeAbs,     # abs % change on day
+        [double]$sessionFrac = 1.0  # 0.0 at open, 1.0 at close -- scales early-session thresholds
     )
 
     $score  = 0.0
@@ -310,11 +311,15 @@ function Score-Candidate {
     elseif($absGap -ge 0.8) { $score += 0.5; $reasons += "gap ${gapStr}% small" }
 
     # ── 4. Intraday range -- need movement to profit ──────────────────────────
+    # Hard-reject floor scales with session progress: at 10 AM only ~8% of the
+    # day has elapsed, so demanding 0.5% range is unrealistic; demand ~0.15%.
+    $rngFloor = [Math]::Max(0.10, 0.5 * $sessionFrac)
     $rngStr = "{0:F1}" -f $dailyRangePct
-    if    ($dailyRangePct -ge 3.0) { $score += 1.5; $reasons += "range ${rngStr}% HIGH" }
-    elseif($dailyRangePct -ge 1.5) { $score += 1.0; $reasons += "range ${rngStr}% good" }
-    elseif($dailyRangePct -ge 0.5) { $score += 0.3; $reasons += "range ${rngStr}% ok" }
-    else                           { return $null }  # too flat, no profit opportunity
+    if    ($dailyRangePct -ge 3.0)        { $score += 1.5; $reasons += "range ${rngStr}% HIGH" }
+    elseif($dailyRangePct -ge 1.5)        { $score += 1.0; $reasons += "range ${rngStr}% good" }
+    elseif($dailyRangePct -ge 0.5)        { $score += 0.3; $reasons += "range ${rngStr}% ok" }
+    elseif($dailyRangePct -ge $rngFloor)  { $score += 0.1; $reasons += "range ${rngStr}% early" }
+    else                                   { return $null }  # truly flat, no opportunity
 
     # ── 5. Directional momentum ─────────────────────────────────────────────
     $chgStr = "{0:F1}" -f $changeAbs
@@ -396,6 +401,18 @@ function Get-DynamicWatchlist {
         }
     }
 
+    # ── Session-progress factor for time-of-day adjusted RVOL ────────────────
+    # Compares today's cumulative volume to (prev full-day vol * % of session elapsed).
+    # Without this, RVOL is meaningless before ~3 PM ET because the numerator is
+    # only a slice of the day while the denominator is a full prior day.
+    $etScreen = Get-EasternTime
+    $marketOpen  = $etScreen.Date.AddHours(9).AddMinutes(30)
+    $marketClose = $etScreen.Date.AddHours(16)
+    $sessionMin   = ($marketClose - $marketOpen).TotalMinutes   # 390
+    $elapsedMin   = [Math]::Max(1.0, [Math]::Min($sessionMin, ($etScreen - $marketOpen).TotalMinutes))
+    $sessionFrac  = $elapsedMin / $sessionMin                   # 0.0 -> 1.0
+    Write-Host ("  [SCREENER] Session progress: {0:P0} ({1:F0} min)" -f $sessionFrac, $elapsedMin) -ForegroundColor DarkGray
+
     # ── Step 4: Score each candidate ────────────────────────────────────────
     foreach ($sym in ($snapshots | Get-Member -MemberType NoteProperty).Name) {
         $s = $snapshots.$sym
@@ -426,9 +443,13 @@ function Get-DynamicWatchlist {
             $gapPct        = ($dayOpen - $prevClose) / $prevClose * 100
             $changePct     = ($price   - $prevClose) / $prevClose * 100
             $dailyRangePct = if ($price -gt 0) { ($dayHigh - $dayLow) / $price * 100 } else { 0 }
-            $rVol          = if ($prevVol -gt 0) { $dayVol / $prevVol } else { 1.0 }
 
-            $c = Score-Candidate $sym $price $gapPct $rVol $dailyRangePct ([Math]::Abs($changePct))
+            # Time-of-day adjusted RVOL: today's vol vs (prev full day * fraction elapsed)
+            # >1.0  -> above pace, <1.0 -> below pace. Fair comparison at any hour.
+            $expectedVol = $prevVol * $sessionFrac
+            $rVol        = if ($expectedVol -gt 0) { $dayVol / $expectedVol } else { 1.0 }
+
+            $c = Score-Candidate $sym $price $gapPct $rVol $dailyRangePct ([Math]::Abs($changePct)) $sessionFrac
             if ($null -ne $c) { $candidates += $c }
         } catch { continue }
     }
