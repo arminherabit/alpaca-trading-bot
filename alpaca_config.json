@@ -39,5 +39,7 @@
 
   "earnings_enabled":        true,
   "earnings_blackout_days":  2,
-  "earnings_runup_days":     10
+  "earnings_runup_days":     10,
+
+  "cycle_screener_enabled":  true
 }

@@ -39,6 +39,23 @@ $BEAR_KEYWORDS = @(
 
 # ── Raw fetch ─────────────────────────────────────────────────────────────────
 
+# Shared 48-hour news fetch -- used by both the catalyst tally (24h window
+# inside Get-NewsCatalysts) and the cycle screener's acceleration check.
+# Cached per-scan via module-scope variable to avoid two trips for the same data.
+$script:CycleNewsCache48h = $null
+$script:CycleNewsCacheTime = [datetime]::MinValue
+
+function Get-NewsRaw48h($cfg) {
+    $age = (Get-Date) - $script:CycleNewsCacheTime
+    if ($null -ne $script:CycleNewsCache48h -and $age.TotalMinutes -lt 9) {
+        return $script:CycleNewsCache48h
+    }
+    $news = Get-RecentNews $cfg 48 50
+    $script:CycleNewsCache48h  = $news
+    $script:CycleNewsCacheTime = Get-Date
+    return $news
+}
+
 function Get-RecentNews {
     param($cfg, [int]$hoursBack = 24, [int]$limit = 50)
 

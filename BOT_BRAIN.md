@@ -530,6 +530,52 @@ RVOL             = today_cumulative_volume / expected_volume
 
 Now `RVOL > 1.0` genuinely means "above-pace" at any clock time.
 
+### Cycle Leader Detection (overlay on the base screener)
+
+A separate module (`alpaca_cycle_screener.ps1`) adds five "is this institutional accumulation, not noise?" signals on top of the base candidate scoring. Layered, not replacement.
+
+**Five cycle signals:**
+
+```
+1. News Acceleration   24h mentions > 1.5x prior 24h AND >= 3 fresh
+                       (or 4+ fresh today with zero yesterday = brand-new cycle)
+                       Bonus: +2.5 (+1.0 bull lean, -0.5 bear lean)
+
+2. Sector Heat         Sector ETF (XLK/XLF/XLE/etc.) day change vs SPY
+                       Outperforming SPY by >=1% today  -> +2.0
+                       Underperforming SPY by >=1% today -> -1.0
+
+3. Theme Match         Headlines mention any "hot theme" keyword
+                       (AI, semiconductor, GLP-1, tariff, EV, quantum, ...)
+                       Bonus: +1.5
+
+4. Pre-Market Strength Fetch IEX 5-min bars from 4 AM ET
+                       Gap >= 5% with >= 100k vol      -> strength 3.0
+                       Gap >= 3% with >= 50k vol       -> strength 2.0
+                       Gap >= 1.5%                      -> strength 1.0
+                       Free-tier IEX pre-market is sparse -- best effort
+
+5. Technical Coiling   STUB. Real impl needs 252 daily bars per ticker.
+                       Framework hooks wired and ready to enable.
+```
+
+### Watchlist Tiering
+
+After scoring, each candidate is assigned a tier so the scan loop hits the highest-conviction setups first (matters most on days with daily limits):
+
+```
+Tier 1  HIGH CONVICTION
+        News accelerating AND (premarket strong OR sector hot OR memory >= 1.5)
+
+Tier 2  STANDARD
+        At least one strong catalyst (news accel, premkt, hot sector, OR theme)
+
+Tier 3  FALLBACK
+        Memory-proven only (use sparingly on quiet days)
+```
+
+Final selection sorts by **Tier ascending, then Score descending**. The screener output table now shows the tier column so the prioritization is auditable.
+
 ### Final Selection
 
 ```

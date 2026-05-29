@@ -12,6 +12,7 @@
 . (Join-Path $PSScriptRoot "alpaca_client.ps1")
 . (Join-Path $PSScriptRoot "alpaca_news.ps1")
 . (Join-Path $PSScriptRoot "alpaca_earnings.ps1")
+. (Join-Path $PSScriptRoot "alpaca_cycle_screener.ps1")
 
 $MemoryPath = Join-Path $PSScriptRoot "alpaca_ticker_memory.json"
 
@@ -290,7 +291,8 @@ function Score-Candidate {
         $newsInfo             = $null, # { Mentions, Sentiment, Lean, Headlines }
         [int]$daysToEarnings  = -1,    # -1 = no upcoming earnings; >=0 days
         [int]$blackoutDays    = 2,
-        [int]$runupDays       = 10
+        [int]$runupDays       = 10,
+        $cycleCtx             = $null  # Get-CycleContext output -- adds cycle bonuses
     )
 
     $score  = 0.0
@@ -354,6 +356,40 @@ function Score-Candidate {
         $score += 1.0; $reasons += ("earnings in ${daysToEarnings}d (run-up)")
     }
 
+    # ── Cycle Leader bonuses (cycle screener overlay) ──────────────────────
+    # Each of these can stack -- a name that's accelerating, in a hot sector,
+    # gapping pre-market, AND riding a hot theme is the textbook early cycle
+    # leader. Bonuses sum but each is bounded individually.
+    if ($null -ne $cycleCtx) {
+        if ($cycleCtx.Acceleration -and $cycleCtx.Acceleration.IsAccelerating) {
+            $score += 2.5
+            $reasons += ("news accel {0}->{1}" -f $cycleCtx.Acceleration.Mentions48h, $cycleCtx.Acceleration.Mentions24h)
+            if ($cycleCtx.Acceleration.Lean -eq "bull") { $score += 1.0; $reasons += "accel BULL lean" }
+            elseif ($cycleCtx.Acceleration.Lean -eq "bear") { $score -= 0.5 }
+        }
+        if ($cycleCtx.Premarket -and $cycleCtx.Premarket.Strength -gt 0) {
+            $pmStr = "{0:F1}" -f $cycleCtx.Premarket.GapPct
+            $score += $cycleCtx.Premarket.Strength
+            $reasons += ("premkt gap ${pmStr}% strength " + $cycleCtx.Premarket.Strength)
+        }
+        if ($cycleCtx.SectorHeat -ge 1.0) {
+            $shStr = "{0:F2}" -f $cycleCtx.SectorHeat
+            $score += 2.0
+            $reasons += ("sector " + $cycleCtx.Sector + " hot +${shStr}% vs SPY")
+        } elseif ($cycleCtx.SectorHeat -le -1.0) {
+            $score -= 1.0
+            $reasons += ("sector " + $cycleCtx.Sector + " weak")
+        }
+        if ($cycleCtx.Theme -and $cycleCtx.Theme.Matches) {
+            $score += 1.5
+            $reasons += ("theme: " + (($cycleCtx.Theme.Themes | Select-Object -First 2) -join ","))
+        }
+        if ($cycleCtx.Technical -and $cycleCtx.Technical.NearAth -and $cycleCtx.Technical.VolumeDryUp) {
+            $score += 2.2
+            $reasons += "coiling near ATH"
+        }
+    }
+
     # ── 8. Historical performance memory ────────────────────────────────────
     $memScore = Get-TickerScore $symbol
     $memStr   = "{0:F2}" -f $memScore
@@ -361,7 +397,7 @@ function Score-Candidate {
     elseif($memScore -ge 1.0) { $score += 0.3 }
     elseif($memScore -le 0.5) { $score -= 0.8; $reasons += "memory ${memStr} poor" }
 
-    return [pscustomobject]@{
+    $candidate = [pscustomobject]@{
         Symbol         = $symbol
         Score          = [Math]::Round($score, 2)
         Price          = [Math]::Round($price, 2)
@@ -371,7 +407,12 @@ function Score-Candidate {
         ChangeAbs      = [Math]::Round($changeAbs, 2)
         MemScore       = $memScore
         Reasons        = $reasons
+        Tier           = 3   # default; overwritten by tiering pass downstream
     }
+    if ($null -ne $cycleCtx) {
+        $candidate.Tier = Get-WatchlistTier $candidate $cycleCtx
+    }
+    return $candidate
 }
 
 # ── Main screener ──────────────────────────────────────────────────────────────
@@ -397,6 +438,15 @@ function Get-DynamicWatchlist {
         foreach ($sym in $newsCatalysts.Keys) {
             if (-not $pool.Contains($sym)) { $pool.Add($sym) }
         }
+    }
+
+    # ── Cycle screener prep: 48h news (cached) + sector momentum (once) ────
+    $cycleEnabled = ($cfg.cycle_screener_enabled -ne $false)
+    $news48h      = if ($cycleEnabled) { Get-NewsRaw48h $cfg } else { $null }
+    $sectorMomentum = if ($cycleEnabled) { Get-SectorMomentum $cfg } else { @{} }
+    if ($cycleEnabled -and $sectorMomentum.Count -gt 0) {
+        $topSec = $sectorMomentum.GetEnumerator() | Sort-Object Value -Descending | Select-Object -First 3
+        Write-Host ("  [CYCLE] Sector heat vs SPY: " + (($topSec | ForEach-Object { "$($_.Name) +$($_.Value)%" }) -join ", ")) -ForegroundColor DarkGray
     }
 
     # ── Earnings calendar pre-load ──────────────────────────────────────────
@@ -500,20 +550,43 @@ function Get-DynamicWatchlist {
                 if ($null -eq $v) { -1 } else { [int]$v }
             } else { -1 }
 
+            # Build cycle context: news accel, sector heat, theme, premkt
+            $cycleCtx = $null
+            if ($cycleEnabled) {
+                $memScore = Get-TickerScore $sym
+                $cycleCtx = Get-CycleContext $cfg $sym $prevClose $news48h $sectorMomentum $memScore
+            }
+
             $c = Score-Candidate $sym $price $gapPct $rVol $dailyRangePct ([Math]::Abs($changePct)) `
-                                 $sessionFrac $newsInfo $daysToER $blackoutDays $runupDays
+                                 $sessionFrac $newsInfo $daysToER $blackoutDays $runupDays $cycleCtx
             if ($null -ne $c) { $candidates += $c }
         } catch { continue }
     }
 
     # ── Step 5: Rank and select ──────────────────────────────────────────────
-    $ranked = $candidates | Sort-Object Score -Descending
+    # Tier first (1 highest conviction -> 3 fallback), then Score within tier.
+    # Result: T1 leaders scanned before T2 standard before T3 memory-only,
+    # so the limited daily trade slots go to the strongest setups first.
+    $ranked = $candidates | Sort-Object @{Expression="Tier";Ascending=$true}, @{Expression="Score";Descending=$true}
 
-    # Core anchors always included
+    # Tier summary for visibility
+    $tCounts = @{}
+    foreach ($c in $candidates) {
+        $t = if ($c.Tier) { $c.Tier } else { 3 }
+        if (-not $tCounts.ContainsKey($t)) { $tCounts[$t] = 0 }
+        $tCounts[$t]++
+    }
+    if ($tCounts.Count -gt 0) {
+        $tStr = (($tCounts.GetEnumerator() | Sort-Object Name | ForEach-Object { "T$($_.Name)=$($_.Value)" }) -join " ")
+        Write-Host ("  [CYCLE] Tier distribution: $tStr") -ForegroundColor DarkGray
+    }
+
+    # Core anchors always included (treated as Tier 3 -- last-resort anchors)
     $watchlist = [System.Collections.Generic.List[string]]::new()
     foreach ($anchor in $CORE_TICKERS) { $watchlist.Add($anchor) }
 
-    # Add top screened names (skip cores to avoid duplicate)
+    # Add top screened names IN TIER ORDER -- T1 first so they get scanned
+    # before the daily trade budget is consumed.
     $added = 0
     $maxAdd = $maxTickers - $CORE_TICKERS.Count
     foreach ($c in $ranked) {
@@ -552,21 +625,22 @@ function Get-DynamicWatchlist {
 
 function Write-ScreenerReport($candidates, $selected) {
     Write-Host ""
-    Write-Host ("  {0}" -f ("=" * 68))
+    Write-Host ("  {0}" -f ("=" * 78))
     Write-Host "  SCREENER RESULTS"
-    Write-Host ("  {0}" -f ("=" * 68))
-    Write-Host ("  {0,-6}  {1,6}  {2,6}  {3,6}  {4,6}  {5,6}  {6}" -f `
-        "Symbol","Score","Price","Gap%","RVOL","Range%","Reasons")
-    Write-Host ("  {0}" -f ("-" * 68))
-    $top = $candidates | Sort-Object Score -Descending | Select-Object -First 15
+    Write-Host ("  {0}" -f ("=" * 78))
+    Write-Host ("  {0,-3} {1,-6}  {2,6}  {3,6}  {4,6}  {5,6}  {6,6}  {7}" -f `
+        "Tr","Symbol","Score","Price","Gap%","RVOL","Range%","Reasons")
+    Write-Host ("  {0}" -f ("-" * 78))
+    $top = $candidates | Sort-Object @{Expression="Tier";Ascending=$true}, @{Expression="Score";Descending=$true} | Select-Object -First 15
     foreach ($c in $top) {
         $flag = if ($selected -contains $c.Symbol) { "*" } else { " " }
         $col  = if ($selected -contains $c.Symbol) { "Green" } else { "DarkGray" }
-        Write-Host ("  {0}{1,-6}  {2,6:F2}  {3,6:F2}  {4,5:F1}%  {5,5:F1}x  {6,5:F1}%  {7}" -f `
-            $flag, $c.Symbol, $c.Score, $c.Price, $c.GapPct, `
+        $tier = if ($c.Tier) { "T$($c.Tier)" } else { "T3" }
+        Write-Host ("  {0,-3} {1}{2,-6}  {3,6:F2}  {4,6:F2}  {5,5:F1}%  {6,5:F1}x  {7,5:F1}%  {8}" -f `
+            $tier, $flag, $c.Symbol, $c.Score, $c.Price, $c.GapPct, `
             $c.RVol, $c.RangePct, ($c.Reasons -join " | ")) -ForegroundColor $col
     }
-    Write-Host ("  {0}" -f ("=" * 68))
+    Write-Host ("  {0}" -f ("=" * 78))
     Write-Host ("  Selected ({0}): {1}" -f $selected.Count, ($selected -join "  ")) -ForegroundColor Cyan
     Write-Host ""
 }
