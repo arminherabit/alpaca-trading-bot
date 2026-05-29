@@ -65,8 +65,8 @@ function Get-MarketRegime($cfg) {
         $reason = "ATR=$volPct% -- VIX-like spike, halve size"
     }
     elseif ($bearAligned -and $hourMove -lt -0.2) {
-        $regime = "BEAR_TREND"; $sizeMult = 0.0
-        $reason = "SPY < 9EMA < 20EMA AND -$([Math]::Abs($hourMove))%/hr -- no longs"
+        $regime = "BEAR_TREND"; $sizeMult = 1.0
+        $reason = "SPY < 9EMA < 20EMA AND -$([Math]::Abs($hourMove))%/hr -- shorts enabled, longs blocked by HTF gate"
     }
     elseif ($bullAligned -and $hourMove -gt 0.2) {
         $regime = "BULL_TREND"; $sizeMult = 1.0; $preferTrend = $true

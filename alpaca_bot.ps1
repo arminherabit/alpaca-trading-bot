@@ -410,11 +410,13 @@ function Run-Scan($cfg, $state) {
         return
     }
 
-    # Market bias gate -- no new longs when SPY is in a confirmed downtrend
+    # Market bias note -- no longer a hard skip. Each strategy's HTF gate
+    # filters direction per symbol:
+    #   - BEAR_TREND SPY: long strategies hard-reject (BEARISH HTF),
+    #     short strategies fire when individual symbol's 15m is also bearish
+    #   - BULL_TREND SPY: opposite, longs eligible, shorts hard-rejected
     if ($marketBias -eq "BEAR") {
-        Write-Host "  SPY in BEAR trend (close < 9EMA < 20EMA) -- no new entries." -ForegroundColor Red
-        $state.last_scan = (Get-Date).ToString("o"); Save-State $state
-        return
+        Write-Host "  SPY in BEAR trend -- longs blocked by HTF gate, shorts eligible." -ForegroundColor Magenta
     }
 
     # ── Daily discipline gates ────────────────────────────────────────────

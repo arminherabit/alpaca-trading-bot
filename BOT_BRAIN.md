@@ -257,6 +257,57 @@ T2           : entry + 4.0 * risk
 
 **Valid if:** `Confidence >= 70 AND R:R >= 2.5`
 
+### 5b-SHORT. VWAP Rejection
+
+Mirror of VWAP Bounce. 5-minute chart. Bearish rejection back below VWAP.
+
+```
+Trigger : prev bar high >= VWAP AND current bar close < VWAP
+Stop    : max(prev.high, current.high) + 0.25 * ATR
+T1      : entry - 2.5 * risk
+T2      : entry - 4.0 * risk
+```
+
+**Confidence build (starts at 55):**
+- +15 if price < EMA9 (downtrend confirmation)
+- +15 if RSI falling AND prev RSI >= 55 AND current RSI >= 35
+- +15 if RelVol >= 1.2x
+- +10 if HTF 15m BEARISH (alignment bonus)
+
+**Valid if:** `Confidence >= 70 AND R:R >= 2.5`
+
+### 5c-SHORT. EMA Pullback Short (Rejection)
+
+Mirror of EMA Pullback. 5-minute chart. Trend-continuation short after rally fails at 9 EMA.
+
+```
+Trend filter : price < EMA9 < EMA21
+Trigger      : prev bar high >= EMA9 AND current close < EMA9 (rejection)
+Stop         : EMA21 + 0.15 * ATR
+T1           : entry - 2.5 * risk
+T2           : entry - 4.0 * risk
+```
+
+**Confidence build (starts at 50):**
+- +20 if RSI in 40-60 (healthy bounce zone, not exhausted)
+- +10 if RSI turning down
+- +10 if RelVol >= 1.2x
+- +10 if current candle is red
+- +10 if HTF 15m BEARISH
+
+**Valid if:** `Confidence >= 70 AND R:R >= 2.5`
+
+### How the bot decides direction now
+
+```
+SPY in BULL_TREND  -> Most symbols 15m BULLISH -> longs eligible,  shorts hard-rejected
+SPY in BEAR_TREND  -> Most symbols 15m BEARISH -> shorts eligible, longs  hard-rejected
+SPY in RANGING     -> Mixed HTF per symbol     -> both directions possible
+SPY in VOLATILE    -> All sizes halved
+```
+
+The decision is made **per symbol** by its own 15-min HTF bias, not by SPY's bias. A name with strong relative strength might still be a clean long even on a BEAR_TREND SPY day if its own 15m is BULLISH. This was always the way pros traded; now the bot does too.
+
 ### 5d. Higher Timeframe Bias Filter (HARD GATE in each strategy)
 
 Multi-timeframe confluence check. A long setup against the 15-min downtrend is fighting the tape on a higher frame — and that's the #1 way day-trade setups fail. **This is now a hard reject**, not a soft modifier.
