@@ -13,7 +13,7 @@
 # Stop:   Opposite side of ORB range.
 # Target: 1.5x-2x range projected from breakout level.
 
-function Get-ORBSignal($cfg, $bars1m) {
+function Get-ORBSignal($cfg, $bars1m, [string]$htfBias = "NEUTRAL") {
     $signal = [pscustomobject]@{
         Symbol     = ""; Strategy = "ORB"; Side = ""; Entry = 0.0
         Stop       = 0.0; T1 = 0.0; T2 = 0.0; RR = 0.0
@@ -50,6 +50,11 @@ function Get-ORBSignal($cfg, $bars1m) {
 
     # Long breakout
     if ($last.Close -gt $orb.High -and $prev.Close -le $orb.High) {
+        # HTF hard gate -- never long against a confirmed 15m downtrend
+        if ($htfBias -eq "BEARISH") {
+            $signal.Reason += "LONG breakout detected but HTF 15m BEARISH -- HARD REJECT"
+            return $signal   # Side stays empty, Valid stays false
+        }
         $signal.Side   = "buy"
         $signal.Entry  = [Math]::Round($orb.High + 0.01, 2)
         $signal.Stop   = [Math]::Round($orb.Low  - 0.01, 2)
@@ -60,6 +65,8 @@ function Get-ORBSignal($cfg, $bars1m) {
         if ($relVol -ge 1.5) { $conf += 20; $signal.Reason += "Volume surge (${relVol}x)" }
         if ($rsi -ge 50 -and $rsi -le 70) { $conf += 15; $signal.Reason += "RSI bullish zone" }
         if ($last.Close -gt $last.Open)   { $conf += 15; $signal.Reason += "Green candle confirms" }
+        if ($htfBias -eq "BULLISH")       { $conf += 10; $signal.Reason += "HTF 15m BULLISH -- aligned +10" }
+        else                              { $signal.Reason += "HTF 15m NEUTRAL -- allowed" }
         $signal.Confidence = $conf
         $risk = $signal.Entry - $signal.Stop
         $signal.RR = if ($risk -gt 0) { [Math]::Round(($signal.T1 - $signal.Entry) / $risk, 2) } else { 0 }
@@ -69,6 +76,11 @@ function Get-ORBSignal($cfg, $bars1m) {
 
     # Short breakout
     if ($last.Close -lt $orb.Low -and $prev.Close -ge $orb.Low) {
+        # HTF hard gate -- never short against a confirmed 15m uptrend
+        if ($htfBias -eq "BULLISH") {
+            $signal.Reason += "SHORT breakdown detected but HTF 15m BULLISH -- HARD REJECT"
+            return $signal
+        }
         $signal.Side   = "sell"
         $signal.Entry  = [Math]::Round($orb.Low  - 0.01, 2)
         $signal.Stop   = [Math]::Round($orb.High + 0.01, 2)
@@ -79,6 +91,8 @@ function Get-ORBSignal($cfg, $bars1m) {
         if ($relVol -ge 1.5) { $conf += 20; $signal.Reason += "Volume surge (${relVol}x)" }
         if ($rsi -le 50 -and $rsi -ge 30) { $conf += 15; $signal.Reason += "RSI bearish zone" }
         if ($last.Close -lt $last.Open)   { $conf += 15; $signal.Reason += "Red candle confirms" }
+        if ($htfBias -eq "BEARISH")       { $conf += 10; $signal.Reason += "HTF 15m BEARISH -- aligned +10" }
+        else                              { $signal.Reason += "HTF 15m NEUTRAL -- allowed" }
         $signal.Confidence = $conf
         $risk = $signal.Stop - $signal.Entry
         $signal.RR = if ($risk -gt 0) { [Math]::Round(($signal.Entry - $signal.T1) / $risk, 2) } else { 0 }
@@ -96,7 +110,7 @@ function Get-ORBSignal($cfg, $bars1m) {
 # Stop:   Below the low of the VWAP-touch candle.
 # Target: Previous swing high.
 
-function Get-VWAPSignal($cfg, $bars5m) {
+function Get-VWAPSignal($cfg, $bars5m, [string]$htfBias = "NEUTRAL") {
     $signal = [pscustomobject]@{
         Symbol     = ""; Strategy = "VWAP_BOUNCE"; Side = ""; Entry = 0.0
         Stop       = 0.0; T1 = 0.0; T2 = 0.0; RR = 0.0
@@ -138,6 +152,11 @@ function Get-VWAPSignal($cfg, $bars5m) {
     $rsiRising = ($rsiNow -gt $rsiPrev -and $rsiPrev -le 45 -and $rsiNow -le 65)
 
     if ($vwapDip -and $vwapReclaim) {
+        # HTF hard gate -- VWAP bounce is long-only and never against the trend
+        if ($htfBias -eq "BEARISH") {
+            $signal.Reason += "VWAP reclaim detected but HTF 15m BEARISH -- HARD REJECT"
+            return $signal   # Side stays empty, Valid stays false
+        }
         $signal.Side   = "buy"
         $signal.Entry  = [Math]::Round($last.Close + 0.01, 2)
         $signal.Stop   = [Math]::Round([Math]::Min($prev.Low, $last.Low) - $atr * 0.25, 2)
@@ -148,6 +167,8 @@ function Get-VWAPSignal($cfg, $bars5m) {
         if ($uptrend)         { $conf += 15; $signal.Reason += "Price above EMA9 (uptrend)" }
         if ($rsiRising)       { $conf += 15; $signal.Reason += "RSI rising from oversold" }
         if ($relVol -ge 1.2)  { $conf += 15; $signal.Reason += "Volume above average (${relVol}x)" }
+        if ($htfBias -eq "BULLISH") { $conf += 10; $signal.Reason += "HTF 15m BULLISH -- aligned +10" }
+        else                        { $signal.Reason += "HTF 15m NEUTRAL -- allowed" }
         $signal.Confidence = $conf
         $risk = $signal.Entry - $signal.Stop
         $signal.RR = if ($risk -gt 0) { [Math]::Round(($signal.T1 - $signal.Entry) / $risk, 2) } else { 0 }
@@ -165,7 +186,7 @@ function Get-VWAPSignal($cfg, $bars5m) {
 # Stop:   Below 21 EMA.
 # Target: 2.5x risk.
 
-function Get-EMAPullbackSignal($cfg, $bars5m) {
+function Get-EMAPullbackSignal($cfg, $bars5m, [string]$htfBias = "NEUTRAL") {
     $signal = [pscustomobject]@{
         Symbol     = ""; Strategy = "EMA_PULLBACK"; Side = ""; Entry = 0.0
         Stop       = 0.0; T1 = 0.0; T2 = 0.0; RR = 0.0
@@ -208,6 +229,12 @@ function Get-EMAPullbackSignal($cfg, $bars5m) {
     $rsiRising  = ($rsiNow -gt $rsiPrev)
 
     if ($bullTrend -and $touchedEMA -and $bounced) {
+        # HTF hard gate -- never long against a confirmed 15m downtrend even
+        # when the 5m looks bullish; the higher frame wins
+        if ($htfBias -eq "BEARISH") {
+            $signal.Reason += "EMA bounce detected but HTF 15m BEARISH -- HARD REJECT"
+            return $signal
+        }
         $signal.Side   = "buy"
         $signal.Entry  = [Math]::Round($last.Close + 0.01, 2)
         $signal.Stop   = [Math]::Round($ema21 - $atr * 0.15, 2)
@@ -219,6 +246,8 @@ function Get-EMAPullbackSignal($cfg, $bars5m) {
         if ($rsiRising)      { $conf += 10; $signal.Reason += "RSI turning back up" }
         if ($relVol -ge 1.2) { $conf += 10; $signal.Reason += "Volume confirming bounce (${relVol}x)" }
         if ($last.Close -gt $last.Open) { $conf += 10; $signal.Reason += "Green bounce candle" }
+        if ($htfBias -eq "BULLISH") { $conf += 10; $signal.Reason += "HTF 15m BULLISH -- aligned +10" }
+        else                        { $signal.Reason += "HTF 15m NEUTRAL -- allowed" }
         $signal.Confidence = $conf
         $risk = $signal.Entry - $signal.Stop
         $signal.RR = if ($risk -gt 0) { [Math]::Round(($signal.T1 - $signal.Entry) / $risk, 2) } else { 0 }
@@ -267,45 +296,23 @@ function Get-HigherTimeframeBias {
 # ── Run all strategies for a symbol ──────────────────────────────────────────
 
 function Get-BestSignal($cfg, [string]$symbol, $bars1m, $bars5m) {
-    # Fetch HTF bias once -- shared across all three strategy evaluations
+    # Fetch HTF bias ONCE per symbol and pass it down to each strategy.
+    # Each strategy now owns its own hard-reject logic when opposing the HTF.
     $htfBias = Get-HigherTimeframeBias $cfg $symbol "15Min"
 
-    # Per-strategy original confidence thresholds (used to re-evaluate Valid
-    # after the HTF confidence adjustment)
-    $thresholds = @{ "ORB" = 65; "VWAP_BOUNCE" = 70; "EMA_PULLBACK" = 70 }
+    $signals = @()
 
-    $orb  = Get-ORBSignal        $cfg $bars1m
-    $vwap = Get-VWAPSignal       $cfg $bars5m
-    $ema  = Get-EMAPullbackSignal $cfg $bars5m
+    $orb  = Get-ORBSignal         $cfg $bars1m $htfBias
+    $vwap = Get-VWAPSignal        $cfg $bars5m $htfBias
+    $ema  = Get-EMAPullbackSignal $cfg $bars5m $htfBias
 
     $orb.Symbol  = $symbol
     $vwap.Symbol = $symbol
     $ema.Symbol  = $symbol
 
-    $signals = @()
-    foreach ($sig in @($orb, $vwap, $ema)) {
-        if ([string]::IsNullOrEmpty($sig.Side)) { continue }   # no setup detected at all
-
-        # Apply HTF confidence modifier
-        $sig.Reason += ("HTF 15m bias: {0}" -f $htfBias)
-        if ($htfBias -ne "NEUTRAL") {
-            $isLong  = ($sig.Side -eq "buy")
-            $aligned = ($isLong -and $htfBias -eq "BULLISH") -or `
-                       (-not $isLong -and $htfBias -eq "BEARISH")
-            if ($aligned) {
-                $sig.Confidence += 10
-                $sig.Reason     += "HTF aligned -- bonus +10"
-            } else {
-                $sig.Confidence -= 25
-                $sig.Reason     += "HTF opposed -- penalty -25"
-            }
-            # Re-evaluate Valid against the strategy's original threshold
-            $minConf  = $thresholds[$sig.Strategy]
-            $sig.Valid = ($sig.Confidence -ge $minConf -and $sig.RR -ge $cfg.min_rr_ratio)
-        }
-
-        if ($sig.Valid) { $signals += $sig }
-    }
+    if ($orb.Valid)  { $signals += $orb  }
+    if ($vwap.Valid) { $signals += $vwap }
+    if ($ema.Valid)  { $signals += $ema  }
 
     if ($signals.Count -eq 0) { return $null }
 

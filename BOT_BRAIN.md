@@ -257,9 +257,9 @@ T2           : entry + 4.0 * risk
 
 **Valid if:** `Confidence >= 70 AND R:R >= 2.5`
 
-### 5d. Higher Timeframe Bias Filter (applies to all three)
+### 5d. Higher Timeframe Bias Filter (HARD GATE in each strategy)
 
-Multi-timeframe confluence check. A long setup against the 15-min downtrend is fighting the tape on a higher frame — and that's the #1 way day-trade setups fail.
+Multi-timeframe confluence check. A long setup against the 15-min downtrend is fighting the tape on a higher frame — and that's the #1 way day-trade setups fail. **This is now a hard reject**, not a soft modifier.
 
 ```
 Get-HigherTimeframeBias($symbol, "15Min"):
@@ -267,23 +267,28 @@ Get-HigherTimeframeBias($symbol, "15Min"):
   Compute EMA9 and EMA20
   BULLISH = close > EMA9 > EMA20
   BEARISH = close < EMA9 < EMA20
-  NEUTRAL = mixed OR insufficient data
+  NEUTRAL = mixed OR insufficient data (cautious default)
 ```
 
-Applied once per symbol in `Get-BestSignal` (shared across all three strategies — one HTF fetch per symbol, not three):
+Each strategy applies the gate itself, immediately after detecting a setup but before computing confidence:
 
 ```
-Long  signal vs BULLISH HTF -> +10 confidence (aligned)
-Long  signal vs BEARISH HTF -> -25 confidence (opposed)
-Short signal vs BEARISH HTF -> +10 confidence (aligned)
-Short signal vs BULLISH HTF -> -25 confidence (opposed)
-NEUTRAL HTF                 ->   no change
+Long  signal + BEARISH HTF -> HARD REJECT (signal returned with Side="" and Valid=false)
+Short signal + BULLISH HTF -> HARD REJECT
+Long  signal + BULLISH HTF -> proceed, +10 confidence (aligned)
+Short signal + BEARISH HTF -> proceed, +10 confidence (aligned)
+Any signal   + NEUTRAL HTF -> proceed, no modifier (allowed but not rewarded)
 ```
 
-After the adjustment, the `Valid` flag is re-evaluated against the strategy's original confidence threshold (ORB 65, VWAP 70, EMA 70). This means a marginal-pass setup can fail validation when HTF opposes, and a near-miss can promote into validation when HTF strongly aligns.
+Long-only strategies (VWAP Bounce, EMA Pullback) only check the BEARISH gate. ORB checks both because it can emit shorts.
+
+**Why a hard gate and not a confidence modifier?**
+The previous design subtracted 25 confidence on opposition, which still let high-confidence setups slip through against a clear trend. Pros never do this. The hard gate makes the rule absolute: *if the 15-min trend is against you, you don't take the trade — no matter how clean the lower-timeframe setup looks.*
+
+Computed once per symbol in `Get-BestSignal` and passed to each strategy as a parameter. One API call per symbol, three filtered evaluations.
 
 ### Strategy Selection
-`Get-BestSignal` runs all three for a symbol, applies HTF bias, then returns the highest-confidence valid signal. Ties don't occur in practice because the +bonuses differ.
+`Get-BestSignal` fetches HTF once, passes it to all three strategies, collects any whose `Valid=true`, and returns the highest-confidence one. Ties don't occur in practice because the alignment bonuses differ across strategies.
 
 ---
 
