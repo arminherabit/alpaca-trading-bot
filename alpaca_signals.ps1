@@ -230,10 +230,49 @@ function Get-EMAPullbackSignal($cfg, $bars5m) {
     return $signal
 }
 
+# ── Higher Timeframe Bias filter ─────────────────────────────────────────────
+# Multi-timeframe confluence: a long setup on the 5-min chart against a clear
+# 15-min downtrend is fighting the tape on a higher frame. A seasoned trader
+# either passes the trade or takes it with reduced size and a tighter stop.
+# Here we model that as a confidence modifier so the existing Valid threshold
+# still gates entry.
+#
+# Returns: "BULLISH", "BEARISH", or "NEUTRAL"
+#   BULLISH = close > 9 EMA > 20 EMA on the higher timeframe (default 15m)
+#   BEARISH = close < 9 EMA < 20 EMA
+#   NEUTRAL = mixed (transitional) OR insufficient data (cautious default)
+
+function Get-HigherTimeframeBias {
+    param(
+        $cfg,
+        [string]$symbol,
+        [string]$timeframe = "15Min",
+        [int]$limit        = 50
+    )
+
+    $bars = Get-Bars $cfg $symbol $timeframe $limit
+    if ($null -eq $bars -or $bars.Count -lt 20) { return "NEUTRAL" }
+
+    [double[]]$closes = $bars | ForEach-Object { $_.Close }
+    $ema9  = Get-EMA $closes 9
+    $ema20 = Get-EMA $closes 20
+    if ($null -eq $ema9 -or $null -eq $ema20) { return "NEUTRAL" }
+
+    $lastClose = $closes[$closes.Count - 1]
+    if ($lastClose -gt $ema9 -and $ema9 -gt $ema20) { return "BULLISH" }
+    if ($lastClose -lt $ema9 -and $ema9 -lt $ema20) { return "BEARISH" }
+    return "NEUTRAL"
+}
+
 # ── Run all strategies for a symbol ──────────────────────────────────────────
 
 function Get-BestSignal($cfg, [string]$symbol, $bars1m, $bars5m) {
-    $signals = @()
+    # Fetch HTF bias once -- shared across all three strategy evaluations
+    $htfBias = Get-HigherTimeframeBias $cfg $symbol "15Min"
+
+    # Per-strategy original confidence thresholds (used to re-evaluate Valid
+    # after the HTF confidence adjustment)
+    $thresholds = @{ "ORB" = 65; "VWAP_BOUNCE" = 70; "EMA_PULLBACK" = 70 }
 
     $orb  = Get-ORBSignal        $cfg $bars1m
     $vwap = Get-VWAPSignal       $cfg $bars5m
@@ -243,9 +282,30 @@ function Get-BestSignal($cfg, [string]$symbol, $bars1m, $bars5m) {
     $vwap.Symbol = $symbol
     $ema.Symbol  = $symbol
 
-    if ($orb.Valid)  { $signals += $orb  }
-    if ($vwap.Valid) { $signals += $vwap }
-    if ($ema.Valid)  { $signals += $ema  }
+    $signals = @()
+    foreach ($sig in @($orb, $vwap, $ema)) {
+        if ([string]::IsNullOrEmpty($sig.Side)) { continue }   # no setup detected at all
+
+        # Apply HTF confidence modifier
+        $sig.Reason += ("HTF 15m bias: {0}" -f $htfBias)
+        if ($htfBias -ne "NEUTRAL") {
+            $isLong  = ($sig.Side -eq "buy")
+            $aligned = ($isLong -and $htfBias -eq "BULLISH") -or `
+                       (-not $isLong -and $htfBias -eq "BEARISH")
+            if ($aligned) {
+                $sig.Confidence += 10
+                $sig.Reason     += "HTF aligned -- bonus +10"
+            } else {
+                $sig.Confidence -= 25
+                $sig.Reason     += "HTF opposed -- penalty -25"
+            }
+            # Re-evaluate Valid against the strategy's original threshold
+            $minConf  = $thresholds[$sig.Strategy]
+            $sig.Valid = ($sig.Confidence -ge $minConf -and $sig.RR -ge $cfg.min_rr_ratio)
+        }
+
+        if ($sig.Valid) { $signals += $sig }
+    }
 
     if ($signals.Count -eq 0) { return $null }
 

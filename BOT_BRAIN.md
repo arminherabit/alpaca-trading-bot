@@ -257,8 +257,33 @@ T2           : entry + 4.0 * risk
 
 **Valid if:** `Confidence >= 70 AND R:R >= 2.5`
 
+### 5d. Higher Timeframe Bias Filter (applies to all three)
+
+Multi-timeframe confluence check. A long setup against the 15-min downtrend is fighting the tape on a higher frame — and that's the #1 way day-trade setups fail.
+
+```
+Get-HigherTimeframeBias($symbol, "15Min"):
+  Fetch last 50 x 15-min bars
+  Compute EMA9 and EMA20
+  BULLISH = close > EMA9 > EMA20
+  BEARISH = close < EMA9 < EMA20
+  NEUTRAL = mixed OR insufficient data
+```
+
+Applied once per symbol in `Get-BestSignal` (shared across all three strategies — one HTF fetch per symbol, not three):
+
+```
+Long  signal vs BULLISH HTF -> +10 confidence (aligned)
+Long  signal vs BEARISH HTF -> -25 confidence (opposed)
+Short signal vs BEARISH HTF -> +10 confidence (aligned)
+Short signal vs BULLISH HTF -> -25 confidence (opposed)
+NEUTRAL HTF                 ->   no change
+```
+
+After the adjustment, the `Valid` flag is re-evaluated against the strategy's original confidence threshold (ORB 65, VWAP 70, EMA 70). This means a marginal-pass setup can fail validation when HTF opposes, and a near-miss can promote into validation when HTF strongly aligns.
+
 ### Strategy Selection
-`Get-BestSignal` runs all three for a symbol and returns the highest-confidence valid signal. Ties don't occur in practice because the +bonuses differ.
+`Get-BestSignal` runs all three for a symbol, applies HTF bias, then returns the highest-confidence valid signal. Ties don't occur in practice because the +bonuses differ.
 
 ---
 
