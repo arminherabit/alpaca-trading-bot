@@ -323,8 +323,10 @@ function Run-Scan($cfg, $state) {
         "BULL_TREND" { "Green"  } "BEAR_TREND" { "Red"    }
         "VOLATILE"   { "Magenta"} "RANGING"    { "Yellow" } default { "DarkYellow" }
     }
-    Write-Host ("  Regime: {0,-11} | Vol: {1}% | 60m: {2}% | SizeMult: {3}x" -f `
-        $regime.Regime, $regime.Volatility, $regime.TrendStrength, $regime.SizeMult) -ForegroundColor $biasColor
+    $vixDisplay = if ($null -eq $regime.VIX) { "n/a" } else { "{0:F1}" -f $regime.VIX }
+    $hvFlag     = if ($regime.HighVol) { " [HIGH-VOL]" } else { "" }
+    Write-Host ("  Regime: {0,-11} | Vol: {1}% | 60m: {2}% | VIX: {3}{4} | SizeMult: {5}x" -f `
+        $regime.Regime, $regime.Volatility, $regime.TrendStrength, $vixDisplay, $hvFlag, $regime.SizeMult) -ForegroundColor $biasColor
     Write-Host ("    -> {0}" -f $regime.Reason) -ForegroundColor DarkGray
 
     # ── Dynamic watchlist: refresh once per trading day ─────────────────────

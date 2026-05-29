@@ -179,13 +179,38 @@ else                                                    -> NEUTRAL      (size 0.
 ### Output
 ```
 Regime          : <one of 5 strings>
-Volatility      : ATR as % of price (e.g. 0.052%)
+Volatility      : ATR as % of price (e.g. 0.052%)  -- intraday volatility
 TrendStrength   : signed 60-min move % (e.g. +0.78%)
 SizeMult        : multiplier applied to base risk in Get-PositionSize
 PreferTrend     : bool, hints to strategy selection
 PreferReversion : bool, hints to strategy selection
+VIX             : actual ^VIX level from Yahoo Finance, or null if unavailable
+HighVol         : bool flag, true when VIX > 25
 Reason          : human-readable explanation logged to console
 ```
+
+### VIX Overlay (external fear gauge)
+
+After the intraday regime is classified, the SPY ATR-based size multiplier is
+further reduced by the actual ^VIX level. VIX measures S&P 500 30-day implied
+volatility — institutional hedging spikes show up in VIX before they show up
+in SPY's intraday range, so this is a leading-indicator on top of our
+lagging-indicator ATR%.
+
+Fetched once per scan from Yahoo Finance's unofficial `^VIX` endpoint (free,
+no key). Falls back to null on Yahoo failure -- bot keeps trading on the
+intraday regime alone.
+
+```
+VIX > 40        size multiplier *= 0.25   (PANIC)
+VIX > 30        size multiplier *= 0.40   (HIGH)
+VIX > 25        size multiplier *= 0.60   (elevated)
+13 <= VIX <= 25 no change                 (normal)
+VIX < 13        no change but logged       (complacency, watch for spike)
+```
+
+These stack with the regime multipliers, so e.g. a NEUTRAL regime (0.85x) on
+a VIX=32 day becomes 0.85 * 0.40 = 0.34x effective.
 
 ### Effects
 - `BEAR_TREND` → entry loop returns early. **No new longs ever.**

@@ -20,6 +20,31 @@
 . (Join-Path $PSScriptRoot "alpaca_client.ps1")
 . (Join-Path $PSScriptRoot "alpaca_indicators.ps1")
 
+# ── VIX fetch (external fear gauge) ───────────────────────────────────────────
+# VIX is a CBOE index, not an equity. Free Alpaca paper accounts don't serve
+# it via /v2/stocks/snapshots, so we use Yahoo Finance's unofficial chart API
+# (same pattern as our Nasdaq earnings fetch -- no key required, free, public).
+#
+# If Yahoo blocks us or errors, we return $null and the regime detector falls
+# back to its existing intraday ATR%-based volatility measure. Nothing breaks.
+
+function Get-VIXLevel {
+    $uri = "https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?interval=1d&range=1d"
+    $headers = @{
+        "User-Agent" = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        "Accept"     = "application/json"
+    }
+    try {
+        $r = Invoke-RestMethod -Uri $uri -Method GET -Headers $headers -UseBasicParsing -TimeoutSec 5
+        if ($null -ne $r -and $null -ne $r.chart -and $null -ne $r.chart.result -and `
+            $r.chart.result.Count -gt 0 -and $null -ne $r.chart.result[0].meta) {
+            $vix = [double]$r.chart.result[0].meta.regularMarketPrice
+            if ($vix -gt 0) { return [Math]::Round($vix, 2) }
+        }
+    } catch {}
+    return $null
+}
+
 function Get-MarketRegime($cfg) {
     $default = [pscustomobject]@{
         Regime         = "NEUTRAL"
@@ -29,6 +54,8 @@ function Get-MarketRegime($cfg) {
         Reason         = "Insufficient SPY data"
         PreferTrend    = $false
         PreferReversion= $false
+        VIX            = $null
+        HighVol        = $false
     }
 
     $spyBars = Get-IntradayBars $cfg "SPY" "5Min"
@@ -81,6 +108,36 @@ function Get-MarketRegime($cfg) {
         $reason = "Mixed signals (move=$hourMove%, EMAs not aligned)"
     }
 
+    # ── VIX overlay: external fear gauge layered on top of intraday regime ──
+    # VIX measures S&P 500 30-day implied vol; spikes signal institutional
+    # hedging / panic. We REDUCE size on top of the regime's own multiplier
+    # whenever VIX is elevated. The HighVol flag is exposed so downstream
+    # consumers (validators, dashboards) can branch on it without re-fetching.
+    $vix     = Get-VIXLevel
+    $highVol = $false
+    if ($null -ne $vix) {
+        $vixStr = "{0:F1}" -f $vix
+        if ($vix -gt 40) {
+            $sizeMult *= 0.25; $highVol = $true
+            $reason  += " | VIX=$vixStr PANIC -- size x0.25"
+        } elseif ($vix -gt 30) {
+            $sizeMult *= 0.40; $highVol = $true
+            $reason  += " | VIX=$vixStr HIGH -- size x0.40"
+        } elseif ($vix -gt 25) {
+            $sizeMult *= 0.60; $highVol = $true
+            $reason  += " | VIX=$vixStr elevated -- size x0.60"
+        } elseif ($vix -lt 13) {
+            # Very-low VIX = complacency, often precedes a vol spike. No size
+            # change, just a note in the reason so the log is honest about it.
+            $reason  += " | VIX=$vixStr complacent (watch for spike)"
+        } else {
+            $reason  += " | VIX=$vixStr normal"
+        }
+        $sizeMult = [Math]::Round($sizeMult, 3)
+    } else {
+        $reason += " | VIX unavailable"
+    }
+
     return [pscustomobject]@{
         Regime          = $regime
         Volatility      = $volPct
@@ -89,5 +146,7 @@ function Get-MarketRegime($cfg) {
         Reason          = $reason
         PreferTrend     = $preferTrend
         PreferReversion = $preferReversion
+        VIX             = $vix
+        HighVol         = $highVol
     }
 }
