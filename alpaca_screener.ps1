@@ -16,6 +16,12 @@
 
 $MemoryPath = Join-Path $PSScriptRoot "alpaca_ticker_memory.json"
 
+# Module-scope stash so the caller (bot.ps1) can pass real scored candidates
+# to Write-ScreenerReport instead of an empty array. Refreshed each
+# Get-DynamicWatchlist call.
+$script:LastScreenerCandidates = @()
+function Get-LastScreenerCandidates { return $script:LastScreenerCandidates }
+
 # ── Core anchors -- always in the list (market structure reference) ─────────────
 $CORE_TICKERS = @("SPY", "QQQ")
 
@@ -299,7 +305,9 @@ function Score-Candidate {
     $reasons = @()
 
     # ── 1. Price filter (hard reject outside $10-$500) ──────────────────────
-    if ($price -lt 10 -or $price -gt 500) { return $null }
+    if ($price -lt 10 -or $price -gt 500) {
+        return [pscustomobject]@{ Symbol = $symbol; Rejected = $true; Reason = "price_out_of_range" }
+    }
 
     # Sweet-spot bonus
     if ($price -ge 20 -and $price -le 300) { $score += 0.5; $reasons += "price sweet-spot" }
@@ -307,7 +315,7 @@ function Score-Candidate {
     # ── 1b. Earnings blackout (hard reject in +/- blackout window) ──────────
     # Never hold through earnings -- the move is binary and unpredictable.
     if ($daysToEarnings -ge 0 -and $daysToEarnings -le $blackoutDays) {
-        return $null
+        return [pscustomobject]@{ Symbol = $symbol; Rejected = $true; Reason = "earnings_blackout" }
     }
 
     # ── 2. Relative Volume -- #1 signal for day traders ──────────────────────
@@ -315,7 +323,9 @@ function Score-Candidate {
     if    ($rVol -ge 4.0) { $score += 3.0; $reasons += "RVOL ${rVolStr}x EXTREME" }
     elseif($rVol -ge 2.5) { $score += 2.0; $reasons += "RVOL ${rVolStr}x HIGH" }
     elseif($rVol -ge 1.5) { $score += 1.0; $reasons += "RVOL ${rVolStr}x elevated" }
-    elseif($rVol -lt 0.8) { return $null }  # dead -- no interest today
+    elseif($rVol -lt 0.8) {
+        return [pscustomobject]@{ Symbol = $symbol; Rejected = $true; Reason = "low_rvol_${rVolStr}" }
+    }
 
     # ── 3. Gap -- catalyst/momentum signal ───────────────────────────────────
     $absGap    = [Math]::Abs($gapPct)
@@ -333,7 +343,9 @@ function Score-Candidate {
     elseif($dailyRangePct -ge 1.5)        { $score += 1.0; $reasons += "range ${rngStr}% good" }
     elseif($dailyRangePct -ge 0.5)        { $score += 0.3; $reasons += "range ${rngStr}% ok" }
     elseif($dailyRangePct -ge $rngFloor)  { $score += 0.1; $reasons += "range ${rngStr}% early" }
-    else                                   { return $null }  # truly flat, no opportunity
+    else {
+        return [pscustomobject]@{ Symbol = $symbol; Rejected = $true; Reason = "flat_range_${rngStr}" }
+    }
 
     # ── 5. Directional momentum ─────────────────────────────────────────────
     $chgStr = "{0:F1}" -f $changeAbs
@@ -399,6 +411,7 @@ function Score-Candidate {
 
     $candidate = [pscustomobject]@{
         Symbol         = $symbol
+        Rejected       = $false
         Score          = [Math]::Round($score, 2)
         Price          = [Math]::Round($price, 2)
         GapPct         = [Math]::Round($gapPct, 2)
@@ -508,13 +521,19 @@ function Get-DynamicWatchlist {
     Write-Host ("  [SCREENER] Session progress: {0:P0} ({1:F0} min)" -f $sessionFrac, $elapsedMin) -ForegroundColor DarkGray
 
     # ── Step 4: Score each candidate ────────────────────────────────────────
+    # Track rejection reasons so we can see WHY everything's getting filtered.
+    $rejectTally = @{}
+    function _tally([string]$reason) {
+        if (-not $rejectTally.ContainsKey($reason)) { $rejectTally[$reason] = 0 }
+        $rejectTally[$reason]++
+    }
     foreach ($sym in ($snapshots | Get-Member -MemberType NoteProperty).Name) {
         $s = $snapshots.$sym
         try {
             $daily  = $s.dailyBar
             $prev   = $s.prevDailyBar
 
-            if ($null -eq $daily -or $null -eq $prev) { continue }
+            if ($null -eq $daily -or $null -eq $prev) { _tally "missing_bars"; continue }
 
             # Price: prefer latestTrade, fall back to dailyBar close
             $price = 0.0
@@ -559,8 +578,21 @@ function Get-DynamicWatchlist {
 
             $c = Score-Candidate $sym $price $gapPct $rVol $dailyRangePct ([Math]::Abs($changePct)) `
                                  $sessionFrac $newsInfo $daysToER $blackoutDays $runupDays $cycleCtx
-            if ($null -ne $c) { $candidates += $c }
-        } catch { continue }
+            if ($null -eq $c) { _tally "null_return"; continue }
+            if ($c.Rejected)  { _tally $c.Reason;   continue }
+            $candidates += $c
+        } catch {
+            _tally "exception"
+            continue
+        }
+    }
+
+    # ── Reject summary -- explicit visibility into screener filter funnel ───
+    if ($rejectTally.Count -gt 0) {
+        $summary = (($rejectTally.GetEnumerator() | Sort-Object Value -Descending | Select-Object -First 8 | ForEach-Object {
+            "$($_.Name)=$($_.Value)"
+        }) -join " ")
+        Write-Host ("  [SCREENER] Rejects ({0} candidates): {1}" -f $candidates.Count, $summary) -ForegroundColor DarkGray
     }
 
     # ── Step 5: Rank and select ──────────────────────────────────────────────
@@ -617,6 +649,9 @@ function Get-DynamicWatchlist {
         }
     }
     Save-TickerMemory $mem
+
+    # Stash for Write-ScreenerReport so it can display real candidates
+    $script:LastScreenerCandidates = @($candidates)
 
     return $watchlist.ToArray()
 }

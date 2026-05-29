@@ -154,20 +154,38 @@ function Get-MarketBias($cfg) {
 
 function Get-StopLegForPosition($cfg, $position) {
     $sym = $position.symbol
-    $orders = Invoke-AlpacaApi $cfg "GET" ("/v2/orders?status=open&nested=true&symbols=" + $sym)
+    # Two cases must be handled:
+    #  1. Parent bracket still open: stop leg lives in parent.legs[] (nested=true).
+    #  2. Parent already filled: child legs become STANDALONE open orders and
+    #     no longer have a parent reference. We must accept top-level orders
+    #     that ARE stops matching the position's exit direction.
+    # Old code missed case 2 -- that's why week-old bracket positions logged
+    # "no bracket stop leg found".
+    $orders = Invoke-AlpacaApi $cfg "GET" "/v2/orders?status=open&nested=true&limit=100"
     if ($null -eq $orders) { return $null }
     $arr = if ($orders -is [System.Array]) { $orders } else { @($orders) }
+
+    # Long position closes via sell+stop. Short position closes via buy+stop.
+    $expectedSide = if ($position.side -eq "long") { "sell" } else { "buy" }
+
     foreach ($order in $arr) {
         if ($null -eq $order) { continue }
         if ($order.symbol -ne $sym) { continue }
-        if (-not $order.legs -or $order.legs.Count -eq 0) { continue }
-        foreach ($leg in $order.legs) {
-            if ($null -eq $leg) { continue }
-            # Long position -> sell+stop leg. Short position -> buy+stop leg.
-            $isStopType = ($leg.order_type -eq "stop" -or $leg.type -eq "stop")
-            $expectedSide = if ($position.side -eq "long") { "sell" } else { "buy" }
-            if ($isStopType -and $leg.side -eq $expectedSide) {
-                return $leg
+
+        # Case 2: the order ITSELF is the stop (orphaned bracket child)
+        $orderType = if ($order.order_type) { $order.order_type } else { $order.type }
+        if ($orderType -eq "stop" -and $order.side -eq $expectedSide) {
+            return $order
+        }
+
+        # Case 1: parent bracket still active with embedded legs
+        if ($order.legs -and $order.legs.Count -gt 0) {
+            foreach ($leg in $order.legs) {
+                if ($null -eq $leg) { continue }
+                $legType = if ($leg.order_type) { $leg.order_type } else { $leg.type }
+                if ($legType -eq "stop" -and $leg.side -eq $expectedSide) {
+                    return $leg
+                }
             }
         }
     }
@@ -358,7 +376,7 @@ function Run-Scan($cfg, $state) {
         $dynamicList = Get-DynamicWatchlist $cfg $maxW
         $state.active_watchlist = $dynamicList
         $state.watchlist_date   = $etToday
-        Write-ScreenerReport @() $dynamicList
+        Write-ScreenerReport (Get-LastScreenerCandidates) $dynamicList
         Save-State $state
     } elseif ($needScreen -and -not $screenerReady) {
         Write-Host ("  [SCREENER] Waiting until 10:00 AM ET for richer data (now {0} ET)" -f `
