@@ -130,6 +130,116 @@ function Get-MarketBias($cfg) {
     return "NEUTRAL"
 }
 
+# ── Position Management (break-even stop at +1R) ──────────────────────────────
+# A seasoned trader doesn't just set a stop and walk away. The moment the
+# trade has earned 1R of profit, the stop moves to entry + small buffer so
+# the worst-case outcome becomes scratch instead of a loss. This is "free
+# risk reduction": same upside, zero downside on managed trades.
+#
+# How it works with Alpaca bracket orders:
+#   1. Each open position has a parent buy order with two child sell legs:
+#      take-profit (limit) and stop-loss (stop). We need the stop leg.
+#   2. We look up open orders with nested=true so legs are embedded.
+#   3. For each position:
+#        - find the parent buy with matching symbol that has bracket legs
+#        - find the child stop leg (sell+stop for longs, buy+stop for shorts)
+#        - compute risk-per-share = |entry - current_stop|
+#        - if unrealized_pl >= risk * qty (i.e. +1R), PATCH stop to breakeven
+#        - idempotent: skip if stop already at/past breakeven
+#
+# Scale-out (sell 50% at +1R) is intentionally NOT implemented here. Partial
+# closes on bracket orders require rebalancing the leg qty, which can race
+# with TP/SL fills. Revisit once we have 30+ trade samples to confirm the
+# break-even rule alone is correctly tightened.
+
+function Get-StopLegForPosition($cfg, $position) {
+    $sym = $position.symbol
+    $orders = Invoke-AlpacaApi $cfg "GET" ("/v2/orders?status=open&nested=true&symbols=" + $sym)
+    if ($null -eq $orders) { return $null }
+    $arr = if ($orders -is [System.Array]) { $orders } else { @($orders) }
+    foreach ($order in $arr) {
+        if ($null -eq $order) { continue }
+        if ($order.symbol -ne $sym) { continue }
+        if (-not $order.legs -or $order.legs.Count -eq 0) { continue }
+        foreach ($leg in $order.legs) {
+            if ($null -eq $leg) { continue }
+            # Long position -> sell+stop leg. Short position -> buy+stop leg.
+            $isStopType = ($leg.order_type -eq "stop" -or $leg.type -eq "stop")
+            $expectedSide = if ($position.side -eq "long") { "sell" } else { "buy" }
+            if ($isStopType -and $leg.side -eq $expectedSide) {
+                return $leg
+            }
+        }
+    }
+    return $null
+}
+
+function Manage-OpenPositions($cfg, $positions) {
+    if ($null -eq $positions -or $positions.Count -eq 0) { return }
+
+    foreach ($pos in $positions) {
+        $sym        = $pos.symbol
+        $entry      = [double]$pos.avg_entry_price
+        $qty        = [double]$pos.qty
+        $side       = [string]$pos.side                    # "long" or "short"
+        $unrealized = [double]$pos.unrealized_pl
+
+        $stopLeg = Get-StopLegForPosition $cfg $pos
+        if ($null -eq $stopLeg) {
+            Write-Host ("    [MANAGE] {0,-6} no bracket stop leg found -- skipping" -f $sym) -ForegroundColor DarkGray
+            continue
+        }
+
+        $currentStopRaw = if ($stopLeg.stop_price) { $stopLeg.stop_price } else { 0 }
+        $currentStop    = [double]$currentStopRaw
+        if ($currentStop -le 0) { continue }
+
+        $riskPerShare = [Math]::Abs($entry - $currentStop)
+        $totalRisk    = $riskPerShare * $qty
+        if ($totalRisk -le 0) { continue }
+
+        # Idempotency: skip if stop already past breakeven (moved on a prior scan)
+        $alreadyManaged = if ($side -eq "long") {
+            $currentStop -ge $entry
+        } else {
+            $currentStop -le $entry
+        }
+        if ($alreadyManaged) {
+            Write-Host ("    [MANAGE] {0,-6} stop already at/past BE (`${1:F2}) -- holding" -f `
+                $sym, $currentStop) -ForegroundColor DarkGray
+            continue
+        }
+
+        # Trigger: unrealized profit has reached at least 1R
+        if ($unrealized -lt $totalRisk) {
+            Write-Host ("    [MANAGE] {0,-6} pnl=`${1:F2} below 1R=`${2:F2} -- holding" -f `
+                $sym, $unrealized, $totalRisk) -ForegroundColor DarkGray
+            continue
+        }
+
+        # Move stop to breakeven + 0.1% buffer (gives the bracket some slippage room)
+        $buffer = $entry * 0.001
+        $newStop = if ($side -eq "long") {
+            [Math]::Round($entry + $buffer, 2)
+        } else {
+            [Math]::Round($entry - $buffer, 2)
+        }
+
+        Write-Host ("    [MANAGE] {0,-6} +1R hit (pnl=`${1:F2} >= risk=`${2:F2}) -- moving stop `${3:F2} -> `${4:F2}" -f `
+            $sym, $unrealized, $totalRisk, $currentStop, $newStop) -ForegroundColor Cyan
+        $patchResult = Update-OrderStop $cfg $stopLeg.id $newStop
+        if ($null -ne $patchResult) {
+            Write-Host ("    [MANAGE] {0,-6} stop moved to BE successfully" -f $sym) -ForegroundColor Green
+        } else {
+            Write-Host ("    [MANAGE] {0,-6} stop move FAILED -- will retry next scan" -f $sym) -ForegroundColor Red
+        }
+
+        # SCALE-OUT (deferred): sell 50% qty here, then rebalance bracket legs.
+        # Risk: partial close races with TP/SL fills if not done atomically.
+        # Skipping until we have larger trade sample to validate the BE-only rule.
+    }
+}
+
 # ── Scan Cycle ────────────────────────────────────────────────────────────────
 
 function Run-Scan($cfg, $state) {
@@ -281,6 +391,10 @@ function Run-Scan($cfg, $state) {
             Write-Host ("    {0,-6} {1,5} shares @ `${2}  PnL: `${3:F2} ({4:F2}%)" -f `
                 $p.symbol, $p.qty, $p.avg_entry_price, $pnl, $pnlPct) -ForegroundColor $color
         }
+        Write-Host ""
+
+        # Active position management: break-even stop at +1R
+        Manage-OpenPositions $cfg $positions
         Write-Host ""
     }
 

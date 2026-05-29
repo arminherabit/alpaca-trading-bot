@@ -561,6 +561,31 @@ Earnings dates older than today are ignored (`Get-DaysToEarnings` filters past d
 
 ## 11. Order Execution
 
+### Active Position Management: Break-Even Stop at +1R
+
+After every scan, each open position is checked. When the unrealized P&L reaches **+1R** (one unit of original risk = `qty × |entry − current_stop|`), the bot **PATCHes the bracket's stop-loss leg to entry + 0.1% buffer**.
+
+Effect: from that point forward the position can only finish flat (scratch at the BE stop) or with a profit (TP hit). The downside has been removed without sacrificing any upside.
+
+Implementation (`Manage-OpenPositions` in `alpaca_bot.ps1`):
+
+```
+1. Get open orders with nested=true for the position's symbol
+2. Find the bracket parent (filled buy) with matching symbol
+3. Locate the stop leg (sell+stop for long, buy+stop for short)
+4. Compute risk = |entry - current_stop| * qty
+5. If unrealized_pl < risk:                       no-op (not yet at +1R)
+   If stop already past entry (idempotency):     no-op (managed prior scan)
+   Else:
+     new_stop = entry +/- 0.1% buffer
+     PATCH /v2/orders/{stop_leg.id}  stop_price = new_stop
+```
+
+**Idempotency**: the check `currentStop >= entry` (long) or `currentStop <= entry` (short) means re-running on every 10-min scan never moves the stop twice. The state is in Alpaca, not in our memory.
+
+**Why no scale-out yet?**
+Partial close (sell 50% at +1R) requires rebalancing the bracket leg quantity atomically. If we sell half via a separate market order, the bracket TP/SL legs still reference the original qty and can fire on the remaining shares before we PATCH them down. Deferred until we have ≥30 sample trades validating the BE-only rule is correctly improving expectancy.
+
 ### Bracket Orders
 Every entry submits an Alpaca **bracket** order: parent buy limit + child take-profit limit + child stop-loss stop. Server-managed by Alpaca — bot doesn't poll for management.
 

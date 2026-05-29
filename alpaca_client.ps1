@@ -156,6 +156,14 @@ function Cancel-Order($cfg, [string]$orderId) {
     return Invoke-AlpacaApi $cfg "DELETE" ("/v2/orders/" + $orderId)
 }
 
+# PATCH a child stop-loss leg's stop_price. Used for break-even stop moves
+# while the parent bracket is still active. Alpaca allows partial updates
+# of stop_price on stop orders without canceling the whole bracket.
+function Update-OrderStop($cfg, [string]$orderId, [double]$newStopPrice) {
+    $body = @{ stop_price = $newStopPrice.ToString("F2") }
+    return Invoke-AlpacaApi $cfg "PATCH" ("/v2/orders/" + $orderId) $body
+}
+
 function Cancel-AllOrders($cfg) {
     return Invoke-AlpacaApi $cfg "DELETE" "/v2/orders"
 }
