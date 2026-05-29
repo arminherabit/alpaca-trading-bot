@@ -164,6 +164,13 @@ function Run-Scan($cfg, $state) {
         Save-State $state
     }
 
+    # ── Self-learning: sync closed trades -> update ticker memory ───────────
+    # Run this BEFORE the market-open gate so any exits that filled near or at
+    # close get recorded into memory overnight rather than waiting until the
+    # next session. The 7-day lookback in Sync-ClosedTrades is safe to call
+    # repeatedly thanks to the recorded_exits dedup set.
+    $state = Sync-ClosedTrades $cfg $state
+
     # Market hours check
     if (-not (Test-MarketOpen $cfg)) {
         Write-Host "  Market closed -- waiting." -ForegroundColor DarkGray
@@ -176,9 +183,6 @@ function Run-Scan($cfg, $state) {
         Write-Host ("  Outside trading window ({0}-{1} ET, paused {2}-{3}) -- monitoring only." -f `
             $cfg.no_trade_before, $cfg.no_trade_after, $cfg.midday_pause_start, $cfg.midday_pause_end) -ForegroundColor Yellow
     }
-
-    # ── Self-learning: sync closed trades -> update ticker memory ───────────
-    $state = Sync-ClosedTrades $cfg $state
 
     # ── Backward-compat: ensure new state fields exist on old state.json ───
     foreach ($f in @("equity_at_open","equity_at_open_date")) {
