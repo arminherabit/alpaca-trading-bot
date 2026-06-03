@@ -122,6 +122,24 @@ function Get-HourEdge {
     return [pscustomobject]@{ Trades = $mem.hour_stats.$key.trades; WinRate = $mem.hour_stats.$key.win_rate }
 }
 
+# Returns the per-ticker memory score (0.1-3.0) computed in Update-TickerMemory.
+# 1.0 = neutral (no history). Higher = proven performer, lower = poor performer.
+# This is the single biggest hidden bug -- it was called from Score-Candidate
+# and Get-CycleContext for weeks but never defined, so every candidate threw
+# 'The term Get-TickerScore is not recognized' and the try/catch swallowed it
+# silently. The exception-message-prefix logging added today finally surfaced it.
+function Get-TickerScore {
+    param([string]$symbol)
+    $mem = Load-TickerMemory
+    if ($null -eq $mem.tickers) { return 1.0 }
+    if (-not (Get-Member -InputObject $mem.tickers -Name $symbol -ErrorAction SilentlyContinue)) {
+        return 1.0
+    }
+    $t = $mem.tickers.$symbol
+    if ($null -eq $t -or $null -eq $t.score) { return 1.0 }
+    return [double]$t.score
+}
+
 function Save-TickerMemory($mem) {
     $mem.last_updated = (Get-Date).ToString("o")
     $mem | ConvertTo-Json -Depth 10 | Set-Content $MemoryPath
