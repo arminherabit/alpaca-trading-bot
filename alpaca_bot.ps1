@@ -159,8 +159,6 @@ function Get-StopLegForPosition($cfg, $position) {
     #  2. Parent already filled: child legs become STANDALONE open orders and
     #     no longer have a parent reference. We must accept top-level orders
     #     that ARE stops matching the position's exit direction.
-    # Old code missed case 2 -- that's why week-old bracket positions logged
-    # "no bracket stop leg found".
     $orders = Invoke-AlpacaApi $cfg "GET" "/v2/orders?status=open&nested=true&limit=100"
     if ($null -eq $orders) { return $null }
     $arr = if ($orders -is [System.Array]) { $orders } else { @($orders) }
@@ -168,13 +166,18 @@ function Get-StopLegForPosition($cfg, $position) {
     # Long position closes via sell+stop. Short position closes via buy+stop.
     $expectedSide = if ($position.side -eq "long") { "sell" } else { "buy" }
 
+    # Accept any stop variant -- Alpaca returns 'stop', 'stop_limit',
+    # 'trailing_stop' depending on order shape. The previous exact-match on
+    # 'stop' missed stop_limit children of brackets.
+    $stopTypes = @("stop","stop_limit","trailing_stop","stop_loss")
+
     foreach ($order in $arr) {
         if ($null -eq $order) { continue }
         if ($order.symbol -ne $sym) { continue }
 
         # Case 2: the order ITSELF is the stop (orphaned bracket child)
         $orderType = if ($order.order_type) { $order.order_type } else { $order.type }
-        if ($orderType -eq "stop" -and $order.side -eq $expectedSide) {
+        if (($stopTypes -contains $orderType) -and $order.side -eq $expectedSide) {
             return $order
         }
 
@@ -183,13 +186,44 @@ function Get-StopLegForPosition($cfg, $position) {
             foreach ($leg in $order.legs) {
                 if ($null -eq $leg) { continue }
                 $legType = if ($leg.order_type) { $leg.order_type } else { $leg.type }
-                if ($legType -eq "stop" -and $leg.side -eq $expectedSide) {
+                if (($stopTypes -contains $legType) -and $leg.side -eq $expectedSide) {
                     return $leg
                 }
             }
         }
     }
     return $null
+}
+
+# When a position has zero stop protection (no leg found AND PnL is positive),
+# submit a fresh standalone stop to lock in the gain. This protects winners
+# whose original bracket legs were cleaned up by Alpaca after days of life.
+function New-ProtectiveStop($cfg, $position) {
+    $sym  = $position.symbol
+    $qty  = [int]([double]$position.qty)
+    $side = if ($position.side -eq "long") { "sell" } else { "buy" }
+    $entry = [double]$position.avg_entry_price
+    if ($entry -le 0 -or $qty -le 0) { return $null }
+
+    # Stop at entry + 0.1% (long) or entry - 0.1% (short) -- pure break-even hedge
+    $buf = $entry * 0.001
+    $stopPx = if ($side -eq "sell") {
+        [Math]::Round($entry + $buf, 2)
+    } else {
+        [Math]::Round($entry - $buf, 2)
+    }
+
+    $body = @{
+        symbol        = $sym
+        qty           = $qty.ToString()
+        side          = $side
+        type          = "stop"
+        time_in_force = "gtc"
+        stop_price    = $stopPx.ToString("F2")
+        client_order_id = "PROTECT_" + $sym + "_" + (Get-Date -Format "HHmmss")
+    }
+    Write-Host ("    [PROTECT] {0,-6} no stop found -- placing fresh GTC stop @ `${1:F2}" -f $sym, $stopPx) -ForegroundColor Yellow
+    return Invoke-AlpacaApi $cfg "POST" "/v2/orders" $body
 }
 
 function Manage-OpenPositions($cfg, $positions) {
@@ -204,7 +238,14 @@ function Manage-OpenPositions($cfg, $positions) {
 
         $stopLeg = Get-StopLegForPosition $cfg $pos
         if ($null -eq $stopLeg) {
-            Write-Host ("    [MANAGE] {0,-6} no bracket stop leg found -- skipping" -f $sym) -ForegroundColor DarkGray
+            # No stop protection at all. If position is profitable, plant a
+            # fresh GTC stop at entry+buffer so we lock in at least breakeven.
+            if ($unrealized -gt 0) {
+                Write-Host ("    [MANAGE] {0,-6} no stop leg found AND pnl=`${1:F2} > 0 -- planting protective stop" -f $sym, $unrealized) -ForegroundColor Yellow
+                New-ProtectiveStop $cfg $pos | Out-Null
+            } else {
+                Write-Host ("    [MANAGE] {0,-6} no stop leg found, pnl=`${1:F2} <= 0 -- skipping" -f $sym, $unrealized) -ForegroundColor DarkGray
+            }
             continue
         }
 

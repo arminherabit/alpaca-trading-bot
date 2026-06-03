@@ -522,18 +522,21 @@ function Get-DynamicWatchlist {
 
     # ── Step 4: Score each candidate ────────────────────────────────────────
     # Track rejection reasons so we can see WHY everything's getting filtered.
+    # Inline tally instead of inner function -- PowerShell's nested function
+    # scoping made the previous version throw on every iteration ('exception=87'
+    # in production). Inline is uglier but bulletproof.
     $rejectTally = @{}
-    function _tally([string]$reason) {
-        if (-not $rejectTally.ContainsKey($reason)) { $rejectTally[$reason] = 0 }
-        $rejectTally[$reason]++
-    }
     foreach ($sym in ($snapshots | Get-Member -MemberType NoteProperty).Name) {
         $s = $snapshots.$sym
         try {
             $daily  = $s.dailyBar
             $prev   = $s.prevDailyBar
 
-            if ($null -eq $daily -or $null -eq $prev) { _tally "missing_bars"; continue }
+            if ($null -eq $daily -or $null -eq $prev) {
+                if (-not $rejectTally.ContainsKey("missing_bars")) { $rejectTally["missing_bars"] = 0 }
+                $rejectTally["missing_bars"]++
+                continue
+            }
 
             # Price: prefer latestTrade, fall back to dailyBar close
             $price = 0.0
@@ -578,11 +581,25 @@ function Get-DynamicWatchlist {
 
             $c = Score-Candidate $sym $price $gapPct $rVol $dailyRangePct ([Math]::Abs($changePct)) `
                                  $sessionFrac $newsInfo $daysToER $blackoutDays $runupDays $cycleCtx
-            if ($null -eq $c) { _tally "null_return"; continue }
-            if ($c.Rejected)  { _tally $c.Reason;   continue }
+            if ($null -eq $c) {
+                if (-not $rejectTally.ContainsKey("null_return")) { $rejectTally["null_return"] = 0 }
+                $rejectTally["null_return"]++
+                continue
+            }
+            if ($c.Rejected) {
+                $r = if ($c.Reason) { $c.Reason } else { "unknown" }
+                if (-not $rejectTally.ContainsKey($r)) { $rejectTally[$r] = 0 }
+                $rejectTally[$r]++
+                continue
+            }
             $candidates += $c
         } catch {
-            _tally "exception"
+            # Surface the exception message in the first occurrence so we don't
+            # silently swallow future bugs the way the inner-function one was.
+            $msg = $_.Exception.Message
+            $key = "exception:" + ($msg.Substring(0, [Math]::Min(40, $msg.Length)))
+            if (-not $rejectTally.ContainsKey($key)) { $rejectTally[$key] = 0 }
+            $rejectTally[$key]++
             continue
         }
     }
