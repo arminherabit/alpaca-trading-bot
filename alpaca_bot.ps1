@@ -195,34 +195,48 @@ function Get-StopLegForPosition($cfg, $position) {
     return $null
 }
 
-# When a position has zero stop protection (no leg found AND PnL is positive),
-# submit a fresh standalone stop to lock in the gain. This protects winners
-# whose original bracket legs were cleaned up by Alpaca after days of life.
-function New-ProtectiveStop($cfg, $position) {
+# Submits a fresh standalone stop for a position that has lost its bracket
+# protection. Two modes:
+#   BREAKEVEN: entry +/- 0.1% buffer  (use for profitable positions)
+#   MAXLOSS:   entry +/- 2.0%         (use for losing positions to cap bleeding)
+function New-ProtectiveStop {
+    param(
+        $cfg,
+        $position,
+        [string]$Mode = "BREAKEVEN"   # BREAKEVEN | MAXLOSS
+    )
     $sym  = $position.symbol
-    $qty  = [int]([double]$position.qty)
+    $qty  = [int][Math]::Abs([double]$position.qty)
     $side = if ($position.side -eq "long") { "sell" } else { "buy" }
     $entry = [double]$position.avg_entry_price
     if ($entry -le 0 -or $qty -le 0) { return $null }
 
-    # Stop at entry + 0.1% (long) or entry - 0.1% (short) -- pure break-even hedge
-    $buf = $entry * 0.001
+    $bufPct = if ($Mode -eq "MAXLOSS") { 0.02 } else { 0.001 }
+    $buf = $entry * $bufPct
+
+    # Long: stop BELOW entry (sell trigger).
+    # Short: stop ABOVE entry (buy-to-cover trigger).
     $stopPx = if ($side -eq "sell") {
-        [Math]::Round($entry + $buf, 2)
+        # closing a long -- BE mode = entry+0.1%, MAXLOSS mode = entry-2%
+        if ($Mode -eq "BREAKEVEN") { [Math]::Round($entry + $buf, 2) }
+        else                       { [Math]::Round($entry - $buf, 2) }
     } else {
-        [Math]::Round($entry - $buf, 2)
+        # closing a short -- BE mode = entry-0.1%, MAXLOSS mode = entry+2%
+        if ($Mode -eq "BREAKEVEN") { [Math]::Round($entry - $buf, 2) }
+        else                       { [Math]::Round($entry + $buf, 2) }
     }
 
     $body = @{
-        symbol        = $sym
-        qty           = $qty.ToString()
-        side          = $side
-        type          = "stop"
-        time_in_force = "gtc"
-        stop_price    = $stopPx.ToString("F2")
-        client_order_id = "PROTECT_" + $sym + "_" + (Get-Date -Format "HHmmss")
+        symbol          = $sym
+        qty             = $qty.ToString()
+        side            = $side
+        type            = "stop"
+        time_in_force   = "gtc"
+        stop_price      = $stopPx.ToString("F2")
+        client_order_id = "PROTECT_${Mode}_" + $sym + "_" + (Get-Date -Format "HHmmss")
     }
-    Write-Host ("    [PROTECT] {0,-6} no stop found -- placing fresh GTC stop @ `${1:F2}" -f $sym, $stopPx) -ForegroundColor Yellow
+    Write-Host ("    [PROTECT-{0}] {1,-6} placing GTC stop @ `${2:F2} (entry=`${3:F2})" -f `
+        $Mode, $sym, $stopPx, $entry) -ForegroundColor Yellow
     return Invoke-AlpacaApi $cfg "POST" "/v2/orders" $body
 }
 
@@ -238,13 +252,16 @@ function Manage-OpenPositions($cfg, $positions) {
 
         $stopLeg = Get-StopLegForPosition $cfg $pos
         if ($null -eq $stopLeg) {
-            # No stop protection at all. If position is profitable, plant a
-            # fresh GTC stop at entry+buffer so we lock in at least breakeven.
+            # No stop protection at all. ALWAYS plant a stop -- a naked position
+            # is the highest-risk configuration regardless of P&L:
+            #   - Profitable -> plant BE+buffer stop to lock in gains
+            #   - Losing     -> plant max-loss stop to CAP the bleeding
             if ($unrealized -gt 0) {
-                Write-Host ("    [MANAGE] {0,-6} no stop leg found AND pnl=`${1:F2} > 0 -- planting protective stop" -f $sym, $unrealized) -ForegroundColor Yellow
-                New-ProtectiveStop $cfg $pos | Out-Null
+                Write-Host ("    [MANAGE] {0,-6} no stop leg AND pnl=`${1:F2} > 0 -- planting BE protective stop" -f $sym, $unrealized) -ForegroundColor Yellow
+                New-ProtectiveStop $cfg $pos -Mode "BREAKEVEN" | Out-Null
             } else {
-                Write-Host ("    [MANAGE] {0,-6} no stop leg found, pnl=`${1:F2} <= 0 -- skipping" -f $sym, $unrealized) -ForegroundColor DarkGray
+                Write-Host ("    [MANAGE] {0,-6} no stop leg AND pnl=`${1:F2} < 0 -- planting MAX-LOSS stop (cap bleeding)" -f $sym, $unrealized) -ForegroundColor Red
+                New-ProtectiveStop $cfg $pos -Mode "MAXLOSS" | Out-Null
             }
             continue
         }
