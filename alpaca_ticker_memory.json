@@ -102,11 +102,30 @@
       },
       "last_trade": "2026-06-05T17:30:37.2047358+00:00",
       "added_count": 0
+    },
+    "AMZN": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_pnl": -122.41,
+      "avg_pnl": -122.41,
+      "win_rate": 0.0,
+      "score": 0.7,
+      "consecutive_losses": 1,
+      "best_strategy": "",
+      "strategy_wins": {
+        "VWAP": 0
+      },
+      "strategy_trades": {
+        "VWAP": 1
+      },
+      "last_trade": "2026-06-05T18:00:36.8067748+00:00",
+      "added_count": 0
     }
   },
-  "last_updated": "2026-06-05T17:30:37.2187220+00:00",
+  "last_updated": "2026-06-05T18:00:36.8236736+00:00",
   "last_screened": "2026-06-05T14:01:10.86525+00:00",
-  "total_trades": 9,
+  "total_trades": 10,
   "strategy_stats": {
     "EMA": {
       "trades": 2,
@@ -115,6 +134,14 @@
       "total_pnl": -115.05,
       "win_rate": 0.0,
       "avg_pnl": -57.52
+    },
+    "VWAP": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_pnl": -122.41,
+      "win_rate": 0.0,
+      "avg_pnl": -122.41
     }
   },
   "hour_stats": {
@@ -127,12 +154,12 @@
       "avg_pnl": -114.74
     },
     "13": {
-      "trades": 1,
+      "trades": 2,
       "wins": 0,
-      "losses": 1,
-      "total_pnl": -0.31,
+      "losses": 2,
+      "total_pnl": -122.72,
       "win_rate": 0.0,
-      "avg_pnl": -0.31
+      "avg_pnl": -61.36
     }
   },
   "regime_stats": {}
