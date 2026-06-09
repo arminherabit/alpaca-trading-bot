@@ -19,7 +19,7 @@ It is built like a disciplined junior analyst: small, repeatable edges + iron ru
 2. [The Run-Scan Lifecycle](#2-the-run-scan-lifecycle)
 3. [The Four Pillars of Discipline](#3-the-four-pillars-of-discipline)
 4. [Market Regime Detection](#4-market-regime-detection)
-5. [Strategy Engine](#5-strategy-engine-3-setups)
+5. [Strategy Engine](#5-strategy-engine-5-setups)
 6. [Risk & Position Sizing](#6-risk--position-sizing)
 7. [The Self-Learning Loop](#7-the-self-learning-loop)
 8. [Dynamic Screener](#8-dynamic-screener)
@@ -108,22 +108,27 @@ Every 10 minutes, `Run-Scan` executes in this exact order:
                                   - Get-DynamicWatchlist (news + screener)
 10.  Account summary         -> Equity, BP, positions, today's stats
 11.  Display open positions  -> Per-position unrealized P&L
-12.  Max-positions check     -> If full, monitor-only, return
-13.  Trading-window block    -> If outside window, return
-14.  BEAR regime block       -> If BEAR_TREND, no new entries, return
-15.  Daily limits block      -> If trades_today >= 5 OR losses >= 2
+12.  Manage-OpenPositions    -> Break-even stop at +2R for each position
+13.  Close-EODPositions      -> At 3:45 PM ET, close same-day positions
+14a. Max-positions check     -> If full, monitor-only, return
+14b. Trading-window block    -> If outside window, return
+14.  Daily limits block      -> If trades_today >= 3 OR losses >= 2
                                 OR daily DD <= -3%, return
-16.  Scan watchlist loop:
+15.  Scan watchlist loop (MAX 1 ENTRY PER SCAN):
+        $enteredThisScan = false
         For each symbol:
           - Skip if already holding / pending
+          - Skip if leveraged ETF (TQQQ, SQQQ, SOXL, etc.)
+          - Skip if correlated with existing position or same-scan entry
           - Fetch 1m bars (need >= 20) + 5m bars (need >= 10)
           - Get-BestSignal (highest-confidence valid setup)
-          - If NEUTRAL regime, require confidence >= 80
+          - Confidence floor: >= 75% all regimes, >= 85% in NEUTRAL
           - Validate-Trade (R:R, sizing, BP, edge multiplier)
           - Write trade card to log
           - Submit bracket order with strategy tag in client_order_id
           - Increment trades_today
-17.  Save final state
+          - Set $enteredThisScan = true, BREAK (one entry per scan)
+16.  Save final state
 ```
 
 The flow is **idempotent and recovery-safe**: any single step can fail without corrupting state.
@@ -142,7 +147,7 @@ Three hard stops that end the day immediately if breached:
 
 | Limit | Default | Triggers |
 |-------|---------|----------|
-| `max_trades_per_day` | 5 | No more entries |
+| `max_trades_per_day` | 3 | No more entries (reduced from 5 to prevent overtrading) |
 | `max_losses_per_day` | 2 | Day done — no revenge trading |
 | `max_daily_drawdown_pct` | -3.0% | Day done — preserve capital |
 
@@ -213,16 +218,16 @@ These stack with the regime multipliers, so e.g. a NEUTRAL regime (0.85x) on
 a VIX=32 day becomes 0.85 * 0.40 = 0.34x effective.
 
 ### Effects
-- `BEAR_TREND` → entry loop returns early. **No new longs ever.**
+- `BEAR_TREND` → **Longs blocked by HTF gate, shorts eligible.** The bot can still trade in a bear trend — it just takes the other side.
 - `VOLATILE` → all entries sized at 50% of baseline.
-- `NEUTRAL` → confidence threshold raised from 65 to 80 to require higher conviction.
+- `NEUTRAL` → confidence threshold raised to 85% to require highest conviction.
 - `BULL_TREND` / `RANGING` → standard processing, but size multiplier applied.
 
 ---
 
-## 5. Strategy Engine (3 setups)
+## 5. Strategy Engine (5 setups)
 
-All three strategies are evaluated for every symbol every scan. The highest-confidence valid one wins.
+All five strategies (3 long + 2 short mirrors) are evaluated for every symbol every scan. The highest-confidence valid one wins. Direction is gated by HTF bias — longs require BULLISH or NEUTRAL 15m, shorts require BEARISH or NEUTRAL 15m.
 
 ### 5a. ORB — Opening Range Breakout
 
@@ -242,7 +247,7 @@ T2          : Entry +/- 2.0x range
 - +15 if RSI in 50-70 (long) or 30-50 (short)
 - +15 if candle direction confirms (green for long, red for short)
 
-**Valid if:** `Confidence >= 65 AND R:R >= 2.5`
+**Valid if:** `Confidence >= 75 AND R:R >= 2.5` (85 in NEUTRAL regime)
 
 ### 5b. VWAP Bounce
 
@@ -250,7 +255,7 @@ T2          : Entry +/- 2.0x range
 
 ```
 Trigger : prev bar low <= VWAP AND current bar close > VWAP
-Stop    : min(prev.low, current.low) - 0.25 * ATR
+Stop    : min(prev.low, current.low) - 0.50 * ATR
 T1      : entry + 2.5 * risk
 T2      : entry + 4.0 * risk
 ```
@@ -269,7 +274,7 @@ T2      : entry + 4.0 * risk
 ```
 Trend filter : price > EMA9 > EMA21
 Trigger      : prev bar low <= EMA9 AND current close > EMA9 (bounce)
-Stop         : EMA21 - 0.15 * ATR
+Stop         : EMA21 - 0.50 * ATR
 T1           : entry + 2.5 * risk
 T2           : entry + 4.0 * risk
 ```
@@ -288,7 +293,7 @@ Mirror of VWAP Bounce. 5-minute chart. Bearish rejection back below VWAP.
 
 ```
 Trigger : prev bar high >= VWAP AND current bar close < VWAP
-Stop    : max(prev.high, current.high) + 0.25 * ATR
+Stop    : max(prev.high, current.high) + 0.50 * ATR
 T1      : entry - 2.5 * risk
 T2      : entry - 4.0 * risk
 ```
@@ -308,7 +313,7 @@ Mirror of EMA Pullback. 5-minute chart. Trend-continuation short after rally fai
 ```
 Trend filter : price < EMA9 < EMA21
 Trigger      : prev bar high >= EMA9 AND current close < EMA9 (rejection)
-Stop         : EMA21 + 0.15 * ATR
+Stop         : EMA21 + 0.50 * ATR
 T1           : entry - 2.5 * risk
 T2           : entry - 4.0 * risk
 ```
@@ -321,6 +326,12 @@ T2           : entry - 4.0 * risk
 - +10 if HTF 15m BEARISH
 
 **Valid if:** `Confidence >= 70 AND R:R >= 2.5`
+
+### Stop Buffer Philosophy (all strategies)
+
+All non-ORB strategies use a **0.50 × ATR** buffer on stops. This was widened from 0.15-0.25 ATR after analysis showed the tighter stops were causing false stop-outs — 12 of 13 trades were stopped out by normal intraday noise before the trade thesis played out. The wider buffer gives setups room to breathe while still respecting the structural level (VWAP, EMA21).
+
+ORB stops are placed at the opposite end of the opening range (+/- $0.01), which is inherently wider and doesn't need the ATR buffer.
 
 ### How the bot decides direction now
 
@@ -407,7 +418,7 @@ Pulled from `memory.strategy_stats[strategy].win_rate`:
 | R:R | < `min_rr_ratio` (default 2.5) |
 | Buying power | Required > available |
 | Position count | >= `max_positions` (default 3) |
-| Confidence | < 65% (or < 80% if NEUTRAL regime) |
+| Confidence | < 75% (or < 85% if NEUTRAL regime) |
 | Sizing | Returned 0 shares (regime or edge cut it to zero) |
 
 Rejected trades log a `[REJECTED]` card with reasons. Approved trades log `[APPROVED]`.
@@ -512,6 +523,7 @@ All four are merged and de-duplicated. Result: typically 80-120 candidates per d
 -0.8  memory score <= 0.5  (poor)
 
 HARD REJECTS (return null):
+  Leveraged/inverse ETF (TQQQ, SQQQ, SOXL, etc. — 21 tickers)
   price < $10 or > $500
   earnings within 2 days (blackout)
   RVOL < 0.8
@@ -635,7 +647,7 @@ Per-ticker sentiment score = sum across all headlines about it.
 - Adds the ticker to the candidate pool even if not in the static universe
 - Score `+1.5` for active cycle
 - Score `±0.5` based on lean
-- Lean does NOT change trade direction (bot is long-only) but does affect the threshold for taking longs on bear-leaning names
+- Lean influences screener scoring but does NOT gate trade direction — direction is determined by HTF bias and strategy signals
 
 ---
 
@@ -683,20 +695,53 @@ Earnings dates older than today are ignored (`Get-DaysToEarnings` filters past d
 
 ## 11. Order Execution
 
-### Active Position Management: Break-Even Stop at +1R
+### Leveraged ETF Blocklist
 
-After every scan, each open position is checked. When the unrealized P&L reaches **+1R** (one unit of original risk = `qty × |entry − current_stop|`), the bot **PATCHes the bracket's stop-loss leg to entry + 0.1% buffer**.
+The following tickers are hard-rejected **before** any scoring or signal evaluation. Leveraged/inverse ETFs amplify noise and decay — they are unsuitable for the bot's intraday risk model.
 
-Effect: from that point forward the position can only finish flat (scratch at the BE stop) or with a profit (TP hit). The downside has been removed without sacrificing any upside.
+```
+TQQQ, SQQQ, SPXL, SPXS, UPRO, SDS, SH, UVXY, SVXY,
+SOXL, SOXS, LABU, LABD, TNA, TZA, FNGU, FNGD,
+NUGT, DUST, JNUG, JDST
+```
+
+Blocked in both the screener (`Score-Candidate` returns null) and the entry loop (explicit skip with log).
+
+### Correlated Ticker Groups
+
+Prevents contradictory or duplicative bets. If SPY is already held (or entered this scan), SPXL and SPXS are blocked.
+
+```
+Group 1: QQQ, TQQQ, SQQQ
+Group 2: SPY, SPXL, SPXS, UPRO, SDS, SH
+Group 3: IWM, TNA, TZA
+Group 4: SOXX, SOXL, SOXS
+Group 5: GLD, NUGT, DUST, JNUG, JDST
+```
+
+`Test-CorrelationConflict` checks against both existing positions AND entries made earlier in the same scan.
+
+### Max 1 Entry Per Scan
+
+The scan loop sets `$enteredThisScan = $false` before iterating. After the first successful order submission, it sets the flag to `$true` and `break`s out of the loop. This prevents 3-trade bursts in a single 10-minute window — the bot re-evaluates the full picture on the next scan.
+
+### Active Position Management: Break-Even Stop at +2R
+
+After every scan, each open position is checked. When the unrealized P&L reaches **+2R** (two units of original risk = `Abs(qty) × |entry − current_stop| × 2`), the bot **PATCHes the bracket's stop-loss leg to entry +/- 0.1% buffer**.
+
+**Why +2R instead of +1R?** At +1R, normal intraday retracements were tripping the BE stop and turning winners into scratches. The 7.7% win rate (1W/12L) was partly caused by stops placed too tight too soon. At +2R the trade has proven itself and BE locks in meaningful profit while still giving the setup room to breathe.
+
+Effect: from that point forward the position can only finish flat (scratch at the BE stop) or with a profit (TP hit). The downside has been removed without sacrificing upside.
 
 Implementation (`Manage-OpenPositions` in `alpaca_bot.ps1`):
 
 ```
 1. Get open orders with nested=true for the position's symbol
-2. Find the bracket parent (filled buy) with matching symbol
-3. Locate the stop leg (sell+stop for long, buy+stop for short)
-4. Compute risk = |entry - current_stop| * qty
-5. If unrealized_pl < risk:                       no-op (not yet at +1R)
+2. Find the stop leg (sell+stop for long, buy+stop for short)
+   Handles both bracket children and orphaned standalone stops
+3. Compute risk = |entry - current_stop| * Abs(qty)
+4. beThreshold = risk * 2.0
+5. If unrealized_pl < beThreshold:                no-op (not yet at +2R)
    If stop already past entry (idempotency):     no-op (managed prior scan)
    Else:
      new_stop = entry +/- 0.1% buffer
@@ -706,7 +751,25 @@ Implementation (`Manage-OpenPositions` in `alpaca_bot.ps1`):
 **Idempotency**: the check `currentStop >= entry` (long) or `currentStop <= entry` (short) means re-running on every 10-min scan never moves the stop twice. The state is in Alpaca, not in our memory.
 
 **Why no scale-out yet?**
-Partial close (sell 50% at +1R) requires rebalancing the bracket leg quantity atomically. If we sell half via a separate market order, the bracket TP/SL legs still reference the original qty and can fire on the remaining shares before we PATCH them down. Deferred until we have ≥30 sample trades validating the BE-only rule is correctly improving expectancy.
+Partial close (sell 50% at +2R) requires rebalancing the bracket leg quantity atomically. Deferred until we have ≥30 sample trades validating the BE-only rule.
+
+### EOD Time-Stop (3:45 PM ET)
+
+A day trade that hasn't hit TP by 3:45 PM ET is unlikely to reach target before close. Holding overnight with intraday-calibrated stops exposes the position to gap risk the sizing didn't account for.
+
+```
+At 3:45 PM ET (or later, before 4 PM):
+  For each open position:
+    1. Check if position has same-day bracket legs (orders created today)
+    2. Multi-day holds (no today orders) -> SKIP, keep overnight
+       Log: "[EOD] multi-day hold -- keeping overnight"
+    3. Same-day trades:
+       a. Cancel all open bracket legs for the symbol
+       b. Submit market close order (sell for long, buy for short)
+       c. Log: "[EOD-CLOSE] ... closing same-day position"
+```
+
+**Multi-day holds are protected.** Positions entered on prior days (e.g., a swing short held for several days) have protective stops already and were intentionally held — the EOD function leaves them alone.
 
 ### Bracket Orders
 Every entry submits an Alpaca **bracket** order: parent buy limit + child take-profit limit + child stop-loss stop. Server-managed by Alpaca — bot doesn't poll for management.
@@ -781,7 +844,7 @@ screener_enabled         true
 
 ### Discipline
 ```
-max_trades_per_day       5
+max_trades_per_day       3         # reduced from 5 to prevent overtrading
 max_losses_per_day       2
 max_daily_drawdown_pct   -3.0      # negative %
 adaptive_sizing          true
@@ -867,12 +930,13 @@ Visual flow diagram generated by `generate_flow.py`. Updated manually after majo
 
 ### Things Deliberately NOT in the Bot
 
-- **Shorting** — paper allows it but easy to misconfigure; long-only is safer for now.
 - **Partial exits / trailing stops** — requires position polling + bracket cancel/resubmit; defer until larger trade sample.
 - **Earnings beat/miss reaction strategy** — would require post-event price scanning logic.
 - **Premium data (SIP, Benzinga, Bloomberg)** — pay-tier features.
 - **Machine learning models** — chose rules-based for auditability.
 - **Options** — different beast.
+- **R:R 3.5+ targets** — analyzed and rejected; targets would be too far for intraday setups to reach consistently.
+- **Daily SPY gate (block all trading on red SPY days)** — analyzed and rejected; over-filtering that prevents valid short setups.
 
 ### Things That Look Like Bugs But Aren't
 
@@ -881,6 +945,11 @@ Visual flow diagram generated by `generate_flow.py`. Updated manually after majo
 - **0 trades on quiet days** — correct behavior. SPY with 0.05% ATR isn't tradeable.
 - **Screener selecting only SPY+QQQ on slow tape** — correct when nothing scores above the threshold.
 - **No new entries after 2 losses** — correct (daily discipline).
+- **"SQQQ SKIP (leveraged ETF blocked)"** — correct; leveraged ETFs are on the blocklist.
+- **"SKIP (correlated with existing position)"** — correct; prevents contradictory bets.
+- **Only 1 entry per 10-min scan** — correct; max-1-per-scan rule in effect.
+- **Multi-day position not closed at EOD** — correct; EOD time-stop only closes same-day positions.
+- **No MANAGE output for positions with stop already at BE** — correct; prints in DarkGray with "stop already at/past BE".
 
 ---
 
@@ -891,7 +960,7 @@ Visual flow diagram generated by `generate_flow.py`. Updated manually after majo
 | `alpaca_bot.ps1` | Main orchestrator — `Run-Scan` lifecycle, daily reset, limits |
 | `alpaca_client.ps1` | Alpaca REST API wrapper (account, orders, bars, snapshots) |
 | `alpaca_indicators.ps1` | EMA, RSI, MACD, ATR, VWAP, opening range, relative volume |
-| `alpaca_signals.ps1` | ORB / VWAP Bounce / EMA Pullback strategy implementations |
+| `alpaca_signals.ps1` | ORB / VWAP Bounce / EMA Pullback / VWAP Rejection / EMA Rejection strategies |
 | `alpaca_risk.ps1` | Position sizing + R:R + buying power + full validation |
 | `alpaca_regime.ps1` | Market regime classifier + size multiplier |
 | `alpaca_screener.ps1` | Dynamic watchlist + memory update + edge lookups |
@@ -931,8 +1000,11 @@ This bot doesn't try to be brilliant. It tries to be **disciplined**, **patient*
 - It doesn't double down after a loss. It stops.
 - It doesn't trade through earnings. It steps aside.
 - It doesn't trust setups it hasn't proven. It cold-starts cautiously.
-- It doesn't fight the tape. It checks SPY first.
+- It doesn't fight the tape. It checks SPY first — then trades the right direction.
 - It doesn't lie to itself about win rate. The memory file is the truth.
+- It doesn't take 3 trades in one scan. One entry, re-evaluate on the next.
+- It doesn't hold intraday setups overnight. If it didn't hit TP by 3:45 PM, it's done.
+- It doesn't touch leveraged ETFs. Ever.
 
 **Edge emerges from process discipline + survival, not heroic trades.**
 
@@ -940,4 +1012,4 @@ That's how index-beaters actually beat the index — not by being right more oft
 
 ---
 
-*Last updated: 2026-05-28 — covers commits through `dabe17d`.*
+*Last updated: 2026-06-09 — covers commits through `ec38a38` (BE fix for shorts).*
