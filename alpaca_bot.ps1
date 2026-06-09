@@ -529,13 +529,36 @@ function Run-Scan($cfg, $state) {
 
     $pending  = @(Load-Pending)
     $newTrades = @()
+    $sameScanEntries = @()   # track entries made THIS scan to prevent correlated duplicates
+    $enteredThisScan = $false  # max 1 new entry per scan cycle
 
     foreach ($symbol in $watchlist) {
+        # ── Max 1 entry per scan ──────────────────────────────────────────
+        # A seasoned trader enters one position, watches it breathe, then
+        # evaluates the next. Prevents 3-trade bursts that blow position limit.
+        if ($enteredThisScan) {
+            break
+        }
+
         # Skip if already have position or pending trade
         $hasPos     = ($positions | Where-Object { $_.symbol -eq $symbol }).Count -gt 0
         $hasPending = ($pending   | Where-Object { $_.symbol -eq $symbol }).Count -gt 0
         if ($hasPos -or $hasPending) {
             Write-Host ("  {0,-6} SKIP  (position or pending order exists)" -f $symbol) -ForegroundColor DarkGray
+            continue
+        }
+
+        # ── Correlated ticker conflict check ──────────────────────────────
+        # Never hold QQQ + TQQQ, or SPY + SPXL, etc. Same underlying = same bet.
+        $conflictReason = Test-CorrelationConflict $symbol $positions $sameScanEntries
+        if ($null -ne $conflictReason) {
+            Write-Host ("  {0,-6} SKIP  ({1})" -f $symbol, $conflictReason) -ForegroundColor Yellow
+            continue
+        }
+
+        # ── Leveraged ETF block (belt-and-suspenders with screener) ───────
+        if ($LEVERAGED_BLOCKLIST -contains $symbol) {
+            Write-Host ("  {0,-6} SKIP  (leveraged ETF blocked)" -f $symbol) -ForegroundColor Yellow
             continue
         }
 
@@ -557,10 +580,12 @@ function Run-Scan($cfg, $state) {
             continue
         }
 
-        # Validate risk -- raise confidence bar in choppy/neutral market
-        if ($marketBias -eq "NEUTRAL" -and $signal.Confidence -lt 80) {
-            Write-Host ("  {0,-6} SKIP  (NEUTRAL market -- need conf>=80, got {1}%)" -f `
-                $symbol, $signal.Confidence) -ForegroundColor DarkGray
+        # Validate risk -- raise confidence bar in all regimes
+        # 75% minimum across the board; 85% in NEUTRAL (choppy = harder to trade)
+        $confFloor = if ($marketBias -eq "NEUTRAL") { 85 } else { 75 }
+        if ($signal.Confidence -lt $confFloor) {
+            Write-Host ("  {0,-6} SKIP  ({1} market -- need conf>={2}, got {3}%)" -f `
+                $symbol, $marketBias, $confFloor, $signal.Confidence) -ForegroundColor DarkGray
             continue
         }
 
@@ -601,6 +626,8 @@ function Run-Scan($cfg, $state) {
             Submit-BracketOrder $cfg $symbol $signal.Side $validation.Sizing.Shares `
                 $signal.Entry $signal.T1 $signal.Stop $signal.Strategy | Out-Null
             $state.trades_today++
+            $sameScanEntries += $symbol
+            $enteredThisScan = $true   # one entry per scan -- wait for next cycle
         } else {
             $newTrades += $trade
             Write-Host ("  QUEUED for approval: ID={0}" -f $tradeId) -ForegroundColor Yellow

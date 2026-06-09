@@ -25,6 +25,60 @@ function Get-LastScreenerCandidates { return $script:LastScreenerCandidates }
 # ── Core anchors -- always in the list (market structure reference) ─────────────
 $CORE_TICKERS = @("SPY", "QQQ")
 
+# ── Leveraged / inverse ETF blocklist ─────────────────────────────────────────
+# These amplify losses, have decay, and break stop/target math.
+# Trade the underlying (QQQ, SPY) instead.
+$LEVERAGED_BLOCKLIST = @(
+    "TQQQ","SQQQ",       # 3x / -3x Nasdaq
+    "SPXL","SPXS",       # 3x / -3x S&P 500
+    "UPRO","SDS","SH",   # 3x / -2x / -1x S&P
+    "UVXY","SVXY",       # VIX leveraged
+    "SOXL","SOXS",       # 3x / -3x Semis
+    "LABU","LABD",       # 3x / -3x Biotech
+    "TNA","TZA",         # 3x / -3x Russell 2000
+    "FNGU","FNGD",       # 3x / -3x FANG+
+    "NUGT","DUST",       # 2x / -2x Gold Miners
+    "JNUG","JDST"        # 2x / -2x Junior Gold Miners
+)
+
+# ── Correlated ticker groups ──────────────────────────────────────────────────
+# Tickers in the same group are the same underlying exposure.
+# The bot must never hold conflicting positions on the same group,
+# and must not enter two tickers from the same group in one session.
+$CORRELATED_GROUPS = @(
+    @("QQQ","TQQQ","SQQQ"),                    # Nasdaq 100
+    @("SPY","SPXL","SPXS","UPRO","SDS","SH"),  # S&P 500
+    @("IWM","TNA","TZA"),                       # Russell 2000
+    @("SOXX","SOXL","SOXS"),                    # Semiconductors
+    @("GLD","NUGT","DUST","JNUG","JDST")        # Gold
+)
+
+function Get-CorrelatedGroup([string]$symbol) {
+    foreach ($group in $CORRELATED_GROUPS) {
+        if ($group -contains $symbol) { return $group }
+    }
+    return @($symbol)
+}
+
+function Test-CorrelationConflict([string]$symbol, [array]$existingPositions, [array]$sameScanEntries) {
+    $group = Get-CorrelatedGroup $symbol
+    if ($group.Count -le 1) { return $null }  # not in any group
+
+    # Check existing positions
+    foreach ($pos in $existingPositions) {
+        if ($group -contains $pos.symbol) {
+            return "correlated with open position $($pos.symbol) (same group: $($group -join ','))"
+        }
+    }
+    # Check same-scan entries (prevent SQQQ + QQQ in one scan)
+    foreach ($entry in $sameScanEntries) {
+        if ($group -contains $entry) {
+            return "correlated with same-scan entry $entry (same group: $($group -join ','))"
+        }
+    }
+    return $null
+}
+
 # ── Broad liquid universe (~60 names) -- fallback when screener API unavailable ─
 # Curated: mega-cap + high-beta tech + sector leaders + ETFs.
 # Each name passes minimum liquidity bar: avg daily volume > 2M shares.
@@ -321,6 +375,11 @@ function Score-Candidate {
 
     $score  = 0.0
     $reasons = @()
+
+    # ── 0. Leveraged ETF filter (hard reject) ─────────────────────────────
+    if ($LEVERAGED_BLOCKLIST -contains $symbol) {
+        return [pscustomobject]@{ Symbol = $symbol; Rejected = $true; Reason = "leveraged_etf_blocked" }
+    }
 
     # ── 1. Price filter (hard reject outside $10-$500) ──────────────────────
     if ($price -lt 10 -or $price -gt 500) {
