@@ -286,10 +286,15 @@ function Manage-OpenPositions($cfg, $positions) {
             continue
         }
 
-        # Trigger: unrealized profit has reached at least 1R
-        if ($unrealized -lt $totalRisk) {
-            Write-Host ("    [MANAGE] {0,-6} pnl=`${1:F2} below 1R=`${2:F2} -- holding" -f `
-                $sym, $unrealized, $totalRisk) -ForegroundColor DarkGray
+        # Trigger: unrealized profit has reached at least 2R
+        # (Raised from 1R to 2R -- at +1R, normal intraday retracements
+        #  were tripping the BE stop and turning winners into scratches.
+        #  At +2R the trade has proven itself and BE locks in meaningful profit.)
+        $beThreshold = $totalRisk * 2.0
+        if ($unrealized -lt $beThreshold) {
+            $threshStr = "{0:F2}" -f $beThreshold
+            Write-Host ("    [MANAGE] {0,-6} pnl=`${1:F2} below 2R=`${2} -- holding" -f `
+                $sym, $unrealized, $threshStr) -ForegroundColor DarkGray
             continue
         }
 
@@ -301,8 +306,8 @@ function Manage-OpenPositions($cfg, $positions) {
             [Math]::Round($entry - $buffer, 2)
         }
 
-        Write-Host ("    [MANAGE] {0,-6} +1R hit (pnl=`${1:F2} >= risk=`${2:F2}) -- moving stop `${3:F2} -> `${4:F2}" -f `
-            $sym, $unrealized, $totalRisk, $currentStop, $newStop) -ForegroundColor Cyan
+        Write-Host ("    [MANAGE] {0,-6} +2R hit (pnl=`${1:F2} >= 2R=`${2:F2}) -- moving stop `${3:F2} -> `${4:F2}" -f `
+            $sym, $unrealized, $beThreshold, $currentStop, $newStop) -ForegroundColor Cyan
         $patchResult = Update-OrderStop $cfg $stopLeg.id $newStop
         if ($null -ne $patchResult) {
             Write-Host ("    [MANAGE] {0,-6} stop moved to BE successfully" -f $sym) -ForegroundColor Green
@@ -313,6 +318,99 @@ function Manage-OpenPositions($cfg, $positions) {
         # SCALE-OUT (deferred): sell 50% qty here, then rebalance bracket legs.
         # Risk: partial close races with TP/SL fills if not done atomically.
         # Skipping until we have larger trade sample to validate the BE-only rule.
+    }
+}
+
+# ── EOD Time-Stop: close day-trade positions before the bell ──────────────────
+# A day trade that hasn't hit TP by 3:45 PM ET is unlikely to reach target
+# before close. Holding overnight with intraday-calibrated stops exposes
+# the position to gap risk the sizing didn't account for.
+#
+# At 3:45 PM ET, close any position that was OPENED TODAY via market order.
+# Positions opened on prior days (e.g. MRVL multi-day short) are left alone
+# -- those have protective stops already and were intentionally held.
+
+function Close-EODPositions($cfg, $positions, $state) {
+    $etNow   = Get-EasternTime
+    $etToday = $etNow.ToString("yyyy-MM-dd")
+
+    # Only fire at 3:45 PM ET or later
+    $eodCutoff = $etNow.Date.AddHours(15).AddMinutes(45)
+    if ($etNow -lt $eodCutoff) { return }
+
+    # Already past close (4 PM)? Don't try to submit market orders.
+    $marketClose = $etNow.Date.AddHours(16)
+    if ($etNow -ge $marketClose) { return }
+
+    foreach ($pos in $positions) {
+        $sym = $pos.symbol
+        $qty = [int][Math]::Abs([double]$pos.qty)
+        if ($qty -le 0) { continue }
+
+        # Only close positions opened TODAY. Check if we have a same-day
+        # entry by looking at the created_at timestamp on matching filled orders.
+        # Quick heuristic: if equity_at_open_date == today AND position exists,
+        # it's likely a same-day entry. For multi-day holds the position
+        # predates today's equity capture.
+        #
+        # More robust: check the order's created_at via API. But to keep it
+        # simple and safe, skip positions that were already open at session start
+        # by checking if we had a recorded trade for this symbol today.
+        # If trades_today == 0, no entries were made today, so all positions
+        # are multi-day holds.
+        if ($state.trades_today -le 0) { continue }
+
+        # Check if this symbol has an open order (bracket TP/SL still active).
+        # If the bracket was placed today, it's a day trade candidate for EOD exit.
+        $orders = Invoke-AlpacaApi $cfg "GET" "/v2/orders?status=open&symbols=$sym&limit=10"
+        $hasTodayOrder = $false
+        if ($null -ne $orders) {
+            $orderArr = if ($orders -is [System.Array]) { $orders } else { @($orders) }
+            foreach ($ord in $orderArr) {
+                if ($null -eq $ord) { continue }
+                try {
+                    $ordDate = [datetime]::Parse($ord.created_at).ToUniversalTime()
+                    try   { $tz = [System.TimeZoneInfo]::FindSystemTimeZoneById("Eastern Standard Time") }
+                    catch { $tz = [System.TimeZoneInfo]::FindSystemTimeZoneById("America/New_York") }
+                    $ordET = [System.TimeZoneInfo]::ConvertTimeFromUtc($ordDate, $tz).ToString("yyyy-MM-dd")
+                    if ($ordET -eq $etToday) { $hasTodayOrder = $true; break }
+                } catch {}
+            }
+        }
+
+        if (-not $hasTodayOrder) {
+            Write-Host ("    [EOD] {0,-6} multi-day hold -- keeping overnight" -f $sym) -ForegroundColor DarkGray
+            continue
+        }
+
+        $pnl = [double]$pos.unrealized_pl
+        $pnlStr = "{0:F2}" -f $pnl
+        Write-Host ("    [EOD] {0,-6} closing day trade at 3:45 PM ET (unrealized `${1})" -f $sym, $pnlStr) -ForegroundColor Yellow
+
+        # Cancel any open orders for this symbol first (bracket legs)
+        foreach ($ord in $orderArr) {
+            if ($null -ne $ord -and $ord.status -eq "new" -or $ord.status -eq "accepted" -or $ord.status -eq "partially_filled") {
+                try { Invoke-AlpacaApi $cfg "DELETE" "/v2/orders/$($ord.id)" | Out-Null } catch {}
+            }
+        }
+        Start-Sleep -Milliseconds 500
+
+        # Submit market close
+        $closeSide = if ($pos.side -eq "long") { "sell" } else { "buy" }
+        $closeBody = @{
+            symbol        = $sym
+            qty           = $qty.ToString()
+            side          = $closeSide
+            type          = "market"
+            time_in_force = "day"
+            client_order_id = "EOD_CLOSE_${sym}_" + (Get-Date -Format "HHmmss")
+        }
+        $result = Invoke-AlpacaApi $cfg "POST" "/v2/orders" $closeBody
+        if ($null -ne $result) {
+            Write-Host ("    [EOD] {0,-6} market close submitted" -f $sym) -ForegroundColor Green
+        } else {
+            Write-Host ("    [EOD] {0,-6} close FAILED -- will retry next scan" -f $sym) -ForegroundColor Red
+        }
     }
 }
 
@@ -471,8 +569,11 @@ function Run-Scan($cfg, $state) {
         }
         Write-Host ""
 
-        # Active position management: break-even stop at +1R
+        # Active position management: break-even stop at +2R
         Manage-OpenPositions $cfg $positions
+
+        # EOD time-stop: close same-day positions at 3:45 PM ET
+        Close-EODPositions $cfg $positions $state
         Write-Host ""
     }
 

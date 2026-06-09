@@ -159,7 +159,7 @@ function Get-VWAPSignal($cfg, $bars5m, [string]$htfBias = "NEUTRAL") {
         }
         $signal.Side   = "buy"
         $signal.Entry  = [Math]::Round($last.Close + 0.01, 2)
-        $signal.Stop   = [Math]::Round([Math]::Min($prev.Low, $last.Low) - $atr * 0.25, 2)
+        $signal.Stop   = [Math]::Round([Math]::Min($prev.Low, $last.Low) - $atr * 0.50, 2)
         $signal.T1     = [Math]::Round($signal.Entry + ($signal.Entry - $signal.Stop) * 2.5, 2)
         $signal.T2     = [Math]::Round($signal.Entry + ($signal.Entry - $signal.Stop) * 4.0, 2)
         $signal.Reason += "VWAP reclaim after dip"
@@ -237,7 +237,7 @@ function Get-EMAPullbackSignal($cfg, $bars5m, [string]$htfBias = "NEUTRAL") {
         }
         $signal.Side   = "buy"
         $signal.Entry  = [Math]::Round($last.Close + 0.01, 2)
-        $signal.Stop   = [Math]::Round($ema21 - $atr * 0.15, 2)
+        $signal.Stop   = [Math]::Round($ema21 - $atr * 0.50, 2)
         $signal.T1     = [Math]::Round($signal.Entry + ($signal.Entry - $signal.Stop) * 2.5, 2)
         $signal.T2     = [Math]::Round($signal.Entry + ($signal.Entry - $signal.Stop) * 4.0, 2)
         $signal.Reason += "EMA9 bounce in uptrend"
@@ -315,7 +315,7 @@ function Get-ShortVWAPSignal($cfg, $bars5m, [string]$htfBias = "NEUTRAL") {
         }
         $signal.Side   = "sell"
         $signal.Entry  = [Math]::Round($last.Close - 0.01, 2)
-        $signal.Stop   = [Math]::Round([Math]::Max($prev.High, $last.High) + $atr * 0.25, 2)
+        $signal.Stop   = [Math]::Round([Math]::Max($prev.High, $last.High) + $atr * 0.50, 2)
         $signal.T1     = [Math]::Round($signal.Entry - ($signal.Stop - $signal.Entry) * 2.5, 2)
         $signal.T2     = [Math]::Round($signal.Entry - ($signal.Stop - $signal.Entry) * 4.0, 2)
         $signal.Reason += "VWAP rejection from above"
@@ -393,7 +393,7 @@ function Get-ShortEMAPullbackSignal($cfg, $bars5m, [string]$htfBias = "NEUTRAL")
         }
         $signal.Side   = "sell"
         $signal.Entry  = [Math]::Round($last.Close - 0.01, 2)
-        $signal.Stop   = [Math]::Round($ema21 + $atr * 0.15, 2)
+        $signal.Stop   = [Math]::Round($ema21 + $atr * 0.50, 2)
         $signal.T1     = [Math]::Round($signal.Entry - ($signal.Stop - $signal.Entry) * 2.5, 2)
         $signal.T2     = [Math]::Round($signal.Entry - ($signal.Stop - $signal.Entry) * 4.0, 2)
         $signal.Reason += "EMA9 rejection in downtrend"
