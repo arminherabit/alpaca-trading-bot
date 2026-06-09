@@ -271,7 +271,8 @@ function Manage-OpenPositions($cfg, $positions) {
         if ($currentStop -le 0) { continue }
 
         $riskPerShare = [Math]::Abs($entry - $currentStop)
-        $totalRisk    = $riskPerShare * $qty
+        $absQty       = [Math]::Abs($qty)
+        $totalRisk    = $riskPerShare * $absQty
         if ($totalRisk -le 0) { continue }
 
         # Idempotency: skip if stop already past breakeven (moved on a prior scan)
