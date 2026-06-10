@@ -23,7 +23,7 @@
         "fd682545-a13a-4374-99d2-0317a0e4d43e": 1
       },
       "last_trade": "2026-05-22T16:40:27.9091793+00:00",
-      "added_count": 224
+      "added_count": 225
     },
     "QQQ": {
       "trades": 4,
@@ -46,7 +46,7 @@
         "VWAP": 2
       },
       "last_trade": "2026-06-10T04:20:31.7962742+00:00",
-      "added_count": 224
+      "added_count": 225
     },
     "NVDA": {
       "trades": 1,
@@ -65,7 +65,7 @@
         "76864a89-0497-49b5-89ab-242300e33424": 1
       },
       "last_trade": "2026-05-22T13:31:02.2166713+00:00",
-      "added_count": 1
+      "added_count": 2
     },
     "AMD": {
       "trades": 1,
@@ -296,8 +296,8 @@
       "added_count": 0
     }
   },
-  "last_updated": "2026-06-10T04:20:31.8025582+00:00",
-  "last_screened": "2026-06-09T14:00:52.786573+00:00",
+  "last_updated": "2026-06-10T14:01:29.7331330+00:00",
+  "last_screened": "2026-06-10T14:01:29.7253004+00:00",
   "total_trades": 22,
   "strategy_stats": {
     "EMA": {
