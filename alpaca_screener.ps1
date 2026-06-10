@@ -809,27 +809,36 @@ function Sync-ClosedTrades {
     foreach ($o in $orders) {
         if ($null -eq $o) { continue }
 
-        # We only care about filled buy (entry) orders that have bracket legs
-        if ($o.side -ne "buy" -or $o.status -ne "filled") { continue }
+        # We care about filled entry orders (buy for longs, sell for shorts)
+        # that have bracket legs. Both directions produce bracket children.
+        if ($o.status -ne "filled") { continue }
+        if ($o.side -ne "buy" -and $o.side -ne "sell") { continue }
         if (-not $o.filled_avg_price -or -not $o.filled_qty) { continue }
         if (-not $o.legs -or $o.legs.Count -eq 0) { continue }
 
         $sym        = $o.symbol
         $entryPrice = [double]$o.filled_avg_price
         $qty        = [double]$o.filled_qty
+        $entrySide  = $o.side   # "buy" = long entry, "sell" = short entry
+        $exitSide   = if ($entrySide -eq "buy") { "sell" } else { "buy" }
         $strategy   = if ($o.client_order_id) { $o.client_order_id -replace "_.*","" } else { "UNKNOWN" }
 
-        # Find whichever sell leg filled (take-profit or stop-loss; the other will be canceled)
+        # Find whichever exit leg filled (take-profit or stop-loss; the other will be canceled)
         foreach ($leg in $o.legs) {
             if ($null -eq $leg) { continue }
-            if ($leg.side -ne "sell" -or $leg.status -ne "filled") { continue }
+            if ($leg.side -ne $exitSide -or $leg.status -ne "filled") { continue }
             if (-not $leg.filled_avg_price) { continue }
 
             $exitId    = $leg.id
             if ($state.recorded_exits -contains $exitId) { continue }  # already processed
 
             $exitPrice = [double]$leg.filled_avg_price
-            $pnl       = [Math]::Round(($exitPrice - $entryPrice) * $qty, 2)
+            # Longs profit when exit > entry; shorts profit when entry > exit
+            $pnl = if ($entrySide -eq "buy") {
+                [Math]::Round(($exitPrice - $entryPrice) * $qty, 2)
+            } else {
+                [Math]::Round(($entryPrice - $exitPrice) * $qty, 2)
+            }
             $won       = ($pnl -gt 0)
 
             # Derive the ET hour the exit filled (drives hour_stats rollup)
