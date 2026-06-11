@@ -94,34 +94,34 @@
     <span class="badge" style="color:#3fb950;  border-color:#3fb950;">OPEN</span>
     <span class="badge" style="color:var(--sub); border-color:var(--border);">Closes 8:00 PM</span>
   </div>
-  <span class="gen-time">Generated: 2026-06-11 19:20:32 &nbsp;|&nbsp; Auto-refresh: 30s</span>
+  <span class="gen-time">Generated: 2026-06-11 19:28:15 &nbsp;|&nbsp; Auto-refresh: 30s</span>
 </header>
 
 <!-- Account Stats -->
 <div class="grid-top">
   <div class="stat-card">
     <div class="label">Equity</div>
-    <div class="value blue">$101,733.85</div>
+    <div class="value blue">$101,848.68</div>
     <div class="sub">Paper account</div>
   </div>
   <div class="stat-card">
     <div class="label">Day P&amp;L</div>
-    <div class="value red">$-3,170.06</div>
-    <div class="sub">-3.02%</div>
+    <div class="value red">$-3,055.23</div>
+    <div class="sub">-2.91%</div>
   </div>
   <div class="stat-card">
     <div class="label">Buying Power</div>
-    <div class="value">$189,596.69</div>
-    <div class="sub">Cash: $-8,665.60</div>
+    <div class="value">$279,808.49</div>
+    <div class="sub">Cash: $66,499.50</div>
   </div>
   <div class="stat-card">
     <div class="label">Trades Today</div>
     <div class="value">3</div>
-    <div class="sub">W: 0 &nbsp;/&nbsp; L: 1</div>
+    <div class="sub">W: 1 &nbsp;/&nbsp; L: 1</div>
   </div>
   <div class="stat-card">
     <div class="label">Open Positions</div>
-    <div class="value">3 <span style="font-size:14px;color:var(--sub)">/ 3</span></div>
+    <div class="value">2 <span style="font-size:14px;color:var(--sub)">/ 3</span></div>
     <div class="sub">Max 3 allowed</div>
   </div>
   <div class="stat-card">
@@ -157,8 +157,8 @@
 </footer>
 
 <script>
-const positions = [{"symbol":"MRVL","side":"short","qty":-127.0,"entry":306.79126,"current":278.41,"stop":309.86,"target":299.12,"rr":2.5,"unrlPnl":3604.42,"unrlPct":9.25,"projProfit":-974.25,"projLoss":-389.73,"pctToTarget":-7.44,"pctToStop":11.3,"progress":100,"value":-35358.07},{"symbol":"NVDA","side":"long","qty":368.0,"entry":202.58,"current":203.715,"stop":200.55,"target":207.64,"rr":2.49,"unrlPnl":417.68,"unrlPct":0.56,"projProfit":1862.08,"projLoss":747.04,"pctToTarget":1.93,"pctToStop":1.55,"progress":45,"value":74967.12},{"symbol":"SPY","side":"long","qty":96.0,"entry":732.46,"current":737.4,"stop":725.14,"target":750.77,"rr":2.5,"unrlPnl":474.24,"unrlPct":0.67,"projProfit":1757.76,"projLoss":702.72,"pctToTarget":1.81,"pctToStop":1.66,"progress":48,"value":70790.4}];
-const closed    = [{"symbol":"NVDA","side":"buy","qty":"368","fillPrice":202.58,"filledAt":"18:51:20","orderType":"limit"},{"symbol":"ORCL","side":"buy","qty":"398","fillPrice":179.84,"filledAt":"18:31:46","orderType":"stop"},{"symbol":"ORCL","side":"sell","qty":"398","fillPrice":177.87,"filledAt":"17:57:53","orderType":"limit"},{"symbol":"SPY","side":"buy","qty":"96","fillPrice":732.46,"filledAt":"17:31:42","orderType":"limit"}];
+const positions = [{"symbol":"MRVL","side":"short","qty":-127.0,"entry":306.79126,"current":279.41,"stop":309.86,"target":299.12,"rr":2.5,"unrlPnl":3477.42,"unrlPct":8.92,"projProfit":-974.25,"projLoss":-389.73,"pctToTarget":-7.05,"pctToStop":10.9,"progress":100,"value":-35485.07},{"symbol":"SPY","side":"long","qty":96.0,"entry":732.46,"current":737.87,"stop":725.14,"target":750.77,"rr":2.5,"unrlPnl":519.36,"unrlPct":0.74,"projProfit":1757.76,"projLoss":702.72,"pctToTarget":1.75,"pctToStop":1.73,"progress":50,"value":70835.52}];
+const closed    = [{"symbol":"NVDA","side":"sell","qty":"368","fillPrice":204.25,"filledAt":"19:26:59","orderType":"limit"},{"symbol":"NVDA","side":"buy","qty":"368","fillPrice":202.58,"filledAt":"18:51:20","orderType":"limit"},{"symbol":"ORCL","side":"buy","qty":"398","fillPrice":179.84,"filledAt":"18:31:46","orderType":"stop"},{"symbol":"ORCL","side":"sell","qty":"398","fillPrice":177.87,"filledAt":"17:57:53","orderType":"limit"},{"symbol":"SPY","side":"buy","qty":"96","fillPrice":732.46,"filledAt":"17:31:42","orderType":"limit"}];
 
 function fmt(n, d=2) {
   return (n >= 0 ? '+' : '') + Number(n).toFixed(d);
