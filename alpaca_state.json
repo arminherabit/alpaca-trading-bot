@@ -1,9 +1,9 @@
 {
   "trades_today": 0,
-  "wins": 2,
-  "losses": 7,
-  "pnl_today": -848.98,
-  "last_scan": "2026-06-11T03:50:30.5209067+00:00",
+  "wins": 0,
+  "losses": 0,
+  "pnl_today": 0.0,
+  "last_scan": "2026-06-11T04:00:30.1477643+00:00",
   "session_start": "2026-05-14T04:50:22.4733863+00:00",
   "watchlist_date": "2026-06-10",
   "active_watchlist": [
