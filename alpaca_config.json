@@ -5,6 +5,9 @@
 
   "paper_trading": true,
 
+  "scan_mode":     "swing",
+  "hold_days_max": 12,
+
   "base_url_paper": "https://paper-api.alpaca.markets",
   "base_url_live":  "https://api.alpaca.markets",
   "data_url":       "https://data.alpaca.markets",
@@ -13,7 +16,7 @@
   "max_watchlist":  12,
 
   "max_risk_pct":    1.0,
-  "min_rr_ratio":    2.5,
+  "min_rr_ratio":    3.0,
   "max_positions":   3,
 
   "orb_minutes":       15,
@@ -27,7 +30,7 @@
   "require_approval": false,
   "screener_enabled": true,
 
-  "max_trades_per_day":      3,
+  "max_trades_per_day":      2,
   "max_losses_per_day":      2,
   "max_daily_drawdown_pct": -3.0,
   "adaptive_sizing":         true,

@@ -15,6 +15,7 @@ param(
 
 . (Join-Path $PSScriptRoot "alpaca_client.ps1")
 . (Join-Path $PSScriptRoot "alpaca_signals.ps1")
+. (Join-Path $PSScriptRoot "alpaca_swing_signals.ps1")
 . (Join-Path $PSScriptRoot "alpaca_risk.ps1")
 . (Join-Path $PSScriptRoot "alpaca_screener.ps1")
 . (Join-Path $PSScriptRoot "alpaca_indicators.ps1")
@@ -415,14 +416,115 @@ function Close-EODPositions($cfg, $positions, $state) {
     }
 }
 
+# ── Swing-mode helpers ───────────────────────────────────────────────────────
+
+# Swing entries allowed 9:50 AM - 3:30 PM ET. No midday pause -- daily-bar
+# signals don't care about lunch chop. The 9:50 floor lets the opening
+# auction settle; the 3:30 ceiling avoids entering minutes before close
+# (fills near the bell get the next day's gap with no chance to manage).
+function Test-SwingEntryWindow {
+    $etNow = Get-EasternTime
+    $start = $etNow.Date.AddHours(9).AddMinutes(50)
+    $end   = $etNow.Date.AddHours(15).AddMinutes(30)
+    return ($etNow -ge $start -and $etNow -le $end)
+}
+
+# Count weekdays between two dates (rough trading-day age; ignores holidays,
+# which only makes the time stop fire a day early on holiday weeks -- fine).
+function Get-WeekdayCount([datetime]$from, [datetime]$to) {
+    $count = 0
+    $d = $from.Date.AddDays(1)
+    while ($d -le $to.Date) {
+        if ($d.DayOfWeek -ne "Saturday" -and $d.DayOfWeek -ne "Sunday") { $count++ }
+        $d = $d.AddDays(1)
+    }
+    return $count
+}
+
+# Time stop: a swing trade that hasn't resolved in hold_days_max trading days
+# is dead capital -- the catalyst didn't play out. Close it, free the slot.
+function Close-StalePositions($cfg, $positions) {
+    $maxHold = if ($cfg.hold_days_max) { [int]$cfg.hold_days_max } else { 12 }
+    $etNow   = Get-EasternTime
+
+    foreach ($pos in $positions) {
+        $sym = $pos.symbol
+        $entrySide = if ($pos.side -eq "long") { "buy" } else { "sell" }
+
+        # Find the entry fill date from closed orders (positions API has no date)
+        $orders = Invoke-AlpacaApi $cfg "GET" "/v2/orders?status=closed&symbols=$sym&limit=100"
+        if ($null -eq $orders) { continue }
+        $arr = if ($orders -is [System.Array]) { $orders } else { @($orders) }
+        $entryFill = $arr | Where-Object { $_.side -eq $entrySide -and $_.status -eq "filled" -and $_.filled_at } |
+                     Sort-Object { [datetime]::Parse($_.filled_at) } -Descending | Select-Object -First 1
+        if ($null -eq $entryFill) { continue }
+
+        # UTC-date weekday count -- a few hours of tz skew can't matter at
+        # a 12-day threshold
+        $ageDays = Get-WeekdayCount ([datetime]::Parse($entryFill.filled_at).ToUniversalTime()) ([datetime]::UtcNow)
+
+        if ($ageDays -lt $maxHold) {
+            Write-Host ("    [HOLD] {0,-6} day {1}/{2} of max hold" -f $sym, $ageDays, $maxHold) -ForegroundColor DarkGray
+            continue
+        }
+
+        $pnl = [double]$pos.unrealized_pl
+        Write-Host ("    [TIME-STOP] {0,-6} held {1} trading days (max {2}) -- closing (unrealized `${3:F2})" -f `
+            $sym, $ageDays, $maxHold, $pnl) -ForegroundColor Yellow
+
+        # Cancel bracket legs first, then market-close
+        $openOrders = Invoke-AlpacaApi $cfg "GET" "/v2/orders?status=open&symbols=$sym&limit=20"
+        if ($null -ne $openOrders) {
+            $oArr = if ($openOrders -is [System.Array]) { $openOrders } else { @($openOrders) }
+            foreach ($o in $oArr) {
+                if ($null -ne $o) { try { Invoke-AlpacaApi $cfg "DELETE" "/v2/orders/$($o.id)" | Out-Null } catch {} }
+            }
+            Start-Sleep -Milliseconds 500
+        }
+        $qty = [int][Math]::Abs([double]$pos.qty)
+        $closeSide = if ($pos.side -eq "long") { "sell" } else { "buy" }
+        Submit-MarketOrder $cfg $sym $closeSide $qty | Out-Null
+    }
+}
+
+# A GTC bracket whose ENTRY never filled is a stale bet: the signal was
+# priced off a level that the market rejected. Cancel any unfilled parent
+# bracket older than today so it can't fill days later in a different tape.
+function Cancel-StaleEntries($cfg) {
+    $etToday = (Get-EasternTime).ToString("yyyy-MM-dd")
+    $orders  = Invoke-AlpacaApi $cfg "GET" "/v2/orders?status=open&nested=true&limit=100"
+    if ($null -eq $orders) { return }
+    $arr = if ($orders -is [System.Array]) { $orders } else { @($orders) }
+    foreach ($o in $arr) {
+        if ($null -eq $o) { continue }
+        if ($o.order_class -ne "bracket") { continue }
+        $filledQty = if ($o.filled_qty) { [double]$o.filled_qty } else { 0 }
+        if ($filledQty -gt 0) { continue }   # entry filled -- legs are live protection
+        try {
+            $createdET = [System.TimeZoneInfo]::ConvertTimeFromUtc(
+                [datetime]::Parse($o.created_at).ToUniversalTime(),
+                $(try { [System.TimeZoneInfo]::FindSystemTimeZoneById("Eastern Standard Time") }
+                  catch { [System.TimeZoneInfo]::FindSystemTimeZoneById("America/New_York") })
+            ).ToString("yyyy-MM-dd")
+            if ($createdET -lt $etToday) {
+                Write-Host ("    [STALE] {0,-6} unfilled entry from {1} -- canceling" -f $o.symbol, $createdET) -ForegroundColor Yellow
+                Invoke-AlpacaApi $cfg "DELETE" "/v2/orders/$($o.id)" | Out-Null
+            }
+        } catch {}
+    }
+}
+
 # ── Scan Cycle ────────────────────────────────────────────────────────────────
 
 function Run-Scan($cfg, $state) {
     $now = (Get-Date).ToUniversalTime().ToString("yyyy-MM-dd HH:mm:ss")
 
+    $swingMode = ($cfg.scan_mode -eq "swing")
+
     Write-Host ""
     Write-Host ("=" * 70)
-    Write-Host ("  ALPACA DAY TRADER  --  {0} UTC" -f $now)
+    $titleStr = if ($swingMode) { "ALPACA SWING TRADER" } else { "ALPACA DAY TRADER" }
+    Write-Host ("  {0}  --  {1} UTC" -f $titleStr, $now)
     $modeStr = if ($cfg.paper_trading) { "PAPER" } else { "LIVE" }
     Write-Host ("  Mode: {0}  |  Interval: {1}s" -f $modeStr, $cfg.scan_interval_sec)
     Write-Host ("=" * 70)
@@ -464,7 +566,11 @@ function Run-Scan($cfg, $state) {
         return
     }
 
-    if (-not (Test-TradingWindow $cfg)) {
+    if ($swingMode) {
+        if (-not (Test-SwingEntryWindow)) {
+            Write-Host "  Outside swing entry window (09:50-15:30 ET) -- monitoring only." -ForegroundColor Yellow
+        }
+    } elseif (-not (Test-TradingWindow $cfg)) {
         Write-Host ("  Outside trading window ({0}-{1} ET, paused {2}-{3}) -- monitoring only." -f `
             $cfg.no_trade_before, $cfg.no_trade_after, $cfg.midday_pause_start, $cfg.midday_pause_end) -ForegroundColor Yellow
     }
@@ -488,21 +594,38 @@ function Run-Scan($cfg, $state) {
     }
 
     # ── Market regime ──────────────────────────────────────────────────────
-    # Replaces the prior simple BULL/BEAR/NEUTRAL bias with a richer 5-class
-    # regime + size multiplier + strategy preference hint.
-    $regime     = Get-MarketRegime $cfg
-    $marketBias = switch ($regime.Regime) {
-        "BULL_TREND" { "BULL" } "BEAR_TREND" { "BEAR" } default { "NEUTRAL" }
+    # Swing mode reads the PRIMARY trend off SPY daily EMA20/50 -- the same
+    # frame the swing strategies trade. Day mode keeps the 5-min classifier.
+    $spyDaily = $null
+    if ($swingMode) {
+        $spyDaily   = Get-DailyBars $cfg "SPY"
+        $regime     = Get-SwingRegime $cfg $spyDaily
+        $marketBias = switch ($regime.Regime) {
+            "BULL" { "BULL" } "BEAR" { "BEAR" } default { "NEUTRAL" }
+        }
+        $biasColor = switch ($regime.Regime) {
+            "BULL" { "Green" } "BEAR" { "Red" } "RANGING" { "Yellow" } default { "DarkYellow" }
+        }
+        $vixDisplay = if ($null -eq $regime.VIX) { "n/a" } else { "{0:F1}" -f $regime.VIX }
+        $hvFlag     = if ($regime.HighVol) { " [HIGH-VOL]" } else { "" }
+        Write-Host ("  Swing Regime: {0,-8} | VIX: {1}{2} | SizeMult: {3}x" -f `
+            $regime.Regime, $vixDisplay, $hvFlag, $regime.SizeMult) -ForegroundColor $biasColor
+        Write-Host ("    -> {0}" -f $regime.Reason) -ForegroundColor DarkGray
+    } else {
+        $regime     = Get-MarketRegime $cfg
+        $marketBias = switch ($regime.Regime) {
+            "BULL_TREND" { "BULL" } "BEAR_TREND" { "BEAR" } default { "NEUTRAL" }
+        }
+        $biasColor = switch ($regime.Regime) {
+            "BULL_TREND" { "Green"  } "BEAR_TREND" { "Red"    }
+            "VOLATILE"   { "Magenta"} "RANGING"    { "Yellow" } default { "DarkYellow" }
+        }
+        $vixDisplay = if ($null -eq $regime.VIX) { "n/a" } else { "{0:F1}" -f $regime.VIX }
+        $hvFlag     = if ($regime.HighVol) { " [HIGH-VOL]" } else { "" }
+        Write-Host ("  Regime: {0,-11} | Vol: {1}% | 60m: {2}% | VIX: {3}{4} | SizeMult: {5}x" -f `
+            $regime.Regime, $regime.Volatility, $regime.TrendStrength, $vixDisplay, $hvFlag, $regime.SizeMult) -ForegroundColor $biasColor
+        Write-Host ("    -> {0}" -f $regime.Reason) -ForegroundColor DarkGray
     }
-    $biasColor = switch ($regime.Regime) {
-        "BULL_TREND" { "Green"  } "BEAR_TREND" { "Red"    }
-        "VOLATILE"   { "Magenta"} "RANGING"    { "Yellow" } default { "DarkYellow" }
-    }
-    $vixDisplay = if ($null -eq $regime.VIX) { "n/a" } else { "{0:F1}" -f $regime.VIX }
-    $hvFlag     = if ($regime.HighVol) { " [HIGH-VOL]" } else { "" }
-    Write-Host ("  Regime: {0,-11} | Vol: {1}% | 60m: {2}% | VIX: {3}{4} | SizeMult: {5}x" -f `
-        $regime.Regime, $regime.Volatility, $regime.TrendStrength, $vixDisplay, $hvFlag, $regime.SizeMult) -ForegroundColor $biasColor
-    Write-Host ("    -> {0}" -f $regime.Reason) -ForegroundColor DarkGray
 
     # ── Dynamic watchlist: refresh once per trading day ─────────────────────
     # Ensure new properties exist on state (backward compat with old state.json)
@@ -573,10 +696,19 @@ function Run-Scan($cfg, $state) {
         # Active position management: break-even stop at +2R
         Manage-OpenPositions $cfg $positions
 
-        # EOD time-stop: close same-day positions at 3:45 PM ET
-        Close-EODPositions $cfg $positions $state
+        if ($swingMode) {
+            # Swing positions are MEANT to be held overnight -- no EOD close.
+            # Instead: time-stop after hold_days_max trading days.
+            Close-StalePositions $cfg $positions
+        } else {
+            # EOD time-stop: close same-day positions at 3:45 PM ET
+            Close-EODPositions $cfg $positions $state
+        }
         Write-Host ""
     }
+
+    # Swing mode: kill unfilled GTC entry brackets from prior days
+    if ($swingMode) { Cancel-StaleEntries $cfg }
 
     # Skip new entries if at max positions or outside window
     if ($posCount -ge [int]$cfg.max_positions) {
@@ -585,7 +717,8 @@ function Run-Scan($cfg, $state) {
         return
     }
 
-    if (-not (Test-TradingWindow $cfg)) {
+    $entryWindowOk = if ($swingMode) { Test-SwingEntryWindow } else { Test-TradingWindow $cfg }
+    if (-not $entryWindowOk) {
         $state.last_scan = (Get-Date).ToString("o"); Save-State $state
         return
     }
@@ -664,28 +797,42 @@ function Run-Scan($cfg, $state) {
             continue
         }
 
-        # Fetch bar data
-        $bars1m = Get-IntradayBars $cfg $symbol "1Min"
-        $bars5m = Get-IntradayBars $cfg $symbol "5Min"
+        if ($swingMode) {
+            # Swing: signals come from DAILY bars -- stops live outside
+            # intraday noise, targets get days to develop.
+            $dailyBars = Get-DailyBars $cfg $symbol
+            if ($dailyBars.Count -lt 60) {
+                Write-Host ("  {0,-6} SKIP  (insufficient daily bars: {1})" -f $symbol, $dailyBars.Count) -ForegroundColor DarkGray
+                continue
+            }
+            $signal = Get-SwingBestSignal $cfg $symbol $dailyBars $regime.Regime $spyDaily
+            if ($null -eq $signal) {
+                $last = ($dailyBars | Select-Object -Last 1).Close
+                Write-Host ("  {0,-6} WATCH  `${1:F2}  -- no valid setup" -f $symbol, $last) -ForegroundColor DarkGray
+                continue
+            }
+        } else {
+            # Fetch bar data
+            $bars1m = Get-IntradayBars $cfg $symbol "1Min"
+            $bars5m = Get-IntradayBars $cfg $symbol "5Min"
 
-        # Only gate on 1m bars (ORB's requirement -- ~20 min after open).
-        # The 5m strategies self-guard at 30 bars inside alpaca_signals.ps1,
-        # so a thin 5m series just means they return invalid -- no need to
-        # block the whole symbol here. The old "-or bars5m.Count -lt 10"
-        # check silently locked ALL strategies out until 10:20 AM ET,
-        # which truncated ORB's 9:45-10:45 window to its last 25 minutes.
-        if ($bars1m.Count -lt 20) {
-            Write-Host ("  {0,-6} SKIP  (insufficient bar data)" -f $symbol) -ForegroundColor DarkGray
-            continue
-        }
+            # Only gate on 1m bars (ORB's requirement -- ~20 min after open).
+            # The 5m strategies self-guard at 30 bars inside alpaca_signals.ps1,
+            # so a thin 5m series just means they return invalid -- no need to
+            # block the whole symbol here.
+            if ($bars1m.Count -lt 20) {
+                Write-Host ("  {0,-6} SKIP  (insufficient bar data)" -f $symbol) -ForegroundColor DarkGray
+                continue
+            }
 
-        # Generate best signal
-        $signal = Get-BestSignal $cfg $symbol $bars1m $bars5m
+            # Generate best signal
+            $signal = Get-BestSignal $cfg $symbol $bars1m $bars5m
 
-        if ($null -eq $signal) {
-            $last = ($bars1m | Select-Object -Last 1).Close
-            Write-Host ("  {0,-6} WATCH  `${1:F2}  -- no valid setup" -f $symbol, $last) -ForegroundColor DarkGray
-            continue
+            if ($null -eq $signal) {
+                $last = ($bars1m | Select-Object -Last 1).Close
+                Write-Host ("  {0,-6} WATCH  `${1:F2}  -- no valid setup" -f $symbol, $last) -ForegroundColor DarkGray
+                continue
+            }
         }
 
         # Validate risk -- raise confidence bar in all regimes
@@ -731,8 +878,11 @@ function Run-Scan($cfg, $state) {
         # Auto-execute if paper mode and approval not required
         if ($cfg.paper_trading -and -not $cfg.require_approval) {
             Write-Host ("  AUTO-EXECUTE (paper): {0}" -f $tradeId) -ForegroundColor Cyan
+            # Swing brackets are GTC -- the trade needs days, not hours.
+            # Stale unfilled entries are reaped by Cancel-StaleEntries.
+            $tif = if ($swingMode) { "gtc" } else { "day" }
             Submit-BracketOrder $cfg $symbol $signal.Side $validation.Sizing.Shares `
-                $signal.Entry $signal.T1 $signal.Stop $signal.Strategy | Out-Null
+                $signal.Entry $signal.T1 $signal.Stop $signal.Strategy $tif | Out-Null
             $state.trades_today++
             $sameScanEntries += $symbol
             $enteredThisScan = $true   # one entry per scan -- wait for next cycle

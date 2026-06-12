@@ -150,3 +150,62 @@ function Get-MarketRegime($cfg) {
         HighVol         = $highVol
     }
 }
+
+# ── Swing regime: SPY DAILY trend + VIX ──────────────────────────────────────
+# The 5-min regime above answers "what is the tape doing this hour?" --
+# irrelevant for 2-10 day holds. Swing mode asks "what is the PRIMARY trend?"
+# using daily EMA20/EMA50 alignment, the same frame the swing strategies
+# trade on.
+#
+#   BULL     close > EMA20 > EMA50           longs on, full size
+#   NEUTRAL  close > EMA50, EMAs mixed       longs on, reduced size
+#   BEAR     close < EMA20 < EMA50           shorts on, longs off
+#   RANGING  everything else                 reduced size, both sides weak
+#
+# VIX overlay stacks the same way as intraday mode. $spyDaily is passed in
+# so the bot fetches SPY dailies once and shares them with the RS calc.
+
+function Get-SwingRegime($cfg, $spyDaily) {
+    $default = [pscustomobject]@{
+        Regime   = "NEUTRAL"; SizeMult = 0.75
+        Reason   = "Insufficient SPY daily data"
+        VIX      = $null;     HighVol  = $false
+    }
+    if ($null -eq $spyDaily -or $spyDaily.Count -lt 60) { return $default }
+
+    [double[]]$closes = $spyDaily | ForEach-Object { $_.Close }
+    $ema20 = Get-EMA $closes 20
+    $ema50 = Get-EMA $closes 50
+    if ($null -eq $ema20 -or $null -eq $ema50) { return $default }
+    $last = $closes[$closes.Count - 1]
+
+    $regime = "RANGING"; $sizeMult = 0.60; $reason = ""
+    if ($last -gt $ema20 -and $ema20 -gt $ema50) {
+        $regime = "BULL"; $sizeMult = 1.0
+        $reason = "SPY daily: close > EMA20 > EMA50 -- primary uptrend"
+    } elseif ($last -lt $ema20 -and $ema20 -lt $ema50) {
+        $regime = "BEAR"; $sizeMult = 0.75
+        $reason = "SPY daily: close < EMA20 < EMA50 -- primary downtrend, shorts only"
+    } elseif ($last -gt $ema50) {
+        $regime = "NEUTRAL"; $sizeMult = 0.75
+        $reason = "SPY daily: above EMA50, EMAs mixed -- cautious longs"
+    } else {
+        $reason = "SPY daily: chopping around EMA50 -- no primary trend"
+    }
+
+    $vix = Get-VIXLevel
+    $highVol = $false
+    if ($null -ne $vix) {
+        $vixStr = "{0:F1}" -f $vix
+        if     ($vix -gt 40) { $sizeMult *= 0.25; $highVol = $true; $reason += " | VIX=$vixStr PANIC x0.25" }
+        elseif ($vix -gt 30) { $sizeMult *= 0.40; $highVol = $true; $reason += " | VIX=$vixStr HIGH x0.40" }
+        elseif ($vix -gt 25) { $sizeMult *= 0.60; $highVol = $true; $reason += " | VIX=$vixStr elevated x0.60" }
+        else                 { $reason += " | VIX=$vixStr normal" }
+        $sizeMult = [Math]::Round($sizeMult, 3)
+    } else { $reason += " | VIX unavailable" }
+
+    return [pscustomobject]@{
+        Regime = $regime; SizeMult = $sizeMult
+        Reason = $reason; VIX = $vix; HighVol = $highVol
+    }
+}

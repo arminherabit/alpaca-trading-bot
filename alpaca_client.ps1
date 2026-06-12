@@ -129,10 +129,10 @@ function Submit-LimitOrder($cfg, [string]$symbol, [string]$side, [int]$qty, [dou
 
 function Submit-BracketOrder($cfg, [string]$symbol, [string]$side, [int]$qty,
                              [double]$limitPrice, [double]$takeProfit, [double]$stopLoss,
-                             [string]$strategyTag = "") {
+                             [string]$strategyTag = "", [string]$timeInForce = "day") {
     if ($cfg.paper_trading) {
-        Write-Host ("  [PAPER] BRACKET {0} {1} x {2} entry=`${3} tp=`${4} sl=`${5}" -f `
-            $side.ToUpper(), $qty, $symbol, $limitPrice, $takeProfit, $stopLoss) -ForegroundColor Cyan
+        Write-Host ("  [PAPER] BRACKET {0} {1} x {2} entry=`${3} tp=`${4} sl=`${5} tif={6}" -f `
+            $side.ToUpper(), $qty, $symbol, $limitPrice, $takeProfit, $stopLoss, $timeInForce) -ForegroundColor Cyan
     }
     # Embed strategy name in client_order_id so memory can track per-strategy win rates
     $tag = if ($strategyTag -ne "") { $strategyTag } else { "UNKNOWN" }
@@ -142,7 +142,7 @@ function Submit-BracketOrder($cfg, [string]$symbol, [string]$side, [int]$qty,
         qty                 = $qty.ToString()
         side                = $side.ToLower()
         type                = "limit"
-        time_in_force       = "day"
+        time_in_force       = $timeInForce
         limit_price         = $limitPrice.ToString("F2")
         order_class         = "bracket"
         take_profit         = @{ limit_price = $takeProfit.ToString("F2") }
@@ -207,6 +207,30 @@ function Get-IntradayBars($cfg, [string]$symbol, [string]$timeframe = "1Min") {
     $start  = $today + "T09:30:00" + $offStr
     # feed=iex required -- free paper accounts get HTTP error on SIP default
     $path   = "/v2/stocks/{0}/bars?timeframe={1}&start={2}&limit=400&adjustment=raw&feed=iex" -f $symbol, $timeframe, $start
+    $r     = Invoke-AlpacaData $cfg $path
+    if ($null -eq $r -or $null -eq $r.bars) { return @() }
+    return $r.bars | ForEach-Object {
+        [pscustomobject]@{
+            Time   = [datetime]$_.t
+            Open   = [double]$_.o
+            High   = [double]$_.h
+            Low    = [double]$_.l
+            Close  = [double]$_.c
+            Volume = [double]$_.v
+            VWAP   = if ($null -ne $_.vw) { [double]$_.vw } else { [double]$_.c }
+        }
+    }
+}
+
+# Daily bars for swing-mode signals. ~250 calendar days back gives ~170
+# trading bars -- enough for EMA50 + 20-day-high lookbacks with margin.
+# The LAST bar may be today's PARTIAL bar during market hours; swing
+# strategies must treat it as in-progress (use it for breakout detection,
+# exclude it from lookback ranges).
+function Get-DailyBars($cfg, [string]$symbol, [int]$daysBack = 250) {
+    $start = (Get-Date).ToUniversalTime().AddDays(-$daysBack).ToString("yyyy-MM-dd")
+    # feed=iex required -- free paper accounts get HTTP error on SIP default
+    $path  = "/v2/stocks/{0}/bars?timeframe=1Day&start={1}&limit=400&adjustment=split&feed=iex" -f $symbol, $start
     $r     = Invoke-AlpacaData $cfg $path
     if ($null -eq $r -or $null -eq $r.bars) { return @() }
     return $r.bars | ForEach-Object {
