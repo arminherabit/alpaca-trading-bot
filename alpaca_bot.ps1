@@ -668,7 +668,13 @@ function Run-Scan($cfg, $state) {
         $bars1m = Get-IntradayBars $cfg $symbol "1Min"
         $bars5m = Get-IntradayBars $cfg $symbol "5Min"
 
-        if ($bars1m.Count -lt 20 -or $bars5m.Count -lt 10) {
+        # Only gate on 1m bars (ORB's requirement -- ~20 min after open).
+        # The 5m strategies self-guard at 30 bars inside alpaca_signals.ps1,
+        # so a thin 5m series just means they return invalid -- no need to
+        # block the whole symbol here. The old "-or bars5m.Count -lt 10"
+        # check silently locked ALL strategies out until 10:20 AM ET,
+        # which truncated ORB's 9:45-10:45 window to its last 25 minutes.
+        if ($bars1m.Count -lt 20) {
             Write-Host ("  {0,-6} SKIP  (insufficient bar data)" -f $symbol) -ForegroundColor DarkGray
             continue
         }
