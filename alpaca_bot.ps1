@@ -155,12 +155,14 @@ function Get-MarketBias($cfg) {
 
 function Get-StopLegForPosition($cfg, $position) {
     $sym = $position.symbol
-    # Two cases must be handled:
-    #  1. Parent bracket still open: stop leg lives in parent.legs[] (nested=true).
-    #  2. Parent already filled: child legs become STANDALONE open orders and
-    #     no longer have a parent reference. We must accept top-level orders
-    #     that ARE stops matching the position's exit direction.
-    $orders = Invoke-AlpacaApi $cfg "GET" "/v2/orders?status=open&nested=true&limit=100"
+    # CRITICAL: do NOT use nested=true here. With nesting, a bracket's child
+    # legs are grouped under their parent -- but once the entry order FILLS,
+    # the parent leaves status=open, taking its (now-active) children out of
+    # the response entirely. The lookup then sees "no stop" on every scan and
+    # plants a duplicate protective stop each cycle. Querying flat (no nesting)
+    # returns the active child stop as its own top-level order. A position only
+    # exists if the entry filled, so the SL child is always a standalone order.
+    $orders = Invoke-AlpacaApi $cfg "GET" "/v2/orders?status=open&symbols=$sym&limit=100"
     if ($null -eq $orders) { return $null }
     $arr = if ($orders -is [System.Array]) { $orders } else { @($orders) }
 
@@ -212,6 +214,24 @@ function New-ProtectiveStop {
     $entry = [double]$position.avg_entry_price
     if ($entry -le 0 -or $qty -le 0) { return $null }
 
+    # Idempotency guard: never stack stops. If ANY exit-side stop already
+    # exists for this symbol, do nothing -- the position is already protected.
+    # This is the backstop that prevents a detection miss from planting a new
+    # stop every scan (the bug that stacked a dozen GTC stops on SPY/QQQ).
+    $existing = Invoke-AlpacaApi $cfg "GET" "/v2/orders?status=open&symbols=$sym&limit=50"
+    if ($null -ne $existing) {
+        $exArr = if ($existing -is [System.Array]) { $existing } else { @($existing) }
+        $stopTypes = @("stop","stop_limit","trailing_stop","stop_loss")
+        $already = $exArr | Where-Object {
+            $null -ne $_ -and $_.side -eq $side -and
+            ($stopTypes -contains $(if ($_.order_type) { $_.order_type } else { $_.type }))
+        }
+        if ($already.Count -gt 0) {
+            Write-Host ("    [PROTECT] {0,-6} stop already exists -- not planting duplicate" -f $sym) -ForegroundColor DarkGray
+            return $null
+        }
+    }
+
     $bufPct = if ($Mode -eq "MAXLOSS") { 0.02 } else { 0.001 }
     $buf = $entry * $bufPct
 
@@ -239,6 +259,44 @@ function New-ProtectiveStop {
     Write-Host ("    [PROTECT-{0}] {1,-6} placing GTC stop @ `${2:F2} (entry=`${3:F2})" -f `
         $Mode, $sym, $stopPx, $entry) -ForegroundColor Yellow
     return Invoke-AlpacaApi $cfg "POST" "/v2/orders" $body
+}
+
+# One-shot repair for the duplicate-stop bug: a detection miss on freshly
+# filled GTC brackets caused a new protective stop to be planted every scan.
+# Collapse each position's exit-side stop orders down to the single MOST
+# protective one (highest sell-stop for longs, lowest buy-stop for shorts);
+# cancel the rest. Take-profit limit legs are left untouched.
+function Repair-DuplicateStops($cfg, $positions) {
+    if ($null -eq $positions -or $positions.Count -eq 0) { return }
+    $stopTypes = @("stop","stop_limit","trailing_stop","stop_loss")
+
+    foreach ($pos in $positions) {
+        $sym      = $pos.symbol
+        $exitSide = if ($pos.side -eq "long") { "sell" } else { "buy" }
+        $orders   = Invoke-AlpacaApi $cfg "GET" "/v2/orders?status=open&symbols=$sym&limit=100"
+        if ($null -eq $orders) { continue }
+        $arr = if ($orders -is [System.Array]) { $orders } else { @($orders) }
+
+        $stops = @($arr | Where-Object {
+            $null -ne $_ -and $_.side -eq $exitSide -and
+            ($stopTypes -contains $(if ($_.order_type) { $_.order_type } else { $_.type }))
+        })
+        if ($stops.Count -le 1) { continue }
+
+        $keep = if ($pos.side -eq "long") {
+            $stops | Sort-Object { [double]$_.stop_price } -Descending | Select-Object -First 1
+        } else {
+            $stops | Sort-Object { [double]$_.stop_price } | Select-Object -First 1
+        }
+        $canceled = 0
+        foreach ($s in $stops) {
+            if ($s.id -ne $keep.id) {
+                try { Invoke-AlpacaApi $cfg "DELETE" "/v2/orders/$($s.id)" | Out-Null; $canceled++ } catch {}
+            }
+        }
+        Write-Host ("    [REPAIR] {0,-6} had {1} stops -- kept `${2}, canceled {3}" -f `
+            $sym, $stops.Count, $keep.stop_price, $canceled) -ForegroundColor Magenta
+    }
 }
 
 function Manage-OpenPositions($cfg, $positions) {
@@ -692,6 +750,9 @@ function Run-Scan($cfg, $state) {
                 $p.symbol, $p.qty, $p.avg_entry_price, $pnl, $pnlPct) -ForegroundColor $color
         }
         Write-Host ""
+
+        # Clean up any stacked duplicate stops before managing
+        Repair-DuplicateStops $cfg $positions
 
         # Active position management: break-even stop at +2R
         Manage-OpenPositions $cfg $positions
