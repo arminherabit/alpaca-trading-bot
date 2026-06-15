@@ -155,41 +155,40 @@ function Get-MarketBias($cfg) {
 
 function Get-StopLegForPosition($cfg, $position) {
     $sym = $position.symbol
-    # CRITICAL: do NOT use nested=true here. With nesting, a bracket's child
-    # legs are grouped under their parent -- but once the entry order FILLS,
-    # the parent leaves status=open, taking its (now-active) children out of
-    # the response entirely. The lookup then sees "no stop" on every scan and
-    # plants a duplicate protective stop each cycle. Querying flat (no nesting)
-    # returns the active child stop as its own top-level order. A position only
-    # exists if the entry filled, so the SL child is always a standalone order.
-    $orders = Invoke-AlpacaApi $cfg "GET" "/v2/orders?status=open&symbols=$sym&limit=100"
-    if ($null -eq $orders) { return $null }
-    $arr = if ($orders -is [System.Array]) { $orders } else { @($orders) }
-
     # Long position closes via sell+stop. Short position closes via buy+stop.
     $expectedSide = if ($position.side -eq "long") { "sell" } else { "buy" }
+    $stopTypes    = @("stop","stop_limit","trailing_stop","stop_loss")
+    # An order/leg counts as live protection only if it hasn't terminated.
+    $deadStatus   = @("filled","canceled","cancelled","expired","rejected","done_for_day","replaced")
 
-    # Accept any stop variant -- Alpaca returns 'stop', 'stop_limit',
-    # 'trailing_stop' depending on order shape. The previous exact-match on
-    # 'stop' missed stop_limit children of brackets.
-    $stopTypes = @("stop","stop_limit","trailing_stop","stop_loss")
+    # Query status=ALL with nesting. A bracket's stop child is exposed ONLY as
+    # a leg of its parent; once the entry FILLS the parent has status=filled,
+    # so status=open never returns it (this was the duplicate-stop bug). We
+    # therefore pull all orders, then accept either:
+    #   (a) a standalone stop order (e.g. a manually-planted PROTECT_* stop), or
+    #   (b) a live stop LEG under any parent (the bracket SL).
+    $orders = Invoke-AlpacaApi $cfg "GET" "/v2/orders?status=all&nested=true&symbols=$sym&limit=200"
+    if ($null -eq $orders) { return $null }
+    $arr = if ($orders -is [System.Array]) { $orders } else { @($orders) }
 
     foreach ($order in $arr) {
         if ($null -eq $order) { continue }
         if ($order.symbol -ne $sym) { continue }
 
-        # Case 2: the order ITSELF is the stop (orphaned bracket child)
+        # (a) the order ITSELF is a live standalone stop
         $orderType = if ($order.order_type) { $order.order_type } else { $order.type }
-        if (($stopTypes -contains $orderType) -and $order.side -eq $expectedSide) {
+        if (($stopTypes -contains $orderType) -and $order.side -eq $expectedSide -and
+            ($deadStatus -notcontains $order.status)) {
             return $order
         }
 
-        # Case 1: parent bracket still active with embedded legs
+        # (b) a live stop LEG under this parent (the bracket SL after fill)
         if ($order.legs -and $order.legs.Count -gt 0) {
             foreach ($leg in $order.legs) {
                 if ($null -eq $leg) { continue }
                 $legType = if ($leg.order_type) { $leg.order_type } else { $leg.type }
-                if (($stopTypes -contains $legType) -and $leg.side -eq $expectedSide) {
+                if (($stopTypes -contains $legType) -and $leg.side -eq $expectedSide -and
+                    ($deadStatus -notcontains $leg.status)) {
                     return $leg
                 }
             }
@@ -214,22 +213,13 @@ function New-ProtectiveStop {
     $entry = [double]$position.avg_entry_price
     if ($entry -le 0 -or $qty -le 0) { return $null }
 
-    # Idempotency guard: never stack stops. If ANY exit-side stop already
-    # exists for this symbol, do nothing -- the position is already protected.
-    # This is the backstop that prevents a detection miss from planting a new
-    # stop every scan (the bug that stacked a dozen GTC stops on SPY/QQQ).
-    $existing = Invoke-AlpacaApi $cfg "GET" "/v2/orders?status=open&symbols=$sym&limit=50"
-    if ($null -ne $existing) {
-        $exArr = if ($existing -is [System.Array]) { $existing } else { @($existing) }
-        $stopTypes = @("stop","stop_limit","trailing_stop","stop_loss")
-        $already = $exArr | Where-Object {
-            $null -ne $_ -and $_.side -eq $side -and
-            ($stopTypes -contains $(if ($_.order_type) { $_.order_type } else { $_.type }))
-        }
-        if ($already.Count -gt 0) {
-            Write-Host ("    [PROTECT] {0,-6} stop already exists -- not planting duplicate" -f $sym) -ForegroundColor DarkGray
-            return $null
-        }
+    # Idempotency guard: never stack stops. Uses the same nested-aware lookup
+    # as management, so it sees bracket stop legs (not just standalone stops)
+    # and won't plant a duplicate the broker would only reject anyway.
+    $existingStop = Get-StopLegForPosition $cfg $position
+    if ($null -ne $existingStop) {
+        Write-Host ("    [PROTECT] {0,-6} stop already exists -- not planting duplicate" -f $sym) -ForegroundColor DarkGray
+        return $null
     }
 
     $bufPct = if ($Mode -eq "MAXLOSS") { 0.02 } else { 0.001 }
