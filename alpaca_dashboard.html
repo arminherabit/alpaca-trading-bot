@@ -94,34 +94,34 @@
     <span class="badge" style="color:#3fb950;  border-color:#3fb950;">OPEN</span>
     <span class="badge" style="color:var(--sub); border-color:var(--border);">Closes 8:00 PM</span>
   </div>
-  <span class="gen-time">Generated: 2026-06-15 13:50:52 &nbsp;|&nbsp; Auto-refresh: 30s</span>
+  <span class="gen-time">Generated: 2026-06-15 14:01:18 &nbsp;|&nbsp; Auto-refresh: 30s</span>
 </header>
 
 <!-- Account Stats -->
 <div class="grid-top">
   <div class="stat-card">
     <div class="label">Equity</div>
-    <div class="value blue">$98,857.25</div>
+    <div class="value blue">$99,372.16</div>
     <div class="sub">Paper account</div>
   </div>
   <div class="stat-card">
     <div class="label">Day P&amp;L</div>
-    <div class="value red">$-1,774.82</div>
-    <div class="sub">-1.76%</div>
+    <div class="value red">$-1,259.91</div>
+    <div class="sub">-1.25%</div>
   </div>
   <div class="stat-card">
     <div class="label">Buying Power</div>
-    <div class="value">$322,026.98</div>
-    <div class="sub">Cash: $136,153.97</div>
+    <div class="value">$301,270.91</div>
+    <div class="sub">Cash: $107,508.05</div>
   </div>
   <div class="stat-card">
     <div class="label">Trades Today</div>
-    <div class="value">1</div>
+    <div class="value">2</div>
     <div class="sub">W: 0 &nbsp;/&nbsp; L: 0</div>
   </div>
   <div class="stat-card">
     <div class="label">Open Positions</div>
-    <div class="value">1 <span style="font-size:14px;color:var(--sub)">/ 3</span></div>
+    <div class="value">2 <span style="font-size:14px;color:var(--sub)">/ 3</span></div>
     <div class="sub">Max 3 allowed</div>
   </div>
   <div class="stat-card">
@@ -157,8 +157,8 @@
 </footer>
 
 <script>
-const positions = {"symbol":"MRVL","side":"short","qty":-127.0,"entry":306.79126,"current":293.675,"stop":309.86,"target":299.12,"rr":2.5,"unrlPnl":1665.77,"unrlPct":4.28,"projProfit":-974.25,"projLoss":-389.73,"pctToTarget":-1.85,"pctToStop":5.51,"progress":100,"value":-37296.72};
-const closed    = ;
+const positions = [{"symbol":"MRVL","side":"short","qty":-127.0,"entry":306.79126,"current":289.465,"stop":309.86,"target":299.12,"rr":2.5,"unrlPnl":2200.44,"unrlPct":5.65,"projProfit":-974.25,"projLoss":-389.73,"pctToTarget":-3.34,"pctToStop":7.05,"progress":100,"value":-36762.06},{"symbol":"SPY","side":"long","qty":38.0,"entry":753.84,"current":753.32,"stop":746.3,"target":772.69,"rr":2.5,"unrlPnl":-19.76,"unrlPct":-0.07,"projProfit":716.3,"projLoss":286.52,"pctToTarget":2.57,"pctToStop":0.93,"progress":27,"value":28626.16}];
+const closed    = {"symbol":"SPY","side":"buy","qty":"38","fillPrice":753.84,"filledAt":"13:53:58","orderType":"limit"};
 
 function fmt(n, d=2) {
   return (n >= 0 ? '+' : '') + Number(n).toFixed(d);
