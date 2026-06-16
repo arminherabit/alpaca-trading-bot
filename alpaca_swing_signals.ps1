@@ -23,6 +23,11 @@
 $SWING_STOP_ATR_MULT = 2.0
 $SWING_TARGET_R      = 3.5
 $SWING_MIN_BARS      = 60     # need EMA50 + 20-day lookback with margin
+# Reject setups whose stop sits more than this fraction of price away. A
+# 2x-ATR stop normally lands ~3-6% out; when a recent earnings gap inflates
+# daily ATR it can balloon past 10%, producing untradeable geometry and
+# oversized dollar risk (QCOM: 14.7% stop). Cap it.
+$SWING_MAX_STOP_PCT  = 0.10
 
 function New-SwingSignal([string]$strategy) {
     return [pscustomobject]@{
@@ -108,6 +113,7 @@ function Get-SwingBreakoutSignal($cfg, $dailyBars, [string]$swingRegime, $spyBar
         $sig.Stop  = [Math]::Round($price - $SWING_STOP_ATR_MULT * $atr, 2)
         $risk      = $sig.Entry - $sig.Stop
         if ($risk -le 0) { return $sig }
+        if (($risk / $sig.Entry) -gt $SWING_MAX_STOP_PCT) { return $sig }  # ATR too inflated -- untradeable
         $sig.T1    = [Math]::Round($sig.Entry + $SWING_TARGET_R * $risk, 2)
         $sig.T2    = $sig.T1
         $sig.RR    = $SWING_TARGET_R
@@ -141,6 +147,7 @@ function Get-SwingBreakoutSignal($cfg, $dailyBars, [string]$swingRegime, $spyBar
         $sig.Stop  = [Math]::Round($price + $SWING_STOP_ATR_MULT * $atr, 2)
         $risk      = $sig.Stop - $sig.Entry
         if ($risk -le 0) { return $sig }
+        if (($risk / $sig.Entry) -gt $SWING_MAX_STOP_PCT) { return $sig }  # ATR too inflated -- untradeable
         $sig.T1    = [Math]::Round([Math]::Max(0.01, $sig.Entry - $SWING_TARGET_R * $risk), 2)
         $sig.T2    = $sig.T1
         $sig.RR    = $SWING_TARGET_R
@@ -206,6 +213,7 @@ function Get-SwingPullbackSignal($cfg, $dailyBars, [string]$swingRegime, $spyBar
             $sig.Stop  = [Math]::Round($stop, 2)
             $risk      = $sig.Entry - $sig.Stop
             if ($risk -le 0) { return $sig }
+            if (($risk / $sig.Entry) -gt $SWING_MAX_STOP_PCT) { return $sig }  # ATR too inflated -- untradeable
             $sig.T1    = [Math]::Round($sig.Entry + $SWING_TARGET_R * $risk, 2)
             $sig.T2    = $sig.T1
             $sig.RR    = $SWING_TARGET_R
@@ -246,6 +254,7 @@ function Get-SwingPullbackSignal($cfg, $dailyBars, [string]$swingRegime, $spyBar
             $sig.Stop  = [Math]::Round($stop, 2)
             $risk      = $sig.Stop - $sig.Entry
             if ($risk -le 0) { return $sig }
+            if (($risk / $sig.Entry) -gt $SWING_MAX_STOP_PCT) { return $sig }  # ATR too inflated -- untradeable
             $sig.T1    = [Math]::Round([Math]::Max(0.01, $sig.Entry - $SWING_TARGET_R * $risk), 2)
             $sig.T2    = $sig.T1
             $sig.RR    = $SWING_TARGET_R

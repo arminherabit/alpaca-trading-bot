@@ -818,6 +818,17 @@ function Run-Scan($cfg, $state) {
     $sameScanEntries = @()   # track entries made THIS scan to prevent correlated duplicates
     $enteredThisScan = $false  # max 1 new entry per scan cycle
 
+    # Symbols that already have a WORKING (unfilled) order. A GTC bracket entry
+    # submitted on a prior scan isn't a filled position yet, so checking only
+    # $positions let the bot re-enter the same name before the first order
+    # filled (QCOM double-entry -> 2x risk). One fetch, reused for every symbol.
+    $workingOrderSyms = @{}
+    $openOrdersAll = Invoke-AlpacaApi $cfg "GET" "/v2/orders?status=open&limit=200"
+    if ($null -ne $openOrdersAll) {
+        $ooArr = if ($openOrdersAll -is [System.Array]) { $openOrdersAll } else { @($openOrdersAll) }
+        foreach ($oo in $ooArr) { if ($null -ne $oo -and $oo.symbol) { $workingOrderSyms[$oo.symbol] = $true } }
+    }
+
     foreach ($symbol in $watchlist) {
         # ── Max 1 entry per scan ──────────────────────────────────────────
         # A seasoned trader enters one position, watches it breathe, then
@@ -826,11 +837,12 @@ function Run-Scan($cfg, $state) {
             break
         }
 
-        # Skip if already have position or pending trade
+        # Skip if already have a position, a working order, or a pending trade
         $hasPos     = ($positions | Where-Object { $_.symbol -eq $symbol }).Count -gt 0
         $hasPending = ($pending   | Where-Object { $_.symbol -eq $symbol }).Count -gt 0
-        if ($hasPos -or $hasPending) {
-            Write-Host ("  {0,-6} SKIP  (position or pending order exists)" -f $symbol) -ForegroundColor DarkGray
+        $hasWorking = $workingOrderSyms.ContainsKey($symbol)
+        if ($hasPos -or $hasPending -or $hasWorking) {
+            Write-Host ("  {0,-6} SKIP  (position/working order/pending exists)" -f $symbol) -ForegroundColor DarkGray
             continue
         }
 
