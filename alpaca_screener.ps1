@@ -794,8 +794,12 @@ function Sync-ClosedTrades {
     }
     if ($null -eq $state.recorded_exits) { $state.recorded_exits = @() }
 
-    # Look back 7 days -- recorded_exits prevents double-counting on repeat runs
-    $lookback = (Get-Date).ToUniversalTime().AddDays(-7).ToString("yyyy-MM-ddTHH:mm:ssZ")
+    # Look back 30 days. Swing trades can hold up to 12 TRADING days (~17
+    # calendar days), so by the time an exit fills its ENTRY order may be
+    # well over a week old -- a 7-day window dropped the entry and left the
+    # exit unmatchable (both passes need entry + exit in the same window).
+    # recorded_exits dedup makes the wider window safe against double-counting.
+    $lookback = (Get-Date).ToUniversalTime().AddDays(-30).ToString("yyyy-MM-ddTHH:mm:ssZ")
     $uri      = "/v2/orders?status=closed&after=$lookback&direction=asc&limit=500&nested=true"
 
     $raw = $null
