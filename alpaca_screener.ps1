@@ -864,5 +864,83 @@ function Sync-ClosedTrades {
         }
     }
 
+    # ── PASS 2: standalone exits not captured as bracket legs ──────────────
+    # Protective stops (PROTECT_*), EOD closes, and time-stop market closes
+    # are NOT bracket children, so pass 1 misses them -- this is how MRVL's
+    # break-even close went unrecorded. The bot ONLY ever enters via brackets,
+    # so any filled top-level order with no legs (and order_class != bracket)
+    # is a CLOSING order. Match it to the nearest preceding opposite-side
+    # bracket entry for the same symbol to recover entry price + strategy.
+
+    # Index filled bracket entries by symbol.
+    $entriesBySym = @{}
+    foreach ($o in $orders) {
+        if ($null -eq $o -or $o.status -ne "filled") { continue }
+        $isEntry = ($o.order_class -eq "bracket") -or ($o.legs -and $o.legs.Count -gt 0)
+        if (-not $isEntry) { continue }
+        if (-not $o.filled_avg_price -or -not $o.filled_at) { continue }
+        if (-not $entriesBySym.ContainsKey($o.symbol)) { $entriesBySym[$o.symbol] = @() }
+        $entriesBySym[$o.symbol] += $o
+    }
+
+    foreach ($o in $orders) {
+        if ($null -eq $o -or $o.status -ne "filled") { continue }
+        if ($o.side -ne "buy" -and $o.side -ne "sell") { continue }
+        if (-not $o.filled_avg_price -or -not $o.filled_qty -or -not $o.filled_at) { continue }
+        # Skip bracket entries (pass 1) and anything carrying legs.
+        if (($o.order_class -eq "bracket") -or ($o.legs -and $o.legs.Count -gt 0)) { continue }
+
+        $exitId = $o.id
+        if ($state.recorded_exits -contains $exitId) { continue }
+
+        $sym      = $o.symbol
+        $exitSide = $o.side
+        # A long is closed by a sell; a short is closed by a buy.
+        $entrySideNeeded = if ($exitSide -eq "buy") { "sell" } else { "buy" }
+        if (-not $entriesBySym.ContainsKey($sym)) { continue }
+
+        $exitTime = [datetime]::Parse($o.filled_at).ToUniversalTime()
+        # Nearest preceding opposite-side entry whose OWN bracket leg did NOT
+        # already fill (i.e. it wasn't already closed + recorded by pass 1).
+        $match = $entriesBySym[$sym] | Where-Object {
+            $_.side -eq $entrySideNeeded -and
+            ([datetime]::Parse($_.filled_at).ToUniversalTime() -le $exitTime) -and
+            -not (@($_.legs | Where-Object { $null -ne $_ -and $_.side -eq $exitSide -and $_.status -eq "filled" }).Count)
+        } | Sort-Object { [datetime]::Parse($_.filled_at).ToUniversalTime() } -Descending | Select-Object -First 1
+        if ($null -eq $match) { continue }
+
+        $entryPrice = [double]$match.filled_avg_price
+        $exitPrice  = [double]$o.filled_avg_price
+        $qty        = [double]$o.filled_qty
+        $entrySide  = $match.side
+        $strategy   = if ($match.client_order_id) { $match.client_order_id -replace "_.*","" } else { "UNKNOWN" }
+        $pnl = if ($entrySide -eq "buy") {
+            [Math]::Round(($exitPrice - $entryPrice) * $qty, 2)
+        } else {
+            [Math]::Round(($entryPrice - $exitPrice) * $qty, 2)
+        }
+        $won = ($pnl -gt 0)
+
+        $hourET = -1
+        if ($o.filled_at) {
+            try {
+                $filledUtc = [datetime]::Parse($o.filled_at).ToUniversalTime()
+                try   { $tzH = [System.TimeZoneInfo]::FindSystemTimeZoneById("Eastern Standard Time") }
+                catch { $tzH = [System.TimeZoneInfo]::FindSystemTimeZoneById("America/New_York") }
+                $hourET = [System.TimeZoneInfo]::ConvertTimeFromUtc($filledUtc, $tzH).Hour
+            } catch {}
+        }
+
+        Write-Host ("  [LEARN*] {0,-6} {1}  entry=`${2:F2}  exit=`${3:F2}  qty={4}  PnL=`${5:F2}  hr={6}ET  (standalone close)" -f `
+            $sym, (if ($won) { "WIN " } else { "LOSS" }), $entryPrice, $exitPrice, $qty, $pnl, $hourET) `
+            -ForegroundColor (if ($won) { "Green" } else { "Red" })
+
+        Update-TickerMemory -symbol $sym -won $won -pnl $pnl -strategy $strategy -hourET $hourET
+
+        $state.recorded_exits += $exitId
+        if ($won) { $state.wins++ } else { $state.losses++ }
+        $state.pnl_today = [Math]::Round($state.pnl_today + $pnl, 2)
+    }
+
     return $state
 }
