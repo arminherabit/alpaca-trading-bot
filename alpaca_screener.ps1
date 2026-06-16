@@ -810,6 +810,21 @@ function Sync-ClosedTrades {
     $orders = if ($raw -is [System.Array]) { $raw } else { @($raw) }
     if ($orders.Count -eq 0) { return $state }
 
+    # Today's ET date. The daily counters (wins/losses/pnl_today) drive the
+    # day's discipline gates and must reflect ONLY today's realized exits --
+    # a wider lookback (or a late-caught miss) can surface old exits, and
+    # those must update lifetime MEMORY but NOT today's gate counters.
+    try   { $tzD = [System.TimeZoneInfo]::FindSystemTimeZoneById("Eastern Standard Time") }
+    catch { $tzD = [System.TimeZoneInfo]::FindSystemTimeZoneById("America/New_York") }
+    $todayET = [System.TimeZoneInfo]::ConvertTimeFromUtc([datetime]::UtcNow, $tzD).ToString("yyyy-MM-dd")
+    function Test-ExitToday($filledAt) {
+        if (-not $filledAt) { return $false }
+        try {
+            $u = [datetime]::Parse($filledAt).ToUniversalTime()
+            return ([System.TimeZoneInfo]::ConvertTimeFromUtc($u, $tzD).ToString("yyyy-MM-dd") -eq $todayET)
+        } catch { return $false }
+    }
+
     foreach ($o in $orders) {
         if ($null -eq $o) { continue }
 
@@ -863,8 +878,11 @@ function Sync-ClosedTrades {
             Update-TickerMemory -symbol $sym -won $won -pnl $pnl -strategy $strategy -hourET $hourET
 
             $state.recorded_exits += $exitId
-            if ($won) { $state.wins++ } else { $state.losses++ }
-            $state.pnl_today = [Math]::Round($state.pnl_today + $pnl, 2)
+            # Daily gate counters move only for exits that actually filled today
+            if (Test-ExitToday $leg.filled_at) {
+                if ($won) { $state.wins++ } else { $state.losses++ }
+                $state.pnl_today = [Math]::Round($state.pnl_today + $pnl, 2)
+            }
         }
     }
 
@@ -942,8 +960,11 @@ function Sync-ClosedTrades {
         Update-TickerMemory -symbol $sym -won $won -pnl $pnl -strategy $strategy -hourET $hourET
 
         $state.recorded_exits += $exitId
-        if ($won) { $state.wins++ } else { $state.losses++ }
-        $state.pnl_today = [Math]::Round($state.pnl_today + $pnl, 2)
+        # Daily gate counters move only for exits that actually filled today
+        if (Test-ExitToday $o.filled_at) {
+            if ($won) { $state.wins++ } else { $state.losses++ }
+            $state.pnl_today = [Math]::Round($state.pnl_today + $pnl, 2)
+        }
     }
 
     return $state
