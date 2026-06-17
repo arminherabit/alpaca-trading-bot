@@ -237,6 +237,23 @@ function New-ProtectiveStop {
         else                       { [Math]::Round($entry + $buf, 2) }
     }
 
+    # If the protective level is ALREADY breached, a stop on that side is
+    # invalid (sell-stop must sit below market, buy-stop above) and Alpaca
+    # rejects it -- leaving the position naked and the bot retrying the same
+    # rejected order every scan (QCOM: down 4.3%, max-loss stop at entry-2%
+    # was above market, looping forever). When that happens, the protective
+    # action is to CLOSE NOW at market, not to place an unplaceable stop.
+    $mktPx = [double]$position.current_price
+    $breached = $false
+    if ($mktPx -gt 0) {
+        $breached = if ($side -eq "sell") { $stopPx -ge $mktPx } else { $stopPx -le $mktPx }
+    }
+    if ($breached) {
+        Write-Host ("    [PROTECT-{0}] {1,-6} stop `${2:F2} already breached (mkt `${3:F2}) -- market-closing now" -f `
+            $Mode, $sym, $stopPx, $mktPx) -ForegroundColor Red
+        return Submit-MarketOrder $cfg $sym $side $qty
+    }
+
     $body = @{
         symbol          = $sym
         qty             = $qty.ToString()
