@@ -94,34 +94,34 @@
     <span class="badge" style="color:#3fb950;  border-color:#3fb950;">OPEN</span>
     <span class="badge" style="color:var(--sub); border-color:var(--border);">Closes 8:00 PM</span>
   </div>
-  <span class="gen-time">Generated: 2026-06-17 13:51:14 &nbsp;|&nbsp; Auto-refresh: 30s</span>
+  <span class="gen-time">Generated: 2026-06-17 14:01:42 &nbsp;|&nbsp; Auto-refresh: 30s</span>
 </header>
 
 <!-- Account Stats -->
 <div class="grid-top">
   <div class="stat-card">
     <div class="label">Equity</div>
-    <div class="value blue">$96,797.69</div>
+    <div class="value blue">$96,809.89</div>
     <div class="sub">Paper account</div>
   </div>
   <div class="stat-card">
     <div class="label">Day P&amp;L</div>
-    <div class="value green">$183.96</div>
-    <div class="sub">+0.19%</div>
+    <div class="value green">$196.16</div>
+    <div class="sub">+0.2%</div>
   </div>
   <div class="stat-card">
     <div class="label">Buying Power</div>
-    <div class="value">$348,391.28</div>
-    <div class="sub">Cash: $87,622.79</div>
+    <div class="value">$326,043.70</div>
+    <div class="sub">Cash: $59,833.20</div>
   </div>
   <div class="stat-card">
     <div class="label">Trades Today</div>
-    <div class="value">1</div>
+    <div class="value">2</div>
     <div class="sub">W: 0 &nbsp;/&nbsp; L: 0</div>
   </div>
   <div class="stat-card">
     <div class="label">Open Positions</div>
-    <div class="value">1 <span style="font-size:14px;color:var(--sub)">/ 3</span></div>
+    <div class="value">2 <span style="font-size:14px;color:var(--sub)">/ 3</span></div>
     <div class="sub">Max 3 allowed</div>
   </div>
   <div class="stat-card">
@@ -157,8 +157,8 @@
 </footer>
 
 <script>
-const positions = {"symbol":"QCOM","side":"long","qty":42.0,"entry":229.433333,"current":218.45,"stop":227.14,"target":235.17,"rr":2.5,"unrlPnl":-461.3,"unrlPct":-4.79,"projProfit":240.94,"projLoss":96.32,"pctToTarget":7.65,"pctToStop":-3.98,"progress":0,"value":9174.9};
-const closed    = ;
+const positions = [{"symbol":"QCOM","side":"long","qty":42.0,"entry":229.433333,"current":219.52,"stop":227.14,"target":235.17,"rr":2.5,"unrlPnl":-416.36,"unrlPct":-4.32,"projProfit":240.94,"projLoss":96.32,"pctToTarget":7.13,"pctToStop":-3.47,"progress":0,"value":9219.84},{"symbol":"SPY","side":"long","qty":37.0,"entry":751.07,"current":750.185,"stop":743.56,"target":769.85,"rr":2.5,"unrlPnl":-32.74,"unrlPct":-0.12,"projProfit":694.86,"projLoss":277.87,"pctToTarget":2.62,"pctToStop":0.88,"progress":25,"value":27756.84}];
+const closed    = {"symbol":"SPY","side":"buy","qty":"37","fillPrice":751.07,"filledAt":"13:53:21","orderType":"limit"};
 
 function fmt(n, d=2) {
   return (n >= 0 ? '+' : '') + Number(n).toFixed(d);
