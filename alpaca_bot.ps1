@@ -306,6 +306,37 @@ function Repair-DuplicateStops($cfg, $positions) {
     }
 }
 
+# Convert a position's bracket protection into a native trailing stop so a
+# winner can run past the fixed 3.5R target. Cancels the symbol's open bracket
+# legs (the stop AND the take-profit cap), then submits a GTC trailing_stop;
+# Alpaca ratchets the stop behind the high-water mark server-side. trailPct
+# self-calibrates to the trade's volatility (its original stop distance).
+# On a placement failure the position is briefly unprotected -- the next
+# scan's Get-StopLegForPosition->New-ProtectiveStop fallback re-covers it.
+function Convert-ToTrailingStop($cfg, $position, [double]$trailPct) {
+    $sym  = $position.symbol
+    $qty  = [int][Math]::Abs([double]$position.qty)
+    $side = if ($position.side -eq "long") { "sell" } else { "buy" }
+    if ($qty -le 0) { return $null }
+
+    $open = Invoke-AlpacaApi $cfg "GET" "/v2/orders?status=open&symbols=$sym&limit=50"
+    if ($null -ne $open) {
+        $arr = if ($open -is [System.Array]) { $open } else { @($open) }
+        foreach ($o in $arr) { if ($null -ne $o) { try { Invoke-AlpacaApi $cfg "DELETE" "/v2/orders/$($o.id)" | Out-Null } catch {} } }
+        Start-Sleep -Milliseconds 500
+    }
+    $body = @{
+        symbol          = $sym
+        qty             = $qty.ToString()
+        side            = $side
+        type            = "trailing_stop"
+        time_in_force   = "gtc"
+        trail_percent   = $trailPct.ToString("F2")
+        client_order_id = "TRAIL_" + $sym + "_" + (Get-Date -Format "HHmmss")
+    }
+    return Invoke-AlpacaApi $cfg "POST" "/v2/orders" $body
+}
+
 function Manage-OpenPositions($cfg, $positions) {
     if ($null -eq $positions -or $positions.Count -eq 0) { return }
 
@@ -329,6 +360,15 @@ function Manage-OpenPositions($cfg, $positions) {
                 Write-Host ("    [MANAGE] {0,-6} no stop leg AND pnl=`${1:F2} < 0 -- planting MAX-LOSS stop (cap bleeding)" -f $sym, $unrealized) -ForegroundColor Red
                 New-ProtectiveStop $cfg $pos -Mode "MAXLOSS" | Out-Null
             }
+            continue
+        }
+
+        # Already trailing? Alpaca ratchets the stop server-side as the
+        # high-water mark rises -- nothing for us to do, just let it run.
+        $stopType = if ($stopLeg.order_type) { $stopLeg.order_type } else { $stopLeg.type }
+        if ($stopType -eq "trailing_stop") {
+            $tStop = if ($stopLeg.stop_price) { [double]$stopLeg.stop_price } else { 0 }
+            Write-Host ("    [MANAGE] {0,-6} trailing stop active (stop ~`${1:F2}) -- letting it run" -f $sym, $tStop) -ForegroundColor Cyan
             continue
         }
 
@@ -365,26 +405,24 @@ function Manage-OpenPositions($cfg, $positions) {
             continue
         }
 
-        # Move stop to breakeven + 0.1% buffer (gives the bracket some slippage room)
-        $buffer = $entry * 0.001
-        $newStop = if ($side -eq "long") {
-            [Math]::Round($entry + $buffer, 2)
+        # +2R hit. Convert to a TRAILING stop so the winner can run past the
+        # fixed 3.5R cap. We cancel the bracket legs (including the take-profit)
+        # and hand the stop to Alpaca's server-side trailing engine. Trail width
+        # = the original stop distance, self-calibrated to the name's volatility
+        # and bounded 2-8%. Placed at +2R, the initial trail already sits ~+1R
+        # above entry, so profit is locked in while the upside stays open-ended.
+        # This is the "let winners run" change: a few 6-10R trends are what lift
+        # average return, instead of clipping every winner at 3.5R.
+        $trailPct = [Math]::Round(($riskPerShare / $entry) * 100, 2)
+        $trailPct = [Math]::Max(2.0, [Math]::Min(8.0, $trailPct))
+        Write-Host ("    [MANAGE] {0,-6} +2R hit (pnl=`${1:F2} >= 2R=`${2:F2}) -- converting to trailing stop ({3:F2}% trail), removing 3.5R cap" -f `
+            $sym, $unrealized, $beThreshold, $trailPct) -ForegroundColor Cyan
+        $tr = Convert-ToTrailingStop $cfg $pos $trailPct
+        if ($null -ne $tr) {
+            Write-Host ("    [MANAGE] {0,-6} trailing stop placed -- winner can now run" -f $sym) -ForegroundColor Green
         } else {
-            [Math]::Round($entry - $buffer, 2)
+            Write-Host ("    [MANAGE] {0,-6} trailing conversion FAILED -- protective fallback covers next scan" -f $sym) -ForegroundColor Red
         }
-
-        Write-Host ("    [MANAGE] {0,-6} +2R hit (pnl=`${1:F2} >= 2R=`${2:F2}) -- moving stop `${3:F2} -> `${4:F2}" -f `
-            $sym, $unrealized, $beThreshold, $currentStop, $newStop) -ForegroundColor Cyan
-        $patchResult = Update-OrderStop $cfg $stopLeg.id $newStop
-        if ($null -ne $patchResult) {
-            Write-Host ("    [MANAGE] {0,-6} stop moved to BE successfully" -f $sym) -ForegroundColor Green
-        } else {
-            Write-Host ("    [MANAGE] {0,-6} stop move FAILED -- will retry next scan" -f $sym) -ForegroundColor Red
-        }
-
-        # SCALE-OUT (deferred): sell 50% qty here, then rebalance bracket legs.
-        # Risk: partial close races with TP/SL fills if not done atomically.
-        # Skipping until we have larger trade sample to validate the BE-only rule.
     }
 }
 
