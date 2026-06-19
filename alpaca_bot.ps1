@@ -406,13 +406,13 @@ function Manage-OpenPositions($cfg, $positions) {
         }
 
         # +2R hit. Convert to a TRAILING stop and remove the fixed 3.5R cap.
-        # Trail width is a fixed 1% (per instruction): once a trade has proven
-        # itself at +2R, the stop tracks 1% behind each new high-water mark,
-        # banking gains aggressively. NB: 1% is tight relative to daily ATR
-        # (2-5%), so most winners will exit on the first normal pullback rather
-        # than running to a large multiple -- this favours hit-rate and locked
-        # profit over capturing rare big trends.
-        $trailPct = 1.0
+        # Trail width self-calibrates to the trade's own volatility (its
+        # original stop distance as a %), floored at 2% so it never sits in
+        # daily noise and capped at 5% so it never gives back too much. Placed
+        # at +2R, the initial trail already locks in profit while leaving the
+        # upside open-ended -- letting winners run without round-tripping.
+        $trailPct = [Math]::Round(($riskPerShare / $entry) * 100, 2)
+        $trailPct = [Math]::Max(2.0, [Math]::Min(5.0, $trailPct))
         Write-Host ("    [MANAGE] {0,-6} +2R hit (pnl=`${1:F2} >= 2R=`${2:F2}) -- converting to trailing stop ({3:F2}% trail), removing 3.5R cap" -f `
             $sym, $unrealized, $beThreshold, $trailPct) -ForegroundColor Cyan
         $tr = Convert-ToTrailingStop $cfg $pos $trailPct
