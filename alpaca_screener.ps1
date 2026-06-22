@@ -41,6 +41,13 @@ $LEVERAGED_BLOCKLIST = @(
     "JNUG","JDST"        # 2x / -2x Junior Gold Miners
 )
 
+# ── Trade ownership (SHARED Alpaca account) ───────────────────────────────────
+# Another bot trades this same account. The ONLY durable marker of our own
+# trades is the strategy prefix we stamp into every entry's client_order_id.
+# Positions/orders without one of these prefixes belong to the other bot and
+# must never be managed, counted, or learned from.
+$MY_ENTRY_PREFIXES = @("BRKOUT","PULLBK","BRKDN","RALLYF","ORB","VWAP","EMA")
+
 # ── Correlated ticker groups ──────────────────────────────────────────────────
 # Tickers in the same group are the same underlying exposure.
 # The bot must never hold conflicting positions on the same group,
@@ -841,6 +848,9 @@ function Sync-ClosedTrades {
         $entrySide  = $o.side   # "buy" = long entry, "sell" = short entry
         $exitSide   = if ($entrySide -eq "buy") { "sell" } else { "buy" }
         $strategy   = if ($o.client_order_id) { $o.client_order_id -replace "_.*","" } else { "UNKNOWN" }
+        # SHARED ACCOUNT: only reconcile OUR trades. Skip the other bot's
+        # brackets (no recognized strategy prefix) so they never hit our stats.
+        if ($MY_ENTRY_PREFIXES -notcontains $strategy) { continue }
 
         # Find whichever exit leg filled (take-profit or stop-loss; the other will be canceled)
         foreach ($leg in $o.legs) {
@@ -901,6 +911,10 @@ function Sync-ClosedTrades {
         $isEntry = ($o.order_class -eq "bracket") -or ($o.legs -and $o.legs.Count -gt 0)
         if (-not $isEntry) { continue }
         if (-not $o.filled_avg_price -or -not $o.filled_at) { continue }
+        # SHARED ACCOUNT: only index OUR entries so a standalone close can't be
+        # matched to (and recorded against) the other bot's bracket.
+        $oTag = if ($o.client_order_id) { ($o.client_order_id -split "_")[0] } else { "" }
+        if ($MY_ENTRY_PREFIXES -notcontains $oTag) { continue }
         if (-not $entriesBySym.ContainsKey($o.symbol)) { $entriesBySym[$o.symbol] = @() }
         $entriesBySym[$o.symbol] += $o
     }

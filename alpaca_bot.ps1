@@ -615,6 +615,44 @@ function Cancel-StaleEntries($cfg) {
     }
 }
 
+# ── Trade ownership (SHARED Alpaca account) ───────────────────────────────────
+# Another bot trades this account. We identify OUR positions by the strategy
+# prefix on our entry orders' client_order_id ($MY_ENTRY_PREFIXES, defined in
+# alpaca_screener.ps1). Returns a hashtable {symbol=$true} of symbols we entered
+# via a filled, strategy-tagged order in the lookback window -- or $null if the
+# orders API call fails (caller treats $null as "unknown, act on nothing").
+function Get-MyOpenSymbols($cfg) {
+    $lookback = (Get-Date).ToUniversalTime().AddDays(-20).ToString("yyyy-MM-ddTHH:mm:ssZ")
+    $orders = Invoke-AlpacaApi $cfg "GET" "/v2/orders?status=all&after=$lookback&direction=desc&limit=500"
+    if ($null -eq $orders) { return $null }
+    $arr = if ($orders -is [System.Array]) { $orders } else { @($orders) }
+    $owned = @{}
+    foreach ($o in $arr) {
+        if ($null -eq $o -or $o.status -ne "filled" -or -not $o.client_order_id) { continue }
+        $tag = ($o.client_order_id -split "_")[0]
+        if ($MY_ENTRY_PREFIXES -contains $tag) { $owned[$o.symbol] = $true }
+    }
+    return $owned
+}
+
+# Cancel any management orders (PROTECT_/TRAIL_/EOD_) THIS bot placed on a
+# symbol it does not own -- e.g. a protective stop wrongly planted on the other
+# bot's position before ownership filtering existed. Removes only OUR stray
+# order; the foreign position itself is left untouched.
+function Cancel-ForeignManagementOrders($cfg, $mySymbols) {
+    $orders = Invoke-AlpacaApi $cfg "GET" "/v2/orders?status=open&limit=200"
+    if ($null -eq $orders) { return }
+    $arr = if ($orders -is [System.Array]) { $orders } else { @($orders) }
+    foreach ($o in $arr) {
+        if ($null -eq $o -or -not $o.client_order_id) { continue }
+        $tag = ($o.client_order_id -split "_")[0]
+        if ((@("PROTECT","TRAIL","EOD") -contains $tag) -and -not $mySymbols.ContainsKey($o.symbol)) {
+            Write-Host ("    [OWNERSHIP] canceling stray {0} order on non-owned {1}" -f $tag, $o.symbol) -ForegroundColor Magenta
+            try { Invoke-AlpacaApi $cfg "DELETE" "/v2/orders/$($o.id)" | Out-Null } catch {}
+        }
+    }
+}
+
 # ── Scan Cycle ────────────────────────────────────────────────────────────────
 
 function Run-Scan($cfg, $state) {
@@ -774,17 +812,35 @@ function Run-Scan($cfg, $state) {
     # Account summary
     $equity = Get-Equity $cfg
     $bp     = Get-BuyingPower $cfg
-    $posCount = Get-PositionCount $cfg
-    Write-Host ("  Equity: `${0:N2}  |  Buying Power: `${1:N2}  |  Positions: {2}/{3}" -f `
-        $equity, $bp, $posCount, $cfg.max_positions)
+
+    # ── SHARED ACCOUNT: scope to OUR positions only ───────────────────────────
+    # Another bot trades here too. Determine which symbols are ours (by our
+    # entry-order tags); never manage, count, or close anything else. If the
+    # ownership lookup fails, act on NOTHING this scan (our positions stay
+    # protected by their existing GTC stops).
+    $mySymbols = Get-MyOpenSymbols $cfg
+    if ($null -eq $mySymbols) {
+        Write-Host "  [OWNERSHIP] could not resolve owned positions (orders API) -- skipping scan." -ForegroundColor Yellow
+        $state.last_scan = (Get-Date).ToString("o"); Save-State $state; return
+    }
+    Cancel-ForeignManagementOrders $cfg $mySymbols
+
+    $allPositions = @(Get-Positions $cfg)
+    $allPosSyms   = @{}; foreach ($p in $allPositions) { if ($p) { $allPosSyms[$p.symbol] = $true } }
+    $positions    = @($allPositions | Where-Object { $mySymbols.ContainsKey($_.symbol) })
+    $foreignCount = $allPositions.Count - $positions.Count
+    $posCount     = $positions.Count
+
+    $foreignNote = if ($foreignCount -gt 0) { "  (+{0} other-bot, ignored)" -f $foreignCount } else { "" }
+    Write-Host ("  Equity: `${0:N2}  |  Buying Power: `${1:N2}  |  My Positions: {2}/{3}{4}" -f `
+        $equity, $bp, $posCount, $cfg.max_positions, $foreignNote)
     Write-Host ("  P&L Today: `${0:F2}  |  Trades: {1}  |  W/L: {2}/{3}" -f `
         $state.pnl_today, $state.trades_today, $state.wins, $state.losses)
     Write-Host ""
 
-    # Show open positions
-    $positions = Get-Positions $cfg
+    # Show + manage OUR open positions only
     if ($positions.Count -gt 0) {
-        Write-Host "  Open Positions:"
+        Write-Host "  Open Positions (mine):"
         foreach ($p in $positions) {
             $pnl    = [double]$p.unrealized_pl
             $pnlPct = [double]$p.unrealized_plpc * 100
@@ -797,7 +853,7 @@ function Run-Scan($cfg, $state) {
         # Clean up any stacked duplicate stops before managing
         Repair-DuplicateStops $cfg $positions
 
-        # Active position management: break-even stop at +2R
+        # Active position management: trailing stop at +2R
         Manage-OpenPositions $cfg $positions
 
         if ($swingMode) {
@@ -890,9 +946,10 @@ function Run-Scan($cfg, $state) {
             break
         }
 
-        # Skip if already have a position, a working order, or a pending trade
-        $hasPos     = ($positions | Where-Object { $_.symbol -eq $symbol }).Count -gt 0
-        $hasPending = ($pending   | Where-Object { $_.symbol -eq $symbol }).Count -gt 0
+        # Skip if a position (EITHER bot -- never commingle on a symbol the
+        # other bot already holds), a working order, or a pending trade exists.
+        $hasPos     = $allPosSyms.ContainsKey($symbol)
+        $hasPending = ($pending | Where-Object { $_.symbol -eq $symbol }).Count -gt 0
         $hasWorking = $workingOrderSyms.ContainsKey($symbol)
         if ($hasPos -or $hasPending -or $hasWorking) {
             Write-Host ("  {0,-6} SKIP  (position/working order/pending exists)" -f $symbol) -ForegroundColor DarkGray
