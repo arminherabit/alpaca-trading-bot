@@ -1,14 +1,14 @@
 {
   "tickers": {
     "SPY": {
-      "trades": 7,
+      "trades": 8,
       "wins": 4,
-      "losses": 3,
-      "total_pnl": 623.85,
-      "avg_pnl": 89.12,
-      "win_rate": 0.571,
-      "score": 1.35,
-      "consecutive_losses": 0,
+      "losses": 4,
+      "total_pnl": -36.99,
+      "avg_pnl": -4.62,
+      "win_rate": 0.5,
+      "score": 1.2,
+      "consecutive_losses": 1,
       "best_strategy": "",
       "strategy_wins": {
         "be7ab4a5-2a9b-4902-ba79-5b7b4b65964c": 0,
@@ -26,20 +26,20 @@
         "fd682545-a13a-4374-99d2-0317a0e4d43e": 1,
         "VWAP": 1,
         "EMA": 1,
-        "PULLBK": 1
+        "PULLBK": 2
       },
-      "last_trade": "2026-06-16T14:00:53.1382025+00:00",
+      "last_trade": "2026-06-23T13:40:36.8884942+00:00",
       "added_count": 232
     },
     "QQQ": {
-      "trades": 9,
+      "trades": 10,
       "wins": 2,
-      "losses": 7,
-      "total_pnl": -777.54,
-      "avg_pnl": -86.39,
-      "win_rate": 0.222,
+      "losses": 8,
+      "total_pnl": -1155.91,
+      "avg_pnl": -115.59,
+      "win_rate": 0.2,
       "score": 0.3,
-      "consecutive_losses": 0,
+      "consecutive_losses": 1,
       "best_strategy": "EMA",
       "strategy_wins": {
         "f8556d8b-90ec-45e0-95f2-3aed90dd9149": 0,
@@ -51,9 +51,9 @@
         "f8556d8b-90ec-45e0-95f2-3aed90dd9149": 1,
         "EMA": 5,
         "VWAP": 2,
-        "PULLBK": 1
+        "PULLBK": 2
       },
-      "last_trade": "2026-06-16T14:20:49.8879716+00:00",
+      "last_trade": "2026-06-23T13:40:36.749949+00:00",
       "added_count": 232
     },
     "NVDA": {
@@ -420,11 +420,30 @@
       },
       "last_trade": "2026-06-17T14:30:51.3290856+00:00",
       "added_count": 1
+    },
+    "MS": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_pnl": -432.51,
+      "avg_pnl": -432.51,
+      "win_rate": 0.0,
+      "score": 0.7,
+      "consecutive_losses": 1,
+      "best_strategy": "",
+      "strategy_wins": {
+        "BRKOUT": 0
+      },
+      "strategy_trades": {
+        "BRKOUT": 1
+      },
+      "last_trade": "2026-06-23T13:40:36.9750249+00:00",
+      "added_count": 0
     }
   },
-  "last_updated": "2026-06-22T14:01:16.3949707+00:00",
+  "last_updated": "2026-06-23T13:40:36.9793933+00:00",
   "last_screened": "2026-06-22T14:01:16.3879781+00:00",
-  "total_trades": 38,
+  "total_trades": 41,
   "strategy_stats": {
     "EMA": {
       "trades": 17,
@@ -443,12 +462,20 @@
       "avg_pnl": -217.45
     },
     "PULLBK": {
-      "trades": 3,
+      "trades": 5,
       "wins": 2,
+      "losses": 3,
+      "total_pnl": -1429.24,
+      "win_rate": 0.4,
+      "avg_pnl": -285.85
+    },
+    "BRKOUT": {
+      "trades": 1,
+      "wins": 0,
       "losses": 1,
-      "total_pnl": -390.03,
-      "win_rate": 0.667,
-      "avg_pnl": -130.01
+      "total_pnl": -432.51,
+      "win_rate": 0.0,
+      "avg_pnl": -432.51
     }
   },
   "hour_stats": {
@@ -477,12 +504,12 @@
       "avg_pnl": -145.38
     },
     "9": {
-      "trades": 2,
+      "trades": 5,
       "wins": 2,
-      "losses": 0,
-      "total_pnl": 128.44,
-      "win_rate": 1.0,
-      "avg_pnl": 64.22
+      "losses": 3,
+      "total_pnl": -1343.28,
+      "win_rate": 0.4,
+      "avg_pnl": -268.66
     },
     "10": {
       "trades": 2,
