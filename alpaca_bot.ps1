@@ -381,45 +381,57 @@ function Manage-OpenPositions($cfg, $positions) {
         $totalRisk    = $riskPerShare * $absQty
         if ($totalRisk -le 0) { continue }
 
-        # Idempotency: skip if stop already past breakeven (moved on a prior scan)
-        $alreadyManaged = if ($side -eq "long") {
-            $currentStop -ge $entry
-        } else {
-            $currentStop -le $entry
-        }
-        if ($alreadyManaged) {
-            Write-Host ("    [MANAGE] {0,-6} stop already at/past BE (`${1:F2}) -- holding" -f `
-                $sym, $currentStop) -ForegroundColor DarkGray
+        # ── Two-stage exit, measured in R off the ORIGINAL stop ──────────────
+        # The original 1R is recomputed from daily ATR (the same basis the
+        # entry used) so the R-multiple stays correct even after we've moved
+        # the stop to break-even -- once moved, |entry-currentStop| no longer
+        # reflects the real risk taken. Analysis of the first 6 swing trades:
+        # avg loss (~$465) dwarfed avg win (~$45) because losers ran to a full
+        # -1R while nothing locked winners until +2R (a 6-10% move rarely
+        # reached). Stages fix both:
+        #   +1R  -> move stop to break-even  (a would-be loser becomes a scratch)
+        #   +2R  -> trailing stop, drop the 3.5R cap  (let the winner run)
+        $atBE = if ($side -eq "long") { $currentStop -ge $entry } else { $currentStop -le $entry }
+
+        $dBars = Get-DailyBars $cfg $sym
+        $dATR  = if ($dBars -and $dBars.Count -ge 15) { Get-ATR $dBars 14 } else { 0 }
+        $origRiskPS = if ($dATR -gt 0) { 2.0 * $dATR } elseif (-not $atBE) { $riskPerShare } else { 0 }
+        if ($origRiskPS -le 0) {
+            # Can't establish a reliable R reference (no ATR and stop already
+            # moved) -- leave the existing protection in place.
+            Write-Host ("    [MANAGE] {0,-6} holding (stop `${1:F2}, R-ref unavailable)" -f $sym, $currentStop) -ForegroundColor DarkGray
             continue
         }
+        $rMult = ($unrealized / $absQty) / $origRiskPS
 
-        # Trigger: unrealized profit has reached at least 2R
-        # (Raised from 1R to 2R -- at +1R, normal intraday retracements
-        #  were tripping the BE stop and turning winners into scratches.
-        #  At +2R the trade has proven itself and BE locks in meaningful profit.)
-        $beThreshold = $totalRisk * 2.0
-        if ($unrealized -lt $beThreshold) {
-            $threshStr = "{0:F2}" -f $beThreshold
-            Write-Host ("    [MANAGE] {0,-6} pnl=`${1:F2} below 2R=`${2} -- holding" -f `
-                $sym, $unrealized, $threshStr) -ForegroundColor DarkGray
-            continue
+        if ($rMult -ge 2.0) {
+            # +2R -- convert to a trailing stop and remove the fixed TP cap.
+            $trailPct = [Math]::Round(($origRiskPS / $entry) * 100, 2)
+            $trailPct = [Math]::Max(2.0, [Math]::Min(5.0, $trailPct))
+            Write-Host ("    [MANAGE] {0,-6} +{1:F1}R (pnl=`${2:F2}) -- converting to trailing stop ({3:F2}% trail), removing cap" -f `
+                $sym, $rMult, $unrealized, $trailPct) -ForegroundColor Cyan
+            $tr = Convert-ToTrailingStop $cfg $pos $trailPct
+            if ($null -ne $tr) {
+                Write-Host ("    [MANAGE] {0,-6} trailing stop placed -- winner can now run" -f $sym) -ForegroundColor Green
+            } else {
+                Write-Host ("    [MANAGE] {0,-6} trailing conversion FAILED -- protective fallback covers next scan" -f $sym) -ForegroundColor Red
+            }
         }
-
-        # +2R hit. Convert to a TRAILING stop and remove the fixed 3.5R cap.
-        # Trail width self-calibrates to the trade's own volatility (its
-        # original stop distance as a %), floored at 2% so it never sits in
-        # daily noise and capped at 5% so it never gives back too much. Placed
-        # at +2R, the initial trail already locks in profit while leaving the
-        # upside open-ended -- letting winners run without round-tripping.
-        $trailPct = [Math]::Round(($riskPerShare / $entry) * 100, 2)
-        $trailPct = [Math]::Max(2.0, [Math]::Min(5.0, $trailPct))
-        Write-Host ("    [MANAGE] {0,-6} +2R hit (pnl=`${1:F2} >= 2R=`${2:F2}) -- converting to trailing stop ({3:F2}% trail), removing 3.5R cap" -f `
-            $sym, $unrealized, $beThreshold, $trailPct) -ForegroundColor Cyan
-        $tr = Convert-ToTrailingStop $cfg $pos $trailPct
-        if ($null -ne $tr) {
-            Write-Host ("    [MANAGE] {0,-6} trailing stop placed -- winner can now run" -f $sym) -ForegroundColor Green
-        } else {
-            Write-Host ("    [MANAGE] {0,-6} trailing conversion FAILED -- protective fallback covers next scan" -f $sym) -ForegroundColor Red
+        elseif ($rMult -ge 1.0 -and -not $atBE) {
+            # +1R -- move stop to break-even + 0.1% buffer. A pullback from here
+            # now scratches instead of taking a full -1R loss.
+            $buffer  = $entry * 0.001
+            $newStop = if ($side -eq "long") { [Math]::Round($entry + $buffer, 2) } else { [Math]::Round($entry - $buffer, 2) }
+            Write-Host ("    [MANAGE] {0,-6} +{1:F1}R (pnl=`${2:F2}) -- moving stop to BE `${3:F2}" -f `
+                $sym, $rMult, $unrealized, $newStop) -ForegroundColor Cyan
+            $patch = Update-OrderStop $cfg $stopLeg.id $newStop
+            if ($null -eq $patch) {
+                Write-Host ("    [MANAGE] {0,-6} BE move FAILED -- will retry next scan" -f $sym) -ForegroundColor Red
+            }
+        }
+        else {
+            $tag = if ($atBE) { "at BE, <+2R" } else { ("+{0:F1}R, <+1R" -f $rMult) }
+            Write-Host ("    [MANAGE] {0,-6} holding ({1}, pnl=`${2:F2})" -f $sym, $tag, $unrealized) -ForegroundColor DarkGray
         }
     }
 }
