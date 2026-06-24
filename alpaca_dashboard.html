@@ -94,25 +94,25 @@
     <span class="badge" style="color:#3fb950;  border-color:#3fb950;">OPEN</span>
     <span class="badge" style="color:var(--sub); border-color:var(--border);">Closes 8:00 PM</span>
   </div>
-  <span class="gen-time">Generated: 2026-06-24 15:28:07 &nbsp;|&nbsp; Auto-refresh: 30s</span>
+  <span class="gen-time">Generated: 2026-06-24 15:30:38 &nbsp;|&nbsp; Auto-refresh: 30s</span>
 </header>
 
 <!-- Account Stats -->
 <div class="grid-top">
   <div class="stat-card">
     <div class="label">Equity</div>
-    <div class="value blue">$95,031.64</div>
+    <div class="value blue">$95,017.44</div>
     <div class="sub">Paper account</div>
   </div>
   <div class="stat-card">
     <div class="label">Day P&amp;L</div>
-    <div class="value green">$0.00</div>
-    <div class="sub">+0%</div>
+    <div class="value red">$-14.20</div>
+    <div class="sub">-0.01%</div>
   </div>
   <div class="stat-card">
     <div class="label">Buying Power</div>
-    <div class="value">$369,529.51</div>
-    <div class="sub">Cash: $95,031.64</div>
+    <div class="value">$367,370.42</div>
+    <div class="sub">Cash: $84,434.66</div>
   </div>
   <div class="stat-card">
     <div class="label">Trades Today</div>
@@ -121,7 +121,7 @@
   </div>
   <div class="stat-card">
     <div class="label">Open Positions</div>
-    <div class="value">0 <span style="font-size:14px;color:var(--sub)">/ 3</span></div>
+    <div class="value">1 <span style="font-size:14px;color:var(--sub)">/ 3</span></div>
     <div class="sub">Max 3 allowed</div>
   </div>
   <div class="stat-card">
@@ -157,8 +157,8 @@
 </footer>
 
 <script>
-const positions = ;
-const closed    = ;
+const positions = {"symbol":"HD","side":"long","qty":31.0,"entry":341.838065,"current":341.38,"stop":338.42,"target":350.38,"rr":2.5,"unrlPnl":-14.2,"unrlPct":-0.13,"projProfit":264.8,"projLoss":105.96,"pctToTarget":2.64,"pctToStop":0.87,"progress":25,"value":10582.78};
+const closed    = {"symbol":"HD","side":"buy","qty":"31","fillPrice":341.84,"filledAt":"15:28:40","orderType":"limit"};
 
 function fmt(n, d=2) {
   return (n >= 0 ? '+' : '') + Number(n).toFixed(d);
