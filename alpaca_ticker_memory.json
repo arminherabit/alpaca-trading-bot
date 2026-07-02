@@ -29,7 +29,7 @@
         "PULLBK": 2
       },
       "last_trade": "2026-06-23T13:40:36.8884942+00:00",
-      "added_count": 239
+      "added_count": 240
     },
     "QQQ": {
       "trades": 10,
@@ -54,7 +54,7 @@
         "PULLBK": 2
       },
       "last_trade": "2026-06-23T13:40:36.749949+00:00",
-      "added_count": 239
+      "added_count": 240
     },
     "NVDA": {
       "trades": 2,
@@ -229,7 +229,7 @@
         "EMA": 2
       },
       "last_trade": "2026-06-10T04:20:31.5169434+00:00",
-      "added_count": 4
+      "added_count": 5
     },
     "PANW": {
       "trades": 1,
@@ -498,8 +498,8 @@
       "added_count": 0
     }
   },
-  "last_updated": "2026-07-01T14:01:19.0132510+00:00",
-  "last_screened": "2026-07-01T14:01:19.0067811+00:00",
+  "last_updated": "2026-07-02T14:01:08.5487851+00:00",
+  "last_screened": "2026-07-02T14:01:08.5398264+00:00",
   "total_trades": 44,
   "strategy_stats": {
     "EMA": {
