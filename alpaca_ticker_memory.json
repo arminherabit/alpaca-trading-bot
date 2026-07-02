@@ -32,15 +32,15 @@
       "added_count": 240
     },
     "QQQ": {
-      "trades": 10,
+      "trades": 11,
       "wins": 2,
-      "losses": 8,
-      "total_pnl": -1155.91,
-      "avg_pnl": -115.59,
-      "win_rate": 0.2,
-      "score": 0.3,
-      "consecutive_losses": 1,
-      "best_strategy": "EMA",
+      "losses": 9,
+      "total_pnl": -1432.96,
+      "avg_pnl": -130.27,
+      "win_rate": 0.182,
+      "score": 0.1,
+      "consecutive_losses": 2,
+      "best_strategy": "PULLBK",
       "strategy_wins": {
         "f8556d8b-90ec-45e0-95f2-3aed90dd9149": 0,
         "EMA": 1,
@@ -51,9 +51,9 @@
         "f8556d8b-90ec-45e0-95f2-3aed90dd9149": 1,
         "EMA": 5,
         "VWAP": 2,
-        "PULLBK": 2
+        "PULLBK": 3
       },
-      "last_trade": "2026-06-23T13:40:36.749949+00:00",
+      "last_trade": "2026-07-02T16:10:42.6435432+00:00",
       "added_count": 240
     },
     "NVDA": {
@@ -498,9 +498,9 @@
       "added_count": 0
     }
   },
-  "last_updated": "2026-07-02T14:01:08.5487851+00:00",
+  "last_updated": "2026-07-02T16:10:42.6643809+00:00",
   "last_screened": "2026-07-02T14:01:08.5398264+00:00",
-  "total_trades": 44,
+  "total_trades": 45,
   "strategy_stats": {
     "EMA": {
       "trades": 17,
@@ -519,12 +519,12 @@
       "avg_pnl": -217.45
     },
     "PULLBK": {
-      "trades": 5,
+      "trades": 6,
       "wins": 2,
-      "losses": 3,
-      "total_pnl": -1429.24,
-      "win_rate": 0.4,
-      "avg_pnl": -285.85
+      "losses": 4,
+      "total_pnl": -1706.29,
+      "win_rate": 0.333,
+      "avg_pnl": -284.38
     },
     "BRKOUT": {
       "trades": 4,
@@ -575,6 +575,14 @@
       "total_pnl": -418.75,
       "win_rate": 0.5,
       "avg_pnl": -209.38
+    },
+    "12": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_pnl": -277.05,
+      "win_rate": 0.0,
+      "avg_pnl": -277.05
     }
   },
   "regime_stats": {}
