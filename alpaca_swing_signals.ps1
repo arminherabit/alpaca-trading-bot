@@ -108,6 +108,16 @@ function Get-SwingBreakoutSignal($cfg, $dailyBars, [string]$swingRegime, $spyBar
 
     # LONG breakout: price clears the 20-day high. Blocked in BEAR regime.
     if ($price -gt $high20 -and $swingRegime -ne "BEAR") {
+        # HARD GATES (entry-quality package):
+        #  - RS >= +1.5% vs SPY: only market LEADERS break out and keep going;
+        #    a laggard poking a 20-day high in chop is a fade. Also inherently
+        #    blocks index-hugging names (their RS ~ 0 by construction).
+        #  - volPace >= 1.1: a breakout without above-average participation
+        #    has no fuel. Volume was previously only a confidence nudge.
+        $rs = Get-RelativeStrength $dailyBars $spyBars 20
+        if ($rs -lt 1.5)      { return $sig }
+        if ($volPace -lt 1.1) { return $sig }
+
         $sig.Side  = "buy"
         $sig.Entry = [Math]::Round($price, 2)
         $sig.Stop  = [Math]::Round($price - $SWING_STOP_ATR_MULT * $atr, 2)
@@ -124,10 +134,8 @@ function Get-SwingBreakoutSignal($cfg, $dailyBars, [string]$swingRegime, $spyBar
         elseif ($volPace -ge 1.0)                   { $conf += 10 }
         if ($extension -le 0.5)                     { $conf += 10 }   # fresh break, not chasing
         elseif ($extension -gt 1.5)                 { $conf -= 15 }   # extended -- late entry
-        $rs = Get-RelativeStrength $dailyBars $spyBars 20
-        if ($rs -ge 3.0)                            { $conf += 15 }   # market leader
-        elseif ($rs -ge 1.0)                        { $conf += 5  }
-        elseif ($rs -lt -2.0)                       { $conf -= 10 }   # laggard breaking out = suspect
+        if ($rs -ge 3.0)                            { $conf += 15 }   # market leader (RS gated >= 1.5 above)
+        elseif ($rs -ge 2.0)                        { $conf += 5  }
         $ema20 = Get-EMA $closes 20
         $ema50 = Get-EMA $closes 50
         if ($null -ne $ema20 -and $null -ne $ema50 -and $ema20 -gt $ema50) { $conf += 10 }  # trend aligned
@@ -141,6 +149,11 @@ function Get-SwingBreakoutSignal($cfg, $dailyBars, [string]$swingRegime, $spyBar
     # SHORT breakdown: price loses the 20-day low. Only in BEAR regime --
     # shorting breakdowns in bull tape is fighting the primary trend.
     if ($price -lt $low20 -and $swingRegime -eq "BEAR") {
+        # HARD GATES (mirror): weakest names on real volume only.
+        $rs = Get-RelativeStrength $dailyBars $spyBars 20
+        if ($rs -gt -1.5)     { return $sig }
+        if ($volPace -lt 1.1) { return $sig }
+
         $sig.Strategy = "BRKDN"
         $sig.Side  = "sell"
         $sig.Entry = [Math]::Round($price, 2)
@@ -158,9 +171,8 @@ function Get-SwingBreakoutSignal($cfg, $dailyBars, [string]$swingRegime, $spyBar
         elseif ($volPace -ge 1.0)   { $conf += 10 }
         if ($extension -le 0.5)     { $conf += 10 }
         elseif ($extension -gt 1.5) { $conf -= 15 }
-        $rs = Get-RelativeStrength $dailyBars $spyBars 20
-        if ($rs -le -3.0)           { $conf += 15 }   # weakest names fall hardest
-        elseif ($rs -le -1.0)       { $conf += 5  }
+        if ($rs -le -3.0)           { $conf += 15 }   # weakest names fall hardest (RS gated <= -1.5 above)
+        elseif ($rs -le -2.0)       { $conf += 5  }
         $ema20 = Get-EMA $closes 20
         $ema50 = Get-EMA $closes 50
         if ($null -ne $ema20 -and $null -ne $ema50 -and $ema20 -lt $ema50) { $conf += 10 }
@@ -202,6 +214,12 @@ function Get-SwingPullbackSignal($cfg, $dailyBars, [string]$swingRegime, $spyBar
         $reclaimed   = $price -gt $ema20
 
         if ($touchedZone -and $reclaimed) {
+            # HARD GATE: pullbacks are only worth buying in LEADERS (RS >= +1.5%
+            # vs SPY). An index-hugging or lagging name reclaiming its EMA20 in
+            # chop was the QQQ churn pattern (2W/10L).
+            $rs = Get-RelativeStrength $dailyBars $spyBars 20
+            if ($rs -lt 1.5) { return $sig }
+
             $sig.Side  = "buy"
             $sig.Entry = [Math]::Round($price, 2)
             # Stop below BOTH the EMA50 and 2x ATR -- whichever is closer caps
@@ -224,9 +242,8 @@ function Get-SwingPullbackSignal($cfg, $dailyBars, [string]$swingRegime, $spyBar
             elseif ($trendQuality -ge 0.4) { $conf += 8  }
             $rsi = Get-RSI $closes 14
             if ($null -ne $rsi -and $rsi -ge 40 -and $rsi -le 60) { $conf += 10 }  # healthy reset, not broken
-            $rs = Get-RelativeStrength $dailyBars $spyBars 20
-            if ($rs -ge 3.0)     { $conf += 15 }
-            elseif ($rs -ge 1.0) { $conf += 5  }
+            if ($rs -ge 3.0)     { $conf += 15 }   # (RS gated >= 1.5 above)
+            elseif ($rs -ge 2.0) { $conf += 5  }
             if ($today.Close -gt $today.Open) { $conf += 5 }   # buyers showed up today
 
             $sig.Confidence = [Math]::Max(0, [Math]::Min(100, $conf))
@@ -244,6 +261,10 @@ function Get-SwingPullbackSignal($cfg, $dailyBars, [string]$swingRegime, $spyBar
         $rejected    = $price -lt $ema20
 
         if ($touchedZone -and $rejected) {
+            # HARD GATE (mirror): only short LAGGARDS (RS <= -1.5% vs SPY).
+            $rs = Get-RelativeStrength $dailyBars $spyBars 20
+            if ($rs -gt -1.5) { return $sig }
+
             $sig.Strategy = "RALLYF"
             $sig.Side  = "sell"
             $sig.Entry = [Math]::Round($price, 2)
@@ -265,9 +286,8 @@ function Get-SwingPullbackSignal($cfg, $dailyBars, [string]$swingRegime, $spyBar
             elseif ($trendQuality -ge 0.4) { $conf += 8  }
             $rsi = Get-RSI $closes 14
             if ($null -ne $rsi -and $rsi -ge 40 -and $rsi -le 60) { $conf += 10 }
-            $rs = Get-RelativeStrength $dailyBars $spyBars 20
-            if ($rs -le -3.0)     { $conf += 15 }
-            elseif ($rs -le -1.0) { $conf += 5  }
+            if ($rs -le -3.0)     { $conf += 15 }   # (RS gated <= -1.5 above)
+            elseif ($rs -le -2.0) { $conf += 5  }
             if ($today.Close -lt $today.Open) { $conf += 5 }
 
             $sig.Confidence = [Math]::Max(0, [Math]::Min(100, $conf))

@@ -417,6 +417,28 @@ function Manage-OpenPositions($cfg, $positions) {
                 Write-Host ("    [MANAGE] {0,-6} trailing conversion FAILED -- protective fallback covers next scan" -f $sym) -ForegroundColor Red
             }
         }
+        elseif ($rMult -ge 1.5) {
+            # +1.5R -- RATCHET: lock the stop at entry +0.75R. Observed pattern
+            # (ABBV, VOYA): winners stall in the +1R..+1.5R zone and fade back
+            # to the BE stop for a scratch. This stage banks ~half the open
+            # gain while still leaving room to reach the +2R trailing stage.
+            $lockStop = if ($side -eq "long") {
+                [Math]::Round($entry + 0.75 * $origRiskPS, 2)
+            } else {
+                [Math]::Round($entry - 0.75 * $origRiskPS, 2)
+            }
+            $alreadyLocked = if ($side -eq "long") { $currentStop -ge $lockStop } else { $currentStop -le $lockStop }
+            if ($alreadyLocked) {
+                Write-Host ("    [MANAGE] {0,-6} +{1:F1}R -- +0.75R lock already in place (`${2:F2})" -f $sym, $rMult, $currentStop) -ForegroundColor DarkGray
+            } else {
+                Write-Host ("    [MANAGE] {0,-6} +{1:F1}R (pnl=`${2:F2}) -- ratcheting stop to +0.75R (`${3:F2})" -f `
+                    $sym, $rMult, $unrealized, $lockStop) -ForegroundColor Cyan
+                $patch = Update-OrderStop $cfg $stopLeg.id $lockStop
+                if ($null -eq $patch) {
+                    Write-Host ("    [MANAGE] {0,-6} ratchet FAILED -- will retry next scan" -f $sym) -ForegroundColor Red
+                }
+            }
+        }
         elseif ($rMult -ge 1.0 -and -not $atBE) {
             # +1R -- move stop to break-even + 0.1% buffer. A pullback from here
             # now scratches instead of taking a full -1R loss.
@@ -430,7 +452,7 @@ function Manage-OpenPositions($cfg, $positions) {
             }
         }
         else {
-            $tag = if ($atBE) { "at BE, <+2R" } else { ("+{0:F1}R, <+1R" -f $rMult) }
+            $tag = if ($atBE) { "at BE, <+1.5R" } else { ("+{0:F1}R, <+1R" -f $rMult) }
             Write-Host ("    [MANAGE] {0,-6} holding ({1}, pnl=`${2:F2})" -f $sym, $tag, $unrealized) -ForegroundColor DarkGray
         }
     }
@@ -980,6 +1002,40 @@ function Run-Scan($cfg, $state) {
         if ($LEVERAGED_BLOCKLIST -contains $symbol) {
             Write-Host ("  {0,-6} SKIP  (leveraged ETF blocked)" -f $symbol) -ForegroundColor Yellow
             continue
+        }
+
+        # ── Index anchors are WATCH-ONLY ──────────────────────────────────
+        # SPY/QQQ stay on the list for market context but are never entered:
+        # 20 of the first 23 swing trades were anchor churn (QQQ 2W/10L).
+        if ($INDEX_ANCHORS -contains $symbol) {
+            Write-Host ("  {0,-6} SKIP  (index anchor -- watch-only)" -f $symbol) -ForegroundColor DarkGray
+            continue
+        }
+
+        # ── Memory gate + loss cooldown ───────────────────────────────────
+        # The self-learning layer finally gets veto power at the entry:
+        #   - proven loser (5+ trades, score <= 0.3) -> benched
+        #   - lost on this symbol within the last 5 trading days -> cooldown
+        #     (stops the re-enter-the-same-failing-setup churn pattern)
+        $memInfo = Get-TickerMemoryInfo $symbol
+        if ($null -ne $memInfo) {
+            $memScore  = if ($null -ne $memInfo.score) { [double]$memInfo.score } else { 1.0 }
+            $memTrades = if ($null -ne $memInfo.trades) { [int]$memInfo.trades } else { 0 }
+            if ($memTrades -ge 5 -and $memScore -le 0.3) {
+                Write-Host ("  {0,-6} SKIP  (memory gate: {1} trades, score {2})" -f $symbol, $memTrades, $memScore) -ForegroundColor Yellow
+                continue
+            }
+            $consecL = if ($null -ne $memInfo.consecutive_losses) { [int]$memInfo.consecutive_losses } else { 0 }
+            if ($consecL -ge 1 -and $memInfo.last_trade) {
+                try {
+                    $lastTradeUtc = [datetime]::Parse($memInfo.last_trade).ToUniversalTime()
+                    $daysSince    = Get-WeekdayCount $lastTradeUtc ([datetime]::UtcNow)
+                    if ($daysSince -lt 5) {
+                        Write-Host ("  {0,-6} SKIP  (loss cooldown: lost {1} trading day(s) ago, wait 5)" -f $symbol, $daysSince) -ForegroundColor Yellow
+                        continue
+                    }
+                } catch {}
+            }
         }
 
         if ($swingMode) {

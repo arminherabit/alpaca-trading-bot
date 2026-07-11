@@ -201,6 +201,23 @@ function Get-TickerScore {
     return [double]$t.score
 }
 
+# Full memory record for a ticker (or $null if never traded). Used by the
+# entry loop's memory gate and loss-cooldown checks.
+function Get-TickerMemoryInfo {
+    param([string]$symbol)
+    $mem = Load-TickerMemory
+    if ($null -eq $mem.tickers) { return $null }
+    if (-not (Get-Member -InputObject $mem.tickers -Name $symbol -ErrorAction SilentlyContinue)) { return $null }
+    return $mem.tickers.$symbol
+}
+
+# Index ETF anchors: kept on the watchlist for market visibility, but NOT
+# tradeable. Evidence (swing era, Jun 15 - Jul 10): QQQ 2W/10L -$1,663 from
+# pullback churn in range-bound tape; SPY 4W/4L -$37. The anchors were
+# force-included daily, bypassing the memory suppression that would have
+# benched any screened stock with QQQ's record (score 0.1, 17% WR).
+$INDEX_ANCHORS = @("SPY","QQQ")
+
 function Save-TickerMemory($mem) {
     $mem.last_updated = (Get-Date).ToString("o")
     $mem | ConvertTo-Json -Depth 10 | Set-Content $MemoryPath
