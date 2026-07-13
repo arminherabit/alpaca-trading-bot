@@ -114,7 +114,7 @@
         "EMA": 1,
         "BRKOUT": 1
       },
-      "last_trade": "2026-07-13T13:41:10.6525370+00:00",
+      "last_trade": "2026-07-13T13:41:10.652537+00:00",
       "added_count": 3
     },
     "AMZN": {
@@ -536,11 +536,30 @@
       },
       "last_trade": "2026-07-09T14:20:49.2293082+00:00",
       "added_count": 0
+    },
+    "SOFI": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_pnl": -82.4,
+      "avg_pnl": -82.4,
+      "win_rate": 0.0,
+      "score": 0.7,
+      "consecutive_losses": 1,
+      "best_strategy": "",
+      "strategy_wins": {
+        "PULLBK": 0
+      },
+      "strategy_trades": {
+        "PULLBK": 1
+      },
+      "last_trade": "2026-07-13T13:50:53.0824050+00:00",
+      "added_count": 0
     }
   },
-  "last_updated": "2026-07-13T13:41:10.6717306+00:00",
+  "last_updated": "2026-07-13T13:50:53.1025180+00:00",
   "last_screened": "2026-07-10T14:02:06.3548675+00:00",
-  "total_trades": 49,
+  "total_trades": 50,
   "strategy_stats": {
     "EMA": {
       "trades": 17,
@@ -559,12 +578,12 @@
       "avg_pnl": -217.45
     },
     "PULLBK": {
-      "trades": 7,
+      "trades": 8,
       "wins": 2,
-      "losses": 5,
-      "total_pnl": -1936.8,
-      "win_rate": 0.286,
-      "avg_pnl": -276.69
+      "losses": 6,
+      "total_pnl": -2019.2,
+      "win_rate": 0.25,
+      "avg_pnl": -252.4
     },
     "BRKOUT": {
       "trades": 7,
@@ -601,12 +620,12 @@
       "avg_pnl": -128.3
     },
     "9": {
-      "trades": 8,
+      "trades": 9,
       "wins": 3,
-      "losses": 5,
-      "total_pnl": -1561.94,
-      "win_rate": 0.375,
-      "avg_pnl": -195.24
+      "losses": 6,
+      "total_pnl": -1644.34,
+      "win_rate": 0.333,
+      "avg_pnl": -182.7
     },
     "10": {
       "trades": 3,
