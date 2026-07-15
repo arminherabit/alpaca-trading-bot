@@ -1,111 +1,6 @@
 {
-  "last_refreshed": "2026-07-13T14:01:33.8704477+00:00",
+  "last_refreshed": "2026-07-15T14:01:42.4428102+00:00",
   "events": [
-    {
-      "symbol": "FBK",
-      "date": "2026-07-13",
-      "time": "time-after-hours"
-    },
-    {
-      "symbol": "AERO",
-      "date": "2026-07-13",
-      "time": "time-after-hours"
-    },
-    {
-      "symbol": "TRX",
-      "date": "2026-07-13",
-      "time": "time-not-supplied"
-    },
-    {
-      "symbol": "GLDG",
-      "date": "2026-07-13",
-      "time": "time-not-supplied"
-    },
-    {
-      "symbol": "PAPL",
-      "date": "2026-07-13",
-      "time": "time-not-supplied"
-    },
-    {
-      "symbol": "LEXX",
-      "date": "2026-07-13",
-      "time": "time-not-supplied"
-    },
-    {
-      "symbol": "JCTC",
-      "date": "2026-07-13",
-      "time": "time-not-supplied"
-    },
-    {
-      "symbol": "JPM",
-      "date": "2026-07-14",
-      "time": "time-pre-market"
-    },
-    {
-      "symbol": "BAC",
-      "date": "2026-07-14",
-      "time": "time-pre-market"
-    },
-    {
-      "symbol": "GS",
-      "date": "2026-07-14",
-      "time": "time-pre-market"
-    },
-    {
-      "symbol": "WFC",
-      "date": "2026-07-14",
-      "time": "time-pre-market"
-    },
-    {
-      "symbol": "C",
-      "date": "2026-07-14",
-      "time": "time-pre-market"
-    },
-    {
-      "symbol": "FAST",
-      "date": "2026-07-14",
-      "time": "time-pre-market"
-    },
-    {
-      "symbol": "ERIC",
-      "date": "2026-07-14",
-      "time": "time-pre-market"
-    },
-    {
-      "symbol": "AEHR",
-      "date": "2026-07-14",
-      "time": "time-after-hours"
-    },
-    {
-      "symbol": "KMTS",
-      "date": "2026-07-14",
-      "time": "time-after-hours"
-    },
-    {
-      "symbol": "PXED",
-      "date": "2026-07-14",
-      "time": "time-after-hours"
-    },
-    {
-      "symbol": "EQBK",
-      "date": "2026-07-14",
-      "time": "time-after-hours"
-    },
-    {
-      "symbol": "ANGO",
-      "date": "2026-07-14",
-      "time": "time-pre-market"
-    },
-    {
-      "symbol": "LOOP",
-      "date": "2026-07-14",
-      "time": "time-after-hours"
-    },
-    {
-      "symbol": "CRMT",
-      "date": "2026-07-14",
-      "time": "time-pre-market"
-    },
     {
       "symbol": "ASML",
       "date": "2026-07-15",
@@ -147,14 +42,14 @@
       "time": "time-pre-market"
     },
     {
-      "symbol": "KMI",
-      "date": "2026-07-15",
-      "time": "time-not-supplied"
-    },
-    {
       "symbol": "CTAS",
       "date": "2026-07-15",
       "time": "time-pre-market"
+    },
+    {
+      "symbol": "KMI",
+      "date": "2026-07-15",
+      "time": "time-not-supplied"
     },
     {
       "symbol": "UAL",
@@ -232,6 +127,11 @@
       "time": "time-not-supplied"
     },
     {
+      "symbol": "TRX",
+      "date": "2026-07-15",
+      "time": "time-pre-market"
+    },
+    {
       "symbol": "UNB",
       "date": "2026-07-15",
       "time": "time-not-supplied"
@@ -292,22 +192,17 @@
       "time": "time-after-hours"
     },
     {
-      "symbol": "WBS",
-      "date": "2026-07-16",
-      "time": "time-not-supplied"
-    },
-    {
       "symbol": "CBSH",
       "date": "2026-07-16",
       "time": "time-pre-market"
     },
     {
-      "symbol": "FNB",
+      "symbol": "VIST",
       "date": "2026-07-16",
       "time": "time-after-hours"
     },
     {
-      "symbol": "VIST",
+      "symbol": "FNB",
       "date": "2026-07-16",
       "time": "time-after-hours"
     },
@@ -452,7 +347,22 @@
       "time": "time-pre-market"
     },
     {
+      "symbol": "NB",
+      "date": "2026-07-17",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "HIFS",
+      "date": "2026-07-17",
+      "time": "time-not-supplied"
+    },
+    {
       "symbol": "OVLY",
+      "date": "2026-07-17",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "PLG",
       "date": "2026-07-17",
       "time": "time-not-supplied"
     },
@@ -492,16 +402,6 @@
       "time": "time-after-hours"
     },
     {
-      "symbol": "ELS",
-      "date": "2026-07-20",
-      "time": "time-not-supplied"
-    },
-    {
-      "symbol": "PAC",
-      "date": "2026-07-20",
-      "time": "time-not-supplied"
-    },
-    {
       "symbol": "WTFC",
       "date": "2026-07-20",
       "time": "time-after-hours"
@@ -527,11 +427,6 @@
       "time": "time-after-hours"
     },
     {
-      "symbol": "AGYS",
-      "date": "2026-07-20",
-      "time": "time-not-supplied"
-    },
-    {
       "symbol": "DX",
       "date": "2026-07-20",
       "time": "time-pre-market"
@@ -547,17 +442,7 @@
       "time": "time-after-hours"
     },
     {
-      "symbol": "VLRS",
-      "date": "2026-07-20",
-      "time": "time-not-supplied"
-    },
-    {
       "symbol": "CPAC",
-      "date": "2026-07-20",
-      "time": "time-not-supplied"
-    },
-    {
-      "symbol": "TRST",
       "date": "2026-07-20",
       "time": "time-not-supplied"
     },
@@ -692,19 +577,24 @@
       "time": "time-after-hours"
     },
     {
-      "symbol": "GPC",
-      "date": "2026-07-21",
-      "time": "time-pre-market"
-    },
-    {
       "symbol": "NLY",
       "date": "2026-07-21",
       "time": "time-after-hours"
     },
     {
+      "symbol": "GPC",
+      "date": "2026-07-21",
+      "time": "time-pre-market"
+    },
+    {
       "symbol": "ALLY",
       "date": "2026-07-21",
       "time": "time-pre-market"
+    },
+    {
+      "symbol": "WBS",
+      "date": "2026-07-21",
+      "time": "time-after-hours"
     },
     {
       "symbol": "VICR",
@@ -737,22 +627,17 @@
       "time": "time-after-hours"
     },
     {
-      "symbol": "WFRD",
-      "date": "2026-07-21",
-      "time": "time-after-hours"
-    },
-    {
       "symbol": "AUB",
       "date": "2026-07-21",
       "time": "time-pre-market"
     },
     {
-      "symbol": "OZK",
+      "symbol": "WFRD",
       "date": "2026-07-21",
       "time": "time-after-hours"
     },
     {
-      "symbol": "ALK",
+      "symbol": "OZK",
       "date": "2026-07-21",
       "time": "time-after-hours"
     },
@@ -762,7 +647,17 @@
       "time": "time-after-hours"
     },
     {
+      "symbol": "ALK",
+      "date": "2026-07-21",
+      "time": "time-after-hours"
+    },
+    {
       "symbol": "PEGA",
+      "date": "2026-07-21",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "NP",
       "date": "2026-07-21",
       "time": "time-after-hours"
     },
@@ -807,14 +702,14 @@
       "time": "time-pre-market"
     },
     {
-      "symbol": "WINA",
-      "date": "2026-07-21",
-      "time": "time-not-supplied"
-    },
-    {
       "symbol": "PEBO",
       "date": "2026-07-21",
       "time": "time-pre-market"
+    },
+    {
+      "symbol": "WINA",
+      "date": "2026-07-21",
+      "time": "time-not-supplied"
     },
     {
       "symbol": "MCB",
@@ -827,7 +722,17 @@
       "time": "time-pre-market"
     },
     {
+      "symbol": "TRST",
+      "date": "2026-07-21",
+      "time": "time-after-hours"
+    },
+    {
       "symbol": "HAFC",
+      "date": "2026-07-21",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "VLRS",
       "date": "2026-07-21",
       "time": "time-after-hours"
     },
@@ -847,12 +752,12 @@
       "time": "time-not-supplied"
     },
     {
-      "symbol": "AMSF",
+      "symbol": "NPB",
       "date": "2026-07-21",
       "time": "time-after-hours"
     },
     {
-      "symbol": "NPB",
+      "symbol": "AMSF",
       "date": "2026-07-21",
       "time": "time-after-hours"
     },
@@ -860,11 +765,6 @@
       "symbol": "BWB",
       "date": "2026-07-21",
       "time": "time-after-hours"
-    },
-    {
-      "symbol": "UNTY",
-      "date": "2026-07-21",
-      "time": "time-not-supplied"
     },
     {
       "symbol": "KREF",
@@ -887,11 +787,6 @@
       "time": "time-not-supplied"
     },
     {
-      "symbol": "RMCF",
-      "date": "2026-07-21",
-      "time": "time-not-supplied"
-    },
-    {
       "symbol": "GOOG",
       "date": "2026-07-22",
       "time": "time-after-hours"
@@ -907,22 +802,22 @@
       "time": "time-after-hours"
     },
     {
-      "symbol": "GEV",
-      "date": "2026-07-22",
-      "time": "time-pre-market"
-    },
-    {
-      "symbol": "TXN",
-      "date": "2026-07-22",
-      "time": "time-after-hours"
-    },
-    {
       "symbol": "PM",
       "date": "2026-07-22",
       "time": "time-pre-market"
     },
     {
+      "symbol": "GEV",
+      "date": "2026-07-22",
+      "time": "time-pre-market"
+    },
+    {
       "symbol": "IBM",
+      "date": "2026-07-22",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "TXN",
       "date": "2026-07-22",
       "time": "time-after-hours"
     },
@@ -942,17 +837,17 @@
       "time": "time-after-hours"
     },
     {
+      "symbol": "EQNR",
+      "date": "2026-07-22",
+      "time": "time-pre-market"
+    },
+    {
       "symbol": "CME",
       "date": "2026-07-22",
       "time": "time-pre-market"
     },
     {
       "symbol": "MCO",
-      "date": "2026-07-22",
-      "time": "time-pre-market"
-    },
-    {
-      "symbol": "EQNR",
       "date": "2026-07-22",
       "time": "time-pre-market"
     },
@@ -1004,12 +899,12 @@
     {
       "symbol": "TDY",
       "date": "2026-07-22",
-      "time": "time-not-supplied"
+      "time": "time-pre-market"
     },
     {
       "symbol": "OTIS",
       "date": "2026-07-22",
-      "time": "time-not-supplied"
+      "time": "time-pre-market"
     },
     {
       "symbol": "FISV",
@@ -1092,17 +987,22 @@
       "time": "time-not-supplied"
     },
     {
+      "symbol": "MOH",
+      "date": "2026-07-22",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "ELS",
+      "date": "2026-07-22",
+      "time": "time-after-hours"
+    },
+    {
       "symbol": "GGG",
       "date": "2026-07-22",
       "time": "time-after-hours"
     },
     {
       "symbol": "KNX",
-      "date": "2026-07-22",
-      "time": "time-after-hours"
-    },
-    {
-      "symbol": "MOH",
       "date": "2026-07-22",
       "time": "time-after-hours"
     },
@@ -1132,14 +1032,14 @@
       "time": "time-after-hours"
     },
     {
-      "symbol": "PLXS",
-      "date": "2026-07-22",
-      "time": "time-not-supplied"
-    },
-    {
       "symbol": "FAF",
       "date": "2026-07-22",
       "time": "time-after-hours"
+    },
+    {
+      "symbol": "PLXS",
+      "date": "2026-07-22",
+      "time": "time-not-supplied"
     },
     {
       "symbol": "EPRT",
@@ -1157,17 +1057,12 @@
       "time": "time-after-hours"
     },
     {
-      "symbol": "SIGI",
-      "date": "2026-07-22",
-      "time": "time-not-supplied"
-    },
-    {
       "symbol": "RLI",
       "date": "2026-07-22",
       "time": "time-after-hours"
     },
     {
-      "symbol": "SON",
+      "symbol": "WEX",
       "date": "2026-07-22",
       "time": "time-after-hours"
     },
@@ -1177,7 +1072,7 @@
       "time": "time-not-supplied"
     },
     {
-      "symbol": "WEX",
+      "symbol": "SON",
       "date": "2026-07-22",
       "time": "time-after-hours"
     },
@@ -1187,9 +1082,9 @@
       "time": "time-pre-market"
     },
     {
-      "symbol": "SEI",
+      "symbol": "FULT",
       "date": "2026-07-22",
-      "time": "time-not-supplied"
+      "time": "time-after-hours"
     },
     {
       "symbol": "TNL",
@@ -1197,7 +1092,7 @@
       "time": "time-pre-market"
     },
     {
-      "symbol": "FULT",
+      "symbol": "TCBI",
       "date": "2026-07-22",
       "time": "time-after-hours"
     },
@@ -1207,34 +1102,9 @@
       "time": "time-not-supplied"
     },
     {
-      "symbol": "TCBI",
-      "date": "2026-07-22",
-      "time": "time-after-hours"
-    },
-    {
-      "symbol": "NP",
-      "date": "2026-07-22",
-      "time": "time-not-supplied"
-    },
-    {
-      "symbol": "BMI",
-      "date": "2026-07-22",
-      "time": "time-pre-market"
-    },
-    {
       "symbol": "OII",
       "date": "2026-07-22",
       "time": "time-after-hours"
-    },
-    {
-      "symbol": "CALM",
-      "date": "2026-07-22",
-      "time": "time-pre-market"
-    },
-    {
-      "symbol": "FBP",
-      "date": "2026-07-22",
-      "time": "time-pre-market"
     },
     {
       "symbol": "CATY",
@@ -1242,9 +1112,9 @@
       "time": "time-after-hours"
     },
     {
-      "symbol": "QS",
+      "symbol": "FBP",
       "date": "2026-07-22",
-      "time": "time-after-hours"
+      "time": "time-pre-market"
     },
     {
       "symbol": "LBRT",
@@ -1252,12 +1122,32 @@
       "time": "time-after-hours"
     },
     {
+      "symbol": "BMI",
+      "date": "2026-07-22",
+      "time": "time-pre-market"
+    },
+    {
       "symbol": "CVBF",
       "date": "2026-07-22",
       "time": "time-not-supplied"
     },
     {
+      "symbol": "CALM",
+      "date": "2026-07-22",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "QS",
+      "date": "2026-07-22",
+      "time": "time-after-hours"
+    },
+    {
       "symbol": "PTEN",
+      "date": "2026-07-22",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "RHI",
       "date": "2026-07-22",
       "time": "time-not-supplied"
     },
@@ -1275,11 +1165,6 @@
       "symbol": "SLG",
       "date": "2026-07-22",
       "time": "time-after-hours"
-    },
-    {
-      "symbol": "RHI",
-      "date": "2026-07-22",
-      "time": "time-not-supplied"
     },
     {
       "symbol": "BANC",
@@ -1312,6 +1197,11 @@
       "time": "time-after-hours"
     },
     {
+      "symbol": "EFSC",
+      "date": "2026-07-22",
+      "time": "time-after-hours"
+    },
+    {
       "symbol": "BANR",
       "date": "2026-07-22",
       "time": "time-after-hours"
@@ -1322,9 +1212,9 @@
       "time": "time-not-supplied"
     },
     {
-      "symbol": "ARR",
+      "symbol": "STC",
       "date": "2026-07-22",
-      "time": "time-not-supplied"
+      "time": "time-after-hours"
     },
     {
       "symbol": "NTST",
@@ -1332,7 +1222,7 @@
       "time": "time-after-hours"
     },
     {
-      "symbol": "STC",
+      "symbol": "ARR",
       "date": "2026-07-22",
       "time": "time-not-supplied"
     },
@@ -1342,14 +1232,14 @@
       "time": "time-after-hours"
     },
     {
-      "symbol": "LOB",
-      "date": "2026-07-22",
-      "time": "time-after-hours"
-    },
-    {
       "symbol": "GSHD",
       "date": "2026-07-22",
       "time": "time-not-supplied"
+    },
+    {
+      "symbol": "LOB",
+      "date": "2026-07-22",
+      "time": "time-after-hours"
     },
     {
       "symbol": "CASH",
@@ -1374,7 +1264,7 @@
     {
       "symbol": "OBK",
       "date": "2026-07-22",
-      "time": "time-not-supplied"
+      "time": "time-after-hours"
     },
     {
       "symbol": "PFBC",
@@ -1394,7 +1284,7 @@
     {
       "symbol": "OSBC",
       "date": "2026-07-22",
-      "time": "time-not-supplied"
+      "time": "time-after-hours"
     },
     {
       "symbol": "CFFN",
@@ -1437,22 +1327,17 @@
       "time": "time-after-hours"
     },
     {
-      "symbol": "EFOR",
-      "date": "2026-07-22",
-      "time": "time-not-supplied"
-    },
-    {
       "symbol": "TCBX",
       "date": "2026-07-22",
       "time": "time-after-hours"
     },
     {
-      "symbol": "NFBK",
+      "symbol": "NRIM",
       "date": "2026-07-22",
       "time": "time-not-supplied"
     },
     {
-      "symbol": "NRIM",
+      "symbol": "NFBK",
       "date": "2026-07-22",
       "time": "time-not-supplied"
     },
@@ -1472,12 +1357,12 @@
       "time": "time-after-hours"
     },
     {
-      "symbol": "NVEC",
+      "symbol": "CBAN",
       "date": "2026-07-22",
-      "time": "time-not-supplied"
+      "time": "time-after-hours"
     },
     {
-      "symbol": "CBAN",
+      "symbol": "NVEC",
       "date": "2026-07-22",
       "time": "time-after-hours"
     },
@@ -1502,17 +1387,17 @@
       "time": "time-pre-market"
     },
     {
+      "symbol": "OTLY",
+      "date": "2026-07-22",
+      "time": "time-pre-market"
+    },
+    {
       "symbol": "BRBS",
       "date": "2026-07-22",
       "time": "time-not-supplied"
     },
     {
       "symbol": "JMSB",
-      "date": "2026-07-22",
-      "time": "time-pre-market"
-    },
-    {
-      "symbol": "OTLY",
       "date": "2026-07-22",
       "time": "time-pre-market"
     },
@@ -1572,14 +1457,19 @@
       "time": "time-after-hours"
     },
     {
+      "symbol": "FRMM",
+      "date": "2026-07-22",
+      "time": "time-not-supplied"
+    },
+    {
       "symbol": "CSBR",
       "date": "2026-07-22",
       "time": "time-not-supplied"
     },
     {
-      "symbol": "FRMM",
+      "symbol": "HYFT",
       "date": "2026-07-22",
-      "time": "time-not-supplied"
+      "time": "time-after-hours"
     },
     {
       "symbol": "INTC",
@@ -1632,22 +1522,17 @@
       "time": "time-pre-market"
     },
     {
-      "symbol": "LYG",
-      "date": "2026-07-23",
-      "time": "time-not-supplied"
-    },
-    {
       "symbol": "FCX",
       "date": "2026-07-23",
       "time": "time-pre-market"
     },
     {
-      "symbol": "CMCSA",
+      "symbol": "LYG",
       "date": "2026-07-23",
-      "time": "time-pre-market"
+      "time": "time-not-supplied"
     },
     {
-      "symbol": "NOK",
+      "symbol": "CMCSA",
       "date": "2026-07-23",
       "time": "time-pre-market"
     },
@@ -1662,9 +1547,9 @@
       "time": "time-pre-market"
     },
     {
-      "symbol": "DLR",
+      "symbol": "NOK",
       "date": "2026-07-23",
-      "time": "time-after-hours"
+      "time": "time-pre-market"
     },
     {
       "symbol": "DB",
@@ -1672,14 +1557,19 @@
       "time": "time-not-supplied"
     },
     {
-      "symbol": "STM",
+      "symbol": "DLR",
       "date": "2026-07-23",
-      "time": "time-pre-market"
+      "time": "time-after-hours"
     },
     {
       "symbol": "FIX",
       "date": "2026-07-23",
       "time": "time-not-supplied"
+    },
+    {
+      "symbol": "STM",
+      "date": "2026-07-23",
+      "time": "time-pre-market"
     },
     {
       "symbol": "EW",
@@ -1747,12 +1637,12 @@
       "time": "time-pre-market"
     },
     {
-      "symbol": "SNA",
+      "symbol": "DOW",
       "date": "2026-07-23",
       "time": "time-pre-market"
     },
     {
-      "symbol": "DOW",
+      "symbol": "SNA",
       "date": "2026-07-23",
       "time": "time-pre-market"
     },
@@ -1779,7 +1669,7 @@
     {
       "symbol": "DECK",
       "date": "2026-07-23",
-      "time": "time-not-supplied"
+      "time": "time-after-hours"
     },
     {
       "symbol": "COKE",
@@ -1788,11 +1678,6 @@
     },
     {
       "symbol": "ALLE",
-      "date": "2026-07-23",
-      "time": "time-pre-market"
-    },
-    {
-      "symbol": "AAL",
       "date": "2026-07-23",
       "time": "time-pre-market"
     },
@@ -1807,19 +1692,14 @@
       "time": "time-pre-market"
     },
     {
-      "symbol": "ORI",
+      "symbol": "AAL",
       "date": "2026-07-23",
       "time": "time-pre-market"
     },
     {
-      "symbol": "ENSG",
+      "symbol": "ORI",
       "date": "2026-07-23",
-      "time": "time-not-supplied"
-    },
-    {
-      "symbol": "FCFS",
-      "date": "2026-07-23",
-      "time": "time-not-supplied"
+      "time": "time-pre-market"
     },
     {
       "symbol": "SSB",
@@ -1827,9 +1707,24 @@
       "time": "time-after-hours"
     },
     {
+      "symbol": "ENSG",
+      "date": "2026-07-23",
+      "time": "time-not-supplied"
+    },
+    {
       "symbol": "COLB",
       "date": "2026-07-23",
       "time": "time-after-hours"
+    },
+    {
+      "symbol": "FCFS",
+      "date": "2026-07-23",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "MBLY",
+      "date": "2026-07-23",
+      "time": "time-pre-market"
     },
     {
       "symbol": "MXL",
@@ -1842,9 +1737,14 @@
       "time": "time-pre-market"
     },
     {
-      "symbol": "MBLY",
+      "symbol": "REXR",
       "date": "2026-07-23",
-      "time": "time-pre-market"
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "BVN",
+      "date": "2026-07-23",
+      "time": "time-not-supplied"
     },
     {
       "symbol": "KNSL",
@@ -1852,19 +1752,9 @@
       "time": "time-after-hours"
     },
     {
-      "symbol": "REXR",
-      "date": "2026-07-23",
-      "time": "time-after-hours"
-    },
-    {
       "symbol": "POOL",
       "date": "2026-07-23",
       "time": "time-pre-market"
-    },
-    {
-      "symbol": "BVN",
-      "date": "2026-07-23",
-      "time": "time-not-supplied"
     },
     {
       "symbol": "ACI",
@@ -1902,17 +1792,17 @@
       "time": "time-after-hours"
     },
     {
-      "symbol": "GTX",
-      "date": "2026-07-23",
-      "time": "time-not-supplied"
-    },
-    {
-      "symbol": "ENVA",
+      "symbol": "ASB",
       "date": "2026-07-23",
       "time": "time-after-hours"
     },
     {
-      "symbol": "ASB",
+      "symbol": "SIGI",
+      "date": "2026-07-23",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "ENVA",
       "date": "2026-07-23",
       "time": "time-after-hours"
     },
@@ -1932,19 +1822,14 @@
       "time": "time-after-hours"
     },
     {
-      "symbol": "ADT",
+      "symbol": "LAZ",
       "date": "2026-07-23",
-      "time": "time-not-supplied"
+      "time": "time-pre-market"
     },
     {
       "symbol": "SLM",
       "date": "2026-07-23",
       "time": "time-after-hours"
-    },
-    {
-      "symbol": "LAZ",
-      "date": "2026-07-23",
-      "time": "time-pre-market"
     },
     {
       "symbol": "COCO",
@@ -1957,14 +1842,14 @@
       "time": "time-after-hours"
     },
     {
-      "symbol": "SKYW",
-      "date": "2026-07-23",
-      "time": "time-after-hours"
-    },
-    {
       "symbol": "BFH",
       "date": "2026-07-23",
       "time": "time-pre-market"
+    },
+    {
+      "symbol": "SKYW",
+      "date": "2026-07-23",
+      "time": "time-after-hours"
     },
     {
       "symbol": "FIBK",
@@ -2007,11 +1892,6 @@
       "time": "time-pre-market"
     },
     {
-      "symbol": "HNI",
-      "date": "2026-07-23",
-      "time": "time-not-supplied"
-    },
-    {
       "symbol": "TBBK",
       "date": "2026-07-23",
       "time": "time-not-supplied"
@@ -2029,7 +1909,7 @@
     {
       "symbol": "CUBI",
       "date": "2026-07-23",
-      "time": "time-not-supplied"
+      "time": "time-after-hours"
     },
     {
       "symbol": "HTH",
@@ -2042,22 +1922,27 @@
       "time": "time-pre-market"
     },
     {
-      "symbol": "NVCR",
-      "date": "2026-07-23",
-      "time": "time-pre-market"
-    },
-    {
       "symbol": "SRCE",
       "date": "2026-07-23",
       "time": "time-not-supplied"
     },
     {
-      "symbol": "SAM",
+      "symbol": "TCBK",
+      "date": "2026-07-23",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "WKC",
       "date": "2026-07-23",
       "time": "time-after-hours"
     },
     {
-      "symbol": "WKC",
+      "symbol": "NVCR",
+      "date": "2026-07-23",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "SAM",
       "date": "2026-07-23",
       "time": "time-after-hours"
     },
@@ -2067,22 +1952,17 @@
       "time": "time-pre-market"
     },
     {
+      "symbol": "DCOM",
+      "date": "2026-07-23",
+      "time": "time-not-supplied"
+    },
+    {
       "symbol": "ATRC",
       "date": "2026-07-23",
       "time": "time-after-hours"
     },
     {
       "symbol": "CTS",
-      "date": "2026-07-23",
-      "time": "time-not-supplied"
-    },
-    {
-      "symbol": "DCOM",
-      "date": "2026-07-23",
-      "time": "time-not-supplied"
-    },
-    {
-      "symbol": "TCBK",
       "date": "2026-07-23",
       "time": "time-not-supplied"
     },
@@ -2127,12 +2007,12 @@
       "time": "time-pre-market"
     },
     {
-      "symbol": "UVE",
+      "symbol": "HTLD",
       "date": "2026-07-23",
       "time": "time-not-supplied"
     },
     {
-      "symbol": "HTLD",
+      "symbol": "UVE",
       "date": "2026-07-23",
       "time": "time-not-supplied"
     },
@@ -2144,7 +2024,12 @@
     {
       "symbol": "ESQ",
       "date": "2026-07-23",
-      "time": "time-not-supplied"
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "SCHL",
+      "date": "2026-07-23",
+      "time": "time-after-hours"
     },
     {
       "symbol": "BFST",
@@ -2153,11 +2038,6 @@
     },
     {
       "symbol": "AMTB",
-      "date": "2026-07-23",
-      "time": "time-after-hours"
-    },
-    {
-      "symbol": "SCHL",
       "date": "2026-07-23",
       "time": "time-after-hours"
     },
@@ -2172,7 +2052,7 @@
       "time": "time-not-supplied"
     },
     {
-      "symbol": "HZO",
+      "symbol": "FPH",
       "date": "2026-07-23",
       "time": "time-not-supplied"
     },
@@ -2182,12 +2062,12 @@
       "time": "time-after-hours"
     },
     {
-      "symbol": "FPH",
+      "symbol": "SHBI",
       "date": "2026-07-23",
       "time": "time-not-supplied"
     },
     {
-      "symbol": "SHBI",
+      "symbol": "HZO",
       "date": "2026-07-23",
       "time": "time-not-supplied"
     },
@@ -2207,14 +2087,14 @@
       "time": "time-not-supplied"
     },
     {
-      "symbol": "BWMX",
-      "date": "2026-07-23",
-      "time": "time-after-hours"
-    },
-    {
       "symbol": "AROW",
       "date": "2026-07-23",
       "time": "time-not-supplied"
+    },
+    {
+      "symbol": "BWMX",
+      "date": "2026-07-23",
+      "time": "time-after-hours"
     },
     {
       "symbol": "MSBI",
@@ -2222,14 +2102,14 @@
       "time": "time-after-hours"
     },
     {
-      "symbol": "KRNY",
-      "date": "2026-07-23",
-      "time": "time-pre-market"
-    },
-    {
       "symbol": "ACNB",
       "date": "2026-07-23",
       "time": "time-not-supplied"
+    },
+    {
+      "symbol": "KRNY",
+      "date": "2026-07-23",
+      "time": "time-pre-market"
     },
     {
       "symbol": "CIVB",
@@ -2252,17 +2132,12 @@
       "time": "time-after-hours"
     },
     {
-      "symbol": "AVBC",
-      "date": "2026-07-23",
-      "time": "time-not-supplied"
-    },
-    {
       "symbol": "PCB",
       "date": "2026-07-23",
       "time": "time-not-supplied"
     },
     {
-      "symbol": "FRST",
+      "symbol": "AVBC",
       "date": "2026-07-23",
       "time": "time-not-supplied"
     },
@@ -2270,6 +2145,11 @@
       "symbol": "ULH",
       "date": "2026-07-23",
       "time": "time-not-supplied"
+    },
+    {
+      "symbol": "FRST",
+      "date": "2026-07-23",
+      "time": "time-after-hours"
     },
     {
       "symbol": "USCB",
@@ -2302,17 +2182,17 @@
       "time": "time-not-supplied"
     },
     {
+      "symbol": "JAKK",
+      "date": "2026-07-23",
+      "time": "time-after-hours"
+    },
+    {
       "symbol": "BPRN",
       "date": "2026-07-23",
       "time": "time-not-supplied"
     },
     {
       "symbol": "CFFI",
-      "date": "2026-07-23",
-      "time": "time-not-supplied"
-    },
-    {
-      "symbol": "JAKK",
       "date": "2026-07-23",
       "time": "time-not-supplied"
     },
@@ -2327,17 +2207,17 @@
       "time": "time-not-supplied"
     },
     {
+      "symbol": "EFSI",
+      "date": "2026-07-23",
+      "time": "time-not-supplied"
+    },
+    {
       "symbol": "OPBK",
       "date": "2026-07-23",
       "time": "time-not-supplied"
     },
     {
       "symbol": "UTMD",
-      "date": "2026-07-23",
-      "time": "time-not-supplied"
-    },
-    {
-      "symbol": "EFSI",
       "date": "2026-07-23",
       "time": "time-not-supplied"
     },
@@ -2367,12 +2247,12 @@
       "time": "time-not-supplied"
     },
     {
-      "symbol": "RPT",
+      "symbol": "FNWB",
       "date": "2026-07-23",
       "time": "time-not-supplied"
     },
     {
-      "symbol": "FNWB",
+      "symbol": "RPT",
       "date": "2026-07-23",
       "time": "time-not-supplied"
     },
@@ -2382,12 +2262,12 @@
       "time": "time-not-supplied"
     },
     {
-      "symbol": "CLST",
+      "symbol": "IMA",
       "date": "2026-07-23",
       "time": "time-not-supplied"
     },
     {
-      "symbol": "IMA",
+      "symbol": "CLST",
       "date": "2026-07-23",
       "time": "time-not-supplied"
     },
@@ -2424,10 +2304,10 @@
     {
       "symbol": "HCA",
       "date": "2026-07-24",
-      "time": "time-not-supplied"
+      "time": "time-pre-market"
     },
     {
-      "symbol": "AON",
+      "symbol": "E",
       "date": "2026-07-24",
       "time": "time-not-supplied"
     },
@@ -2435,11 +2315,6 @@
       "symbol": "CNI",
       "date": "2026-07-24",
       "time": "time-pre-market"
-    },
-    {
-      "symbol": "E",
-      "date": "2026-07-24",
-      "time": "time-not-supplied"
     },
     {
       "symbol": "SLB",
@@ -2472,11 +2347,6 @@
       "time": "time-pre-market"
     },
     {
-      "symbol": "AN",
-      "date": "2026-07-24",
-      "time": "time-not-supplied"
-    },
-    {
       "symbol": "LW",
       "date": "2026-07-24",
       "time": "time-pre-market"
@@ -2497,11 +2367,6 @@
       "time": "time-pre-market"
     },
     {
-      "symbol": "FHB",
-      "date": "2026-07-24",
-      "time": "time-not-supplied"
-    },
-    {
       "symbol": "LBTYA",
       "date": "2026-07-24",
       "time": "time-pre-market"
@@ -2513,6 +2378,11 @@
     },
     {
       "symbol": "LBTYK",
+      "date": "2026-07-24",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "FHB",
       "date": "2026-07-24",
       "time": "time-pre-market"
     },
@@ -2542,14 +2412,9 @@
       "time": "time-not-supplied"
     },
     {
-      "symbol": "VRTS",
-      "date": "2026-07-24",
-      "time": "time-not-supplied"
-    },
-    {
       "symbol": "SBSI",
       "date": "2026-07-24",
-      "time": "time-not-supplied"
+      "time": "time-pre-market"
     },
     {
       "symbol": "CPF",
@@ -2610,7 +2475,1012 @@
       "symbol": "BKR",
       "date": "2026-07-26",
       "time": "time-after-hours"
+    },
+    {
+      "symbol": "AZN",
+      "date": "2026-07-27",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "WELL",
+      "date": "2026-07-27",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "CDNS",
+      "date": "2026-07-27",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "NUE",
+      "date": "2026-07-27",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "VIV",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "CLS",
+      "date": "2026-07-27",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "VOD",
+      "date": "2026-07-27",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "CINF",
+      "date": "2026-07-27",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "PFG",
+      "date": "2026-07-27",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "FFIV",
+      "date": "2026-07-27",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "BRO",
+      "date": "2026-07-27",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "AMKR",
+      "date": "2026-07-27",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "EXEL",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "UDR",
+      "date": "2026-07-27",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "TFII",
+      "date": "2026-07-27",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "RMBS",
+      "date": "2026-07-27",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "SANM",
+      "date": "2026-07-27",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "BRX",
+      "date": "2026-07-27",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "UHS",
+      "date": "2026-07-27",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "SSD",
+      "date": "2026-07-27",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "OMAB",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "RITM",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "GRFS",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "CNO",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "KRC",
+      "date": "2026-07-27",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "CDP",
+      "date": "2026-07-27",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "DYN",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "MCHB",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "CURB",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "PRK",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "BOH",
+      "date": "2026-07-27",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "ARLP",
+      "date": "2026-07-27",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "NVTS",
+      "date": "2026-07-27",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "AGYS",
+      "date": "2026-07-27",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "CHRN",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "NBTB",
+      "date": "2026-07-27",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "HTO",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "WHR",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "WU",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "NTB",
+      "date": "2026-07-27",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "HAPN",
+      "date": "2026-07-27",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "NWBI",
+      "date": "2026-07-27",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "GABC",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "HOPE",
+      "date": "2026-07-27",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "FSUN",
+      "date": "2026-07-27",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "HLIT",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "TWO",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "HBT",
+      "date": "2026-07-27",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "NBN",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "KFRC",
+      "date": "2026-07-27",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "PGC",
+      "date": "2026-07-27",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "BCAL",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "UHT",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "CBNK",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "BSRR",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "NRC",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "BMRC",
+      "date": "2026-07-27",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "CBK",
+      "date": "2026-07-27",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "GBFH",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "NEWT",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "FMAO",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "RNGR",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "MVBF",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "COSO",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "CBNA",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "CZWI",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "PERF",
+      "date": "2026-07-27",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "BCBP",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "INHD",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "PROV",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "GOVX",
+      "date": "2026-07-27",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "V",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "KO",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "KLAC",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "BA",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "GLW",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "ISRG",
+      "date": "2026-07-28",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "SPGI",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "GSK",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "UPS",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "BCS",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "WM",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "SHW",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "AMT",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "AMX",
+      "date": "2026-07-28",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "ITW",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "RCL",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "ECL",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "HLT",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "NXPI",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "BE",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "PCAR",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "CARR",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "F",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "FMX",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "PYPL",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "ACGL",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "IQV",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "CNC",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "DTE",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "EXR",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "CNP",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "XYL",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "FE",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "PHG",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "PPG",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "HUBB",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "OMC",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "CMS",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "VLTO",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "INCY",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "WPC",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "TXT",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "DINO",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "TRU",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "LOGI",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "UNM",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "IVZ",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "MLI",
+      "date": "2026-07-28",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "CR",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "PNR",
+      "date": "2026-07-28",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "CSGP",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "UMBF",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "BXP",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "MANH",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "AXS",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "ASR",
+      "date": "2026-07-28",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "THG",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "STAG",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "LSTR",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "NOV",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "AXTA",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "AWI",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "CHE",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "MMYT",
+      "date": "2026-07-28",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "CVLT",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "CZR",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "TV",
+      "date": "2026-07-28",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "RUSHA",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "RUSHB",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "ENPH",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "CAR",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "VRNS",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "HRI",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "FELE",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "EXLS",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "CAKE",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "MEOH",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "ABG",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "RNST",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "PII",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "ITRI",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "CBU",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "AB",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "HIW",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "GEF",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "SBCF",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "CGAU",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "AKR",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "ACHC",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "TRMK",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "WERN",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "BUSE",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "SLDE",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "MBIN",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "CHCO",
+      "date": "2026-07-28",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "NEO",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "HURN",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "AAT",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "OI",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "NBR",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "PDM",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "PDS",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "CCNE",
+      "date": "2026-07-28",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "CAC",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "THFF",
+      "date": "2026-07-28",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "FCBC",
+      "date": "2026-07-28",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "HTB",
+      "date": "2026-07-28",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "CTO",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "BRSP",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "RWT",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "BHB",
+      "date": "2026-07-28",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "SFST",
+      "date": "2026-07-28",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "TLRY",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "QUAD",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "USNA",
+      "date": "2026-07-28",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "WSBF",
+      "date": "2026-07-28",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "TSBK",
+      "date": "2026-07-28",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "FVCB",
+      "date": "2026-07-28",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "WNEB",
+      "date": "2026-07-28",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "FRAF",
+      "date": "2026-07-28",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "LCNB",
+      "date": "2026-07-28",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "FSBW",
+      "date": "2026-07-28",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "NAUT",
+      "date": "2026-07-28",
+      "time": "time-pre-market"
+    },
+    {
+      "symbol": "SEVN",
+      "date": "2026-07-28",
+      "time": "time-after-hours"
+    },
+    {
+      "symbol": "CBFV",
+      "date": "2026-07-28",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "MNSB",
+      "date": "2026-07-28",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "AUBN",
+      "date": "2026-07-28",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "ASRV",
+      "date": "2026-07-28",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "LOAN",
+      "date": "2026-07-28",
+      "time": "time-not-supplied"
+    },
+    {
+      "symbol": "ALZN",
+      "date": "2026-07-28",
+      "time": "time-not-supplied"
     }
   ],
-  "last_attempted": "2026-07-13T14:01:33.8678941+00:00"
+  "last_attempted": "2026-07-15T14:01:42.4399498+00:00"
 }
