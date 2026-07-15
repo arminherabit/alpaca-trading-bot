@@ -94,34 +94,34 @@
     <span class="badge" style="color:#3fb950;  border-color:#3fb950;">OPEN</span>
     <span class="badge" style="color:var(--sub); border-color:var(--border);">Closes 8:00 PM</span>
   </div>
-  <span class="gen-time">Generated: 2026-07-15 14:01:56 &nbsp;|&nbsp; Auto-refresh: 30s</span>
+  <span class="gen-time">Generated: 2026-07-15 14:11:17 &nbsp;|&nbsp; Auto-refresh: 30s</span>
 </header>
 
 <!-- Account Stats -->
 <div class="grid-top">
   <div class="stat-card">
     <div class="label">Equity</div>
-    <div class="value blue">$94,926.25</div>
+    <div class="value blue">$95,007.96</div>
     <div class="sub">Paper account</div>
   </div>
   <div class="stat-card">
     <div class="label">Day P&amp;L</div>
-    <div class="value red">$-33.85</div>
-    <div class="sub">-0.04%</div>
+    <div class="value green">$47.86</div>
+    <div class="sub">+0.05%</div>
   </div>
   <div class="stat-card">
     <div class="label">Buying Power</div>
-    <div class="value">$346,337.24</div>
-    <div class="sub">Cash: $76,971.20</div>
+    <div class="value">$334,075.70</div>
+    <div class="sub">Cash: $65,152.30</div>
   </div>
   <div class="stat-card">
     <div class="label">Trades Today</div>
-    <div class="value">1</div>
+    <div class="value">2</div>
     <div class="sub">W: 0 &nbsp;/&nbsp; L: 0</div>
   </div>
   <div class="stat-card">
     <div class="label">Open Positions</div>
-    <div class="value">1 <span style="font-size:14px;color:var(--sub)">/ 3</span></div>
+    <div class="value">2 <span style="font-size:14px;color:var(--sub)">/ 3</span></div>
     <div class="sub">Max 3 allowed</div>
   </div>
   <div class="stat-card">
@@ -157,8 +157,8 @@
 </footer>
 
 <script>
-const positions = {"symbol":"VOYA","side":"long","qty":183.0,"entry":94.348033,"current":98.115,"stop":93.4,"target":96.71,"rr":2.49,"unrlPnl":689.35,"unrlPct":3.99,"projProfit":432.24,"projLoss":173.49,"pctToTarget":-1.43,"pctToStop":4.81,"progress":100,"value":17955.04};
-const closed    = ;
+const positions = [{"symbol":"PYPL","side":"long","qty":216.0,"entry":54.71713,"current":55.07,"stop":54.17,"target":56.09,"rr":2.51,"unrlPnl":76.22,"unrlPct":0.64,"projProfit":296.54,"projLoss":118.18,"pctToTarget":1.85,"pctToStop":1.63,"progress":47,"value":11895.12},{"symbol":"VOYA","side":"long","qty":183.0,"entry":94.348033,"current":98.145,"stop":93.4,"target":96.71,"rr":2.49,"unrlPnl":694.84,"unrlPct":4.02,"projProfit":432.24,"projLoss":173.49,"pctToTarget":-1.46,"pctToStop":4.83,"progress":100,"value":17960.54}];
+const closed    = {"symbol":"PYPL","side":"buy","qty":"216","fillPrice":54.72,"filledAt":"14:01:58","orderType":"limit"};
 
 function fmt(n, d=2) {
   return (n >= 0 ? '+' : '') + Number(n).toFixed(d);
