@@ -1,0 +1,10 @@
+{
+  "Time": "2026-07-20T14:29:14.1307578Z",
+  "Event": "Unusual move: 0.22x avg volume, +4.2% today",
+  "AffectedTickers": [
+    "INTC"
+  ],
+  "Impact": "Price +4.2% on 0.22x relative volume vs 20-day avg.",
+  "RecommendedAction": "Monitor",
+  "HeadlineIds": null
+}
