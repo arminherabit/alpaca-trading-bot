@@ -6,6 +6,11 @@ on:
     # the external cron-job.org pinger via repository_dispatch below.
     - cron: '0,20,40 13-20 * * 1-5'
   workflow_dispatch:        # Manual trigger from GitHub UI
+    inputs:
+      sentinel_only:
+        description: "Run TrumpMarketSentinel only (no trading engine, no orders)"
+        type: boolean
+        default: false
   repository_dispatch:      # External trigger via GitHub API (cron-job.org)
     types: [run-bot]
 
@@ -39,13 +44,23 @@ jobs:
           sudo apt-get install -y powershell
 
       - name: Run Alpaca bot scan
+        if: ${{ github.event.inputs.sentinel_only != 'true' }}
         shell: pwsh
         env:
           ALPACA_API_KEY:    ${{ secrets.ALPACA_API_KEY }}
           ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
         run: pwsh ./alpaca_bot.ps1 -Once
 
+      - name: Run TrumpMarketSentinel only (manual, no trades)
+        if: ${{ github.event.inputs.sentinel_only == 'true' }}
+        shell: pwsh
+        env:
+          ALPACA_API_KEY:    ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
+        run: pwsh ./alpaca_bot.ps1 -SentinelOnly
+
       - name: Generate dashboard
+        if: ${{ github.event.inputs.sentinel_only != 'true' }}
         shell: pwsh
         env:
           ALPACA_API_KEY:    ${{ secrets.ALPACA_API_KEY }}
@@ -53,6 +68,7 @@ jobs:
         run: pwsh ./alpaca_dashboard_html.ps1 -GenerateOnly
 
       - name: Upload dashboard artifact
+        if: ${{ github.event.inputs.sentinel_only != 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: alpaca-dashboard

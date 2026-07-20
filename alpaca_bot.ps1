@@ -7,10 +7,11 @@
 #   If require_approval=false AND paper_trading=true, auto-executes.
 
 param(
-    [switch]$Once,     # Run one scan cycle then exit
-    [switch]$Approve,  # Approve pending trades and submit orders
-    [switch]$Cancel,   # Cancel all open orders and flatten positions
-    [string]$ApproveId # Approve a specific pending trade by ID
+    [switch]$Once,         # Run one scan cycle then exit
+    [switch]$Approve,      # Approve pending trades and submit orders
+    [switch]$Cancel,       # Cancel all open orders and flatten positions
+    [string]$ApproveId,    # Approve a specific pending trade by ID
+    [switch]$SentinelOnly  # One-off TrumpMarketSentinel scan only -- no trading engine, no orders
 )
 
 . (Join-Path $PSScriptRoot "alpaca_client.ps1")
@@ -1158,6 +1159,12 @@ function Run-Scan($cfg, $state) {
 
 $cfg   = Load-AlpacaConfig
 $state = Load-State
+
+if ($SentinelOnly) {
+    $alerts = Invoke-TrumpMarketSentinel $cfg
+    if ($alerts.Count -eq 0) { Write-Host "  [TRUMP-SENTINEL] No significant alerts this run." -ForegroundColor DarkGray }
+    exit 0
+}
 
 if ($Cancel) {
     Invoke-CancelAll $cfg
