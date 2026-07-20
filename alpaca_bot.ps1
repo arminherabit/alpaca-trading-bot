@@ -22,6 +22,7 @@ param(
 . (Join-Path $PSScriptRoot "alpaca_regime.ps1")
 . (Join-Path $PSScriptRoot "alpaca_news.ps1")
 . (Join-Path $PSScriptRoot "alpaca_earnings.ps1")
+. (Join-Path $PSScriptRoot "alpaca_trump_sentinel.ps1")
 
 $StatePath   = Join-Path $PSScriptRoot "alpaca_state.json"
 $PendingPath = Join-Path $PSScriptRoot "pending_approval.json"
@@ -730,6 +731,11 @@ function Run-Scan($cfg, $state) {
     # next session. The 7-day lookback in Sync-ClosedTrades is safe to call
     # repeatedly thanks to the recorded_exits dedup set.
     $state = Sync-ClosedTrades $cfg $state
+
+    # ── TrumpMarketSentinel: Trump/administration headline + volume watch ───
+    # Advisory-only, runs every cycle (including pre/post market and weekends)
+    # since news catalysts aren't bound to trading hours. Never places orders.
+    Invoke-TrumpMarketSentinel $cfg | Out-Null
 
     # Market hours check
     if (-not (Test-MarketOpen $cfg)) {

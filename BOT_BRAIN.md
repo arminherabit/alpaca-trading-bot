@@ -381,6 +381,26 @@ does not gate direction.
 ### Earnings (`alpaca_earnings.ps1`)
 Nasdaq public calendar, 14 days forward, 24h cache TTL, 4h failure back-off.
 
+### TrumpMarketSentinel (`alpaca_trump_sentinel.ps1`)
+Runs every scan cycle, before the market-open gate (news doesn't wait for
+9:30 ET). Scans the same Alpaca news feed for headlines matching a
+Trump/administration/policy keyword lexicon (tariffs, executive orders,
+defense contracts, export controls, etc.) tagged against a small watchlist
+(`trump_sentinel_watchlist`, default DJT/PLTR/LMT/INTC/RTX/NOC/GD/TSM/MSTR/BA).
+Cross-checks each watchlist name for unusual relative volume (≥2x 20-day avg)
+or daily price move (≥3%) via `Get-DailyBars` + `Get-RelativeVolume`.
+
+Alerts print in a fixed format (Event / Affected Tickers / Impact Analysis /
+Recommended Action) and are appended to `trump_sentinel_log.json`, which CI
+persists like state/memory so headline dedup survives across ephemeral
+runners. `RecommendedAction` (Monitor/Buy Dip/Sell/Avoid) is a heuristic
+label for a human to act on — **this module never places orders**, same as
+the plain news catalyst score.
+
+Known limit: only Alpaca's licensed news wire is wired in — there is no live
+X or Truth Social feed, so headline-only catalysts (a raw social post with no
+wire pickup yet) won't be caught until financial media covers it.
+
 ```
 days_to_earnings <= 2           -> HARD REJECT (gap risk through stops)
 days_to_earnings in (2, 10]     -> +1.0 screener score (run-up drift)
@@ -552,6 +572,7 @@ All persisted to the repo by the workflow after every run (`[skip ci]` commits).
 | `alpaca_screener.ps1` | Watchlist, memory, edge lookups, correlation groups, `Sync-ClosedTrades` |
 | `alpaca_news.ps1` | News catalysts + sentiment lexicon |
 | `alpaca_earnings.ps1` | Nasdaq earnings cache |
+| `alpaca_trump_sentinel.ps1` | TrumpMarketSentinel — Trump/policy headline + volume watch, advisory alerts |
 | `alpaca_cycle_screener.ps1` | Cycle-leader overlay (news accel, sector heat, themes) |
 | `alpaca_dashboard_html.ps1` | HTML dashboard generator |
 | `.github/workflows/alpaca_bot.yml` | Trigger + runner + state persistence |

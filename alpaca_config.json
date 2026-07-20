@@ -44,5 +44,11 @@
   "earnings_blackout_days":  2,
   "earnings_runup_days":     10,
 
-  "cycle_screener_enabled":  true
+  "cycle_screener_enabled":  true,
+
+  "trump_sentinel_enabled":         true,
+  "trump_sentinel_watchlist":       ["DJT", "PLTR", "LMT", "INTC", "RTX", "NOC", "GD", "TSM", "MSTR", "BA"],
+  "trump_sentinel_lookback_hours":  6,
+  "trump_sentinel_min_rel_volume":  2.0,
+  "trump_sentinel_min_move_pct":    3.0
 }
