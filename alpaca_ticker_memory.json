@@ -593,11 +593,30 @@
       },
       "last_trade": "2026-07-20T13:50:33.7270668+00:00",
       "added_count": 0
+    },
+    "SNOW": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_pnl": -300.06,
+      "avg_pnl": -300.06,
+      "win_rate": 0.0,
+      "score": 0.7,
+      "consecutive_losses": 1,
+      "best_strategy": "",
+      "strategy_wins": {
+        "BRKOUT": 0
+      },
+      "strategy_trades": {
+        "BRKOUT": 1
+      },
+      "last_trade": "2026-07-22T13:50:29.5748556+00:00",
+      "added_count": 0
     }
   },
-  "last_updated": "2026-07-21T14:01:16.3114289+00:00",
+  "last_updated": "2026-07-22T13:50:29.5942664+00:00",
   "last_screened": "2026-07-21T14:01:16.3027563+00:00",
-  "total_trades": 52,
+  "total_trades": 53,
   "strategy_stats": {
     "EMA": {
       "trades": 17,
@@ -624,12 +643,12 @@
       "avg_pnl": -252.4
     },
     "BRKOUT": {
-      "trades": 9,
+      "trades": 10,
       "wins": 4,
-      "losses": 5,
-      "total_pnl": -19.44,
-      "win_rate": 0.444,
-      "avg_pnl": -2.16
+      "losses": 6,
+      "total_pnl": -319.5,
+      "win_rate": 0.4,
+      "avg_pnl": -31.95
     }
   },
   "hour_stats": {
@@ -658,12 +677,12 @@
       "avg_pnl": -128.3
     },
     "9": {
-      "trades": 11,
+      "trades": 12,
       "wins": 4,
-      "losses": 7,
-      "total_pnl": -1026.79,
-      "win_rate": 0.364,
-      "avg_pnl": -93.34
+      "losses": 8,
+      "total_pnl": -1326.85,
+      "win_rate": 0.333,
+      "avg_pnl": -110.57
     },
     "10": {
       "trades": 3,
