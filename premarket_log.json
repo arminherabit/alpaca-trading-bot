@@ -1,0 +1,162 @@
+{
+  "Time": "2026-07-23T03:22:48.2745165Z",
+  "Universe": [
+    "DJT",
+    "PLTR",
+    "LMT",
+    "INTC",
+    "RTX",
+    "NOC",
+    "GD",
+    "TSM",
+    "MSTR",
+    "BA",
+    "SPY",
+    "QQQ",
+    "AAPL",
+    "NVDA",
+    "TSLA",
+    "MSFT",
+    "AMD"
+  ],
+  "Gaps": [
+    {
+      "Symbol": "DJT",
+      "GapPct": -5.91,
+      "Last": 9.23,
+      "PrevClose": 9.81
+    },
+    {
+      "Symbol": "PLTR",
+      "GapPct": -5.87,
+      "Last": 124.87,
+      "PrevClose": 132.65
+    },
+    {
+      "Symbol": "TSLA",
+      "GapPct": -3.73,
+      "Last": 364.78,
+      "PrevClose": 378.9
+    },
+    {
+      "Symbol": "NOC",
+      "GapPct": 2.78,
+      "Last": 525.34,
+      "PrevClose": 511.13
+    },
+    {
+      "Symbol": "NVDA",
+      "GapPct": 2.58,
+      "Last": 212.59,
+      "PrevClose": 207.24
+    },
+    {
+      "Symbol": "MSTR",
+      "GapPct": -2.03,
+      "Last": 99.86,
+      "PrevClose": 101.93
+    },
+    {
+      "Symbol": "BA",
+      "GapPct": 1.92,
+      "Last": 208.705,
+      "PrevClose": 204.77
+    },
+    {
+      "Symbol": "MSFT",
+      "GapPct": -1.84,
+      "Last": 390.27,
+      "PrevClose": 397.575
+    },
+    {
+      "Symbol": "AMD",
+      "GapPct": 1.56,
+      "Last": 552.87,
+      "PrevClose": 544.365
+    },
+    {
+      "Symbol": "GD",
+      "GapPct": 1.55,
+      "Last": 373.39,
+      "PrevClose": 367.69
+    },
+    {
+      "Symbol": "LMT",
+      "GapPct": 1.51,
+      "Last": 514.62,
+      "PrevClose": 506.96
+    }
+  ],
+  "Earnings": [
+    {
+      "Symbol": "LMT",
+      "DaysToReport": 0
+    },
+    {
+      "Symbol": "INTC",
+      "DaysToReport": 0
+    },
+    {
+      "Symbol": "RTX",
+      "DaysToReport": 0
+    },
+    {
+      "Symbol": "BA",
+      "DaysToReport": 5
+    }
+  ],
+  "News": {
+    "Watchlist": [
+      {
+        "Symbol": "TSLA",
+        "Mentions": 11,
+        "Lean": "bull",
+        "Headline": "Elon Musk's Tesla Held on to Bitcoin Stockpile in Q2 Despite $112 Million in Paper Losses"
+      },
+      {
+        "Symbol": "MSTR",
+        "Mentions": 2,
+        "Lean": "neutral",
+        "Headline": "Elon Musk's Tesla Held on to Bitcoin Stockpile in Q2 Despite $112 Million in Paper Losses"
+      },
+      {
+        "Symbol": "LMT",
+        "Mentions": 1,
+        "Lean": "neutral",
+        "Headline": "Here’s How Much You Would Have Made Owning Lockheed Martin Stock In The Last 15 Years"
+      }
+    ],
+    "OffWatchlist": [
+      {
+        "Symbol": "IBM",
+        "Mentions": 4,
+        "Lean": "neutral",
+        "Headline": "Google-Parent Alphabet, Tesla, ServiceNow, IBM and Texas Instruments: Why These 5 Stocks are on Investors' Radars Today"
+      },
+      {
+        "Symbol": "GOOG",
+        "Mentions": 3,
+        "Lean": "neutral",
+        "Headline": "Google-Parent Alphabet, Tesla, ServiceNow, IBM and Texas Instruments: Why These 5 Stocks are on Investors' Radars Today"
+      },
+      {
+        "Symbol": "SPCX",
+        "Mentions": 3,
+        "Lean": "neutral",
+        "Headline": "Cathie Wood Bets Big on SpaceX Even as Elon Musk Warns Short Sellers — Ark Keeps Dumping Robinhood Shares"
+      },
+      {
+        "Symbol": "GOOGL",
+        "Mentions": 3,
+        "Lean": "neutral",
+        "Headline": "Google-Parent Alphabet, Tesla, ServiceNow, IBM and Texas Instruments: Why These 5 Stocks are on Investors' Radars Today"
+      },
+      {
+        "Symbol": "NOW",
+        "Mentions": 3,
+        "Lean": "neutral",
+        "Headline": "Google-Parent Alphabet, Tesla, ServiceNow, IBM and Texas Instruments: Why These 5 Stocks are on Investors' Radars Today"
+      }
+    ]
+  }
+}
