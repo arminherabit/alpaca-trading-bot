@@ -1,0 +1,18 @@
+{
+  "open": [
+    {
+      "opened_at": "2026-07-23T17:11:41.4177934Z",
+      "symbol": "UNH",
+      "strategy": "PULLBK",
+      "side": "buy",
+      "entry": 422.64,
+      "stop": 399.59,
+      "qty": 9,
+      "risk_usd": 207.45,
+      "confidence": 90,
+      "regime": "RANGING",
+      "reason": "EMA20 pullback reclaim (trendQ 1.62 ATR, RS +3.4%)"
+    }
+  ],
+  "closed": []
+}
