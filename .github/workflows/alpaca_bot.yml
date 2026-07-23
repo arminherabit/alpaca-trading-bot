@@ -64,6 +64,6 @@ jobs:
         run: |
           git config user.name  "alpaca-bot[bot]"
           git config user.email "alpaca-bot@users.noreply.github.com"
-          git add -f alpaca_state.json alpaca_dashboard.html alpaca_ticker_memory.json earnings_calendar.json 2>/dev/null || true
+          git add -f alpaca_state.json alpaca_dashboard.html alpaca_ticker_memory.json earnings_calendar.json alpaca_journal.json alpaca_review.md 2>/dev/null || true
           git diff --staged --quiet || git commit -m "alpaca: state + memory + dashboard $(date -u +%Y-%m-%dT%H:%M:%SZ) [skip ci]"
           git push || true

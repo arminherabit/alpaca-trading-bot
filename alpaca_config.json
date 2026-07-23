@@ -7,6 +7,7 @@
 
   "scan_mode":     "swing",
   "hold_days_max": 12,
+  "pyramiding_enabled": true,
 
   "base_url_paper": "https://paper-api.alpaca.markets",
   "base_url_live":  "https://api.alpaca.markets",

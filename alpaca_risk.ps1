@@ -116,10 +116,12 @@ function Validate-Trade {
     $equity  = Get-Equity $cfg
     $bp      = Get-BuyingPower $cfg
 
-    # Edge lookup -- bigger size on proven strategies, smaller on losing ones
+    # Edge lookup -- bigger size on proven strategies, smaller on losing ones.
+    # Regime-aware: the strategy's record in the CURRENT regime modulates size.
     $edgeMult   = 1.0; $edgeInfo = $null
     if ($cfg.adaptive_sizing) {
-        $edgeInfo = Get-StrategyEdge $signal.Strategy
+        $regimeName = if ($null -ne $regime -and $regime.Regime) { [string]$regime.Regime } else { "" }
+        $edgeInfo = Get-StrategyEdge $signal.Strategy $regimeName
         $edgeMult = $edgeInfo.Mult
     }
     $regimeMult = if ($null -ne $regime) { [double]$regime.SizeMult } else { 1.0 }

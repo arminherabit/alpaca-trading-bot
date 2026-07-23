@@ -13,6 +13,7 @@
 . (Join-Path $PSScriptRoot "alpaca_news.ps1")
 . (Join-Path $PSScriptRoot "alpaca_earnings.ps1")
 . (Join-Path $PSScriptRoot "alpaca_cycle_screener.ps1")
+. (Join-Path $PSScriptRoot "alpaca_journal.ps1")
 
 $MemoryPath = Join-Path $PSScriptRoot "alpaca_ticker_memory.json"
 
@@ -46,7 +47,7 @@ $LEVERAGED_BLOCKLIST = @(
 # trades is the strategy prefix we stamp into every entry's client_order_id.
 # Positions/orders without one of these prefixes belong to the other bot and
 # must never be managed, counted, or learned from.
-$MY_ENTRY_PREFIXES = @("BRKOUT","PULLBK","BRKDN","RALLYF","ORB","VWAP","EMA")
+$MY_ENTRY_PREFIXES = @("BRKOUT","PULLBK","BRKDN","RALLYF","ORB","VWAP","EMA","PYRA")
 
 # ── Correlated ticker groups ──────────────────────────────────────────────────
 # Tickers in the same group are the same underlying exposure.
@@ -124,7 +125,7 @@ function Load-TickerMemory {
         }
     }
     # Backward compat -- ensure the new self-learning rollups exist
-    foreach ($prop in @("strategy_stats","hour_stats","regime_stats")) {
+    foreach ($prop in @("strategy_stats","hour_stats","regime_stats","strategy_regime_stats")) {
         if (-not (Get-Member -InputObject $mem -Name $prop -MemberType NoteProperty -ErrorAction SilentlyContinue)) {
             $mem | Add-Member -NotePropertyName $prop -NotePropertyValue ([pscustomobject]@{}) -Force
         }
@@ -142,20 +143,36 @@ function _Update-RollupBucket($container, [string]$key, [bool]$won, [double]$pnl
     if (-not (Get-Member -InputObject $container -Name $key -MemberType NoteProperty -ErrorAction SilentlyContinue)) {
         $container | Add-Member -NotePropertyName $key -NotePropertyValue ([pscustomobject]@{
             trades = 0; wins = 0; losses = 0; total_pnl = 0.0; win_rate = 0.0; avg_pnl = 0.0
+            gross_profit = 0.0; gross_loss = 0.0; profit_factor = 0.0
         }) -Force
     }
     $b = $container.$key
+    # Backward compat: pre-expectancy buckets lack gross fields. They start
+    # accumulating from now (historical splits are unrecoverable from totals).
+    foreach ($f in @("gross_profit","gross_loss","profit_factor")) {
+        if (-not (Get-Member -InputObject $b -Name $f -ErrorAction SilentlyContinue)) {
+            $b | Add-Member -NotePropertyName $f -NotePropertyValue 0.0 -Force
+        }
+    }
     $b.trades++
-    if ($won) { $b.wins++ } else { $b.losses++ }
+    if ($won) { $b.wins++; $b.gross_profit = [Math]::Round($b.gross_profit + [Math]::Max(0,$pnl), 2) }
+    else      { $b.losses++; $b.gross_loss = [Math]::Round($b.gross_loss + [Math]::Abs([Math]::Min(0,$pnl)), 2) }
     $b.total_pnl = [Math]::Round($b.total_pnl + $pnl, 2)
     $b.win_rate  = if ($b.trades -gt 0) { [Math]::Round($b.wins / $b.trades, 3) } else { 0.0 }
     $b.avg_pnl   = if ($b.trades -gt 0) { [Math]::Round($b.total_pnl / $b.trades, 2) } else { 0.0 }
+    # avg_pnl IS the expectancy per trade; profit_factor = gross win / gross loss
+    $b.profit_factor = if ($b.gross_loss -gt 0) { [Math]::Round($b.gross_profit / $b.gross_loss, 2) }
+                       elseif ($b.gross_profit -gt 0) { 99.0 } else { 0.0 }
 }
 
 function Get-StrategyEdge {
-    # Returns a position-size multiplier (0.5-1.25x) based on the strategy's
-    # historical win rate. Cold-start (sample <5): cautious 0.75x.
-    param([string]$strategy)
+    # Returns a position-size multiplier based on the strategy's historical
+    # record. Ladder is win-rate based, extended by PROFIT FACTOR at larger
+    # samples (a 60% WR strategy whose wins are tiny should not size up), and
+    # adjusted by the strategy's record in the CURRENT regime when known.
+    # Cold-start (sample <5): cautious 0.75x. Hard cap 1.75x (and effective
+    # risk stays capped at 1.5% in Get-PositionSize regardless).
+    param([string]$strategy, [string]$regime = "")
     $mem = Load-TickerMemory
     if (-not (Get-Member -InputObject $mem.strategy_stats -Name $strategy -ErrorAction SilentlyContinue)) {
         return [pscustomobject]@{ Trades = 0; WinRate = 0.0; Mult = 0.75; Reason = "cold-start" }
@@ -164,12 +181,38 @@ function Get-StrategyEdge {
     if ($s.trades -lt 5) {
         return [pscustomobject]@{ Trades = $s.trades; WinRate = $s.win_rate; Mult = 0.75; Reason = "sample<5" }
     }
+    $pf = if (Get-Member -InputObject $s -Name "profit_factor" -ErrorAction SilentlyContinue) { [double]$s.profit_factor } else { 0.0 }
     $wrStr = "{0:P0}" -f $s.win_rate
     $mult = 1.0; $reason = "neutral edge"
-    if    ($s.win_rate -ge 0.60) { $mult = 1.25; $reason = "proven edge ($wrStr)" }
+    if ($s.win_rate -ge 0.60) {
+        # Extended ladder: size up further only when BOTH the sample and the
+        # payoff quality justify it. Win rate alone can be luck at N=5.
+        if     ($s.trades -ge 20 -and $pf -ge 1.8) { $mult = 1.75; $reason = "elite edge ($wrStr, PF $pf, n=$($s.trades))" }
+        elseif ($s.trades -ge 10 -and $pf -ge 1.5) { $mult = 1.50; $reason = "strong proven edge ($wrStr, PF $pf)" }
+        else                                       { $mult = 1.25; $reason = "proven edge ($wrStr)" }
+    }
     elseif($s.win_rate -ge 0.45) { $mult = 1.00; $reason = "marginal edge ($wrStr)" }
     elseif($s.win_rate -ge 0.35) { $mult = 0.65; $reason = "weak edge ($wrStr) -- cut size" }
     else                          { $mult = 0.40; $reason = "negative edge ($wrStr) -- minimal size" }
+
+    # Regime-context adjustment: if this strategy has a meaningful record in
+    # the CURRENT regime, let that record modulate the size.
+    if ($regime -ne "") {
+        $rkey = "{0}|{1}" -f $strategy, $regime
+        if (Get-Member -InputObject $mem.strategy_regime_stats -Name $rkey -ErrorAction SilentlyContinue) {
+            $sr = $mem.strategy_regime_stats.$rkey
+            if ($sr.trades -ge 5) {
+                if ($sr.avg_pnl -lt 0) {
+                    $mult = [Math]::Round($mult * 0.5, 3)
+                    $reason += " | negative in $regime (n=$($sr.trades)) x0.5"
+                } elseif ($sr.win_rate -ge 0.60) {
+                    $mult = [Math]::Round($mult * 1.1, 3)
+                    $reason += " | thrives in $regime x1.1"
+                }
+            }
+        }
+    }
+    $mult = [Math]::Min(1.75, $mult)
     return [pscustomobject]@{ Trades = $s.trades; WinRate = $s.win_rate; Mult = $mult; Reason = $reason }
 }
 
@@ -240,6 +283,12 @@ function Update-TickerMemory {
     _Update-RollupBucket $mem.strategy_stats $strategy $won $pnl
     if ($hourET -ge 0)        { _Update-RollupBucket $mem.hour_stats   "$hourET" $won $pnl }
     if ($regime -ne "")       { _Update-RollupBucket $mem.regime_stats $regime    $won $pnl }
+    # Setup-in-context: strategy performance PER regime (e.g. "BRKOUT|BULL").
+    # Feeds Get-StrategyEdge so a setup that only works in trending tape gets
+    # sized down when the tape is chopping.
+    if ($regime -ne "" -and $strategy -ne "UNKNOWN") {
+        _Update-RollupBucket $mem.strategy_regime_stats ("{0}|{1}" -f $strategy, $regime) $won $pnl
+    }
 
     # Init record if new ticker
     if ($null -eq $mem.tickers.$symbol) {
@@ -902,7 +951,11 @@ function Sync-ClosedTrades {
                 $sym, (if ($won) { "WIN " } else { "LOSS" }), $entryPrice, $exitPrice, $qty, $pnl, $hourET) `
                 -ForegroundColor (if ($won) { "Green" } else { "Red" })
 
-            Update-TickerMemory -symbol $sym -won $won -pnl $pnl -strategy $strategy -hourET $hourET
+            # Journal completion recovers the regime recorded at ENTRY --
+            # the only reliable source for regime-aware expectancy stats.
+            $jrec    = Complete-JournalEntry -symbol $sym -exitPrice $exitPrice -pnl $pnl -qty ([int]$qty)
+            $jRegime = if ($null -ne $jrec -and $jrec.regime) { $jrec.regime } else { "" }
+            Update-TickerMemory -symbol $sym -won $won -pnl $pnl -strategy $strategy -hourET $hourET -regime $jRegime
 
             $state.recorded_exits += $exitId
             # Daily gate counters move only for exits that actually filled today
@@ -988,7 +1041,9 @@ function Sync-ClosedTrades {
             $sym, (if ($won) { "WIN " } else { "LOSS" }), $entryPrice, $exitPrice, $qty, $pnl, $hourET) `
             -ForegroundColor (if ($won) { "Green" } else { "Red" })
 
-        Update-TickerMemory -symbol $sym -won $won -pnl $pnl -strategy $strategy -hourET $hourET
+        $jrec    = Complete-JournalEntry -symbol $sym -exitPrice $exitPrice -pnl $pnl -qty ([int]$qty)
+        $jRegime = if ($null -ne $jrec -and $jrec.regime) { $jrec.regime } else { "" }
+        Update-TickerMemory -symbol $sym -won $won -pnl $pnl -strategy $strategy -hourET $hourET -regime $jRegime
 
         $state.recorded_exits += $exitId
         # Daily gate counters move only for exits that actually filled today

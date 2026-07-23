@@ -16,6 +16,7 @@ param(
 . (Join-Path $PSScriptRoot "alpaca_client.ps1")
 . (Join-Path $PSScriptRoot "alpaca_signals.ps1")
 . (Join-Path $PSScriptRoot "alpaca_swing_signals.ps1")
+. (Join-Path $PSScriptRoot "alpaca_journal.ps1")
 . (Join-Path $PSScriptRoot "alpaca_risk.ps1")
 . (Join-Path $PSScriptRoot "alpaca_screener.ps1")
 . (Join-Path $PSScriptRoot "alpaca_indicators.ps1")
@@ -337,7 +338,7 @@ function Convert-ToTrailingStop($cfg, $position, [double]$trailPct) {
     return Invoke-AlpacaApi $cfg "POST" "/v2/orders" $body
 }
 
-function Manage-OpenPositions($cfg, $positions) {
+function Manage-OpenPositions($cfg, $positions, $state = $null) {
     if ($null -eq $positions -or $positions.Count -eq 0) { return }
 
     foreach ($pos in $positions) {
@@ -449,6 +450,39 @@ function Manage-OpenPositions($cfg, $positions) {
             $patch = Update-OrderStop $cfg $stopLeg.id $newStop
             if ($null -eq $patch) {
                 Write-Host ("    [MANAGE] {0,-6} BE move FAILED -- will retry next scan" -f $sym) -ForegroundColor Red
+            }
+
+            # ── Controlled PYRAMID: half-size add on house money ──────────
+            # The trade just proved itself (+1R) and the original stop is at
+            # BE. Add floor(qty/2) via its OWN GTC bracket with its stop at
+            # the same BE level: if the combined position stops out, the
+            # original scratches and the add gives back roughly half the
+            # open profit -- net still >= breakeven on the whole campaign.
+            # Once per position (state guard); PYRA-tagged for ownership,
+            # sync, and its own expectancy bucket. This stage runs at most
+            # once per position (the atBE guard), so no re-trigger risk.
+            if ($null -ne $patch -and $null -ne $state -and $cfg.pyramiding_enabled -and
+                (@($state.pyramided_syms) -notcontains $sym)) {
+                $addQty = [Math]::Floor($absQty / 2)
+                $px     = [double]$pos.current_price
+                if ($addQty -ge 1 -and $px -gt 0) {
+                    $ordSide = if ($side -eq "long") { "buy" } else { "sell" }
+                    $limitPx = if ($side -eq "long") { [Math]::Round($px * 1.002, 2) } else { [Math]::Round($px * 0.998, 2) }
+                    $tpPy    = if ($side -eq "long") { [Math]::Round($px + 2.0 * $origRiskPS, 2) }
+                               else { [Math]::Round([Math]::Max(0.01, $px - 2.0 * $origRiskPS), 2) }
+                    Write-Host ("    [PYRAMID] {0,-6} +1R proven -- adding {1} sh (half size) @ ~`${2:F2}, stop `${3:F2} (house money)" -f `
+                        $sym, $addQty, $limitPx, $newStop) -ForegroundColor Magenta
+                    $pyOrder = Submit-BracketOrder $cfg $sym $ordSide $addQty $limitPx $tpPy $newStop "PYRA" "gtc"
+                    if ($null -ne $pyOrder) {
+                        $state.pyramided_syms = @($state.pyramided_syms) + $sym
+                        Add-JournalEntry -symbol $sym -strategy "PYRA" -side $ordSide `
+                            -entry $limitPx -stop $newStop -qty $addQty `
+                            -riskUsd ([Math]::Round([Math]::Abs($limitPx - $newStop) * $addQty, 2)) `
+                            -confidence 0 -regime "" -reason "half-size add at +1R, stop at BE"
+                    } else {
+                        Write-Host ("    [PYRAMID] {0,-6} add order FAILED -- will not retry (guard unset)" -f $sym) -ForegroundColor Red
+                    }
+                }
             }
         }
         else {
@@ -731,6 +765,29 @@ function Run-Scan($cfg, $state) {
     # repeatedly thanks to the recorded_exits dedup set.
     $state = Sync-ClosedTrades $cfg $state
 
+    # ── Weekly self-review ────────────────────────────────────────────────
+    # First scan of each new ISO week: aggregate last week's closed journal
+    # entries (W/L, profit factor, expectancy, avg R, by strategy/regime)
+    # into alpaca_review.md + the run log. Runs before the market gate so
+    # the Monday pre-market scans produce it.
+    if (-not (Get-Member -InputObject $state -Name "last_review_week" -MemberType NoteProperty -ErrorAction SilentlyContinue)) {
+        $state | Add-Member -NotePropertyName "last_review_week" -NotePropertyValue "" -Force
+    }
+    if ($true) {
+        try {
+            $wkNow = "{0}-W{1:D2}" -f [System.Globalization.ISOWeek]::GetYear([datetime]::UtcNow), `
+                                       [System.Globalization.ISOWeek]::GetWeekOfYear([datetime]::UtcNow)
+            if ($state.last_review_week -ne $wkNow) {
+                $prevLabel = "Week ending " + [datetime]::UtcNow.AddDays(-1).ToString("yyyy-MM-dd")
+                Write-WeeklyReview -weekLabel $prevLabel
+                $state.last_review_week = $wkNow
+                Save-State $state
+            }
+        } catch {
+            Write-Host ("  [REVIEW] skipped: {0}" -f $_.Exception.Message) -ForegroundColor DarkGray
+        }
+    }
+
     # Market hours check
     if (-not (Test-MarketOpen $cfg)) {
         Write-Host "  Market closed -- waiting." -ForegroundColor DarkGray
@@ -754,6 +811,13 @@ function Run-Scan($cfg, $state) {
             $default = if ($f -eq "equity_at_open") { 0.0 } else { "" }
             $state | Add-Member -NotePropertyName $f -NotePropertyValue $default -Force
         }
+    }
+    if (-not (Get-Member -InputObject $state -Name "pyramided_syms" -MemberType NoteProperty -ErrorAction SilentlyContinue)) {
+        $state | Add-Member -NotePropertyName "pyramided_syms" -NotePropertyValue @() -Force
+    }
+    if ($null -eq $state.pyramided_syms) { $state.pyramided_syms = @() }
+    if (-not (Get-Member -InputObject $state -Name "last_review_week" -MemberType NoteProperty -ErrorAction SilentlyContinue)) {
+        $state | Add-Member -NotePropertyName "last_review_week" -NotePropertyValue "" -Force
     }
 
     # ── Capture start-of-day equity ────────────────────────────────────────
@@ -887,8 +951,13 @@ function Run-Scan($cfg, $state) {
         # Clean up any stacked duplicate stops before managing
         Repair-DuplicateStops $cfg $positions
 
-        # Active position management: trailing stop at +2R
-        Manage-OpenPositions $cfg $positions
+        # Pyramid guard cleanup: once a symbol leaves the book, clear its
+        # pyramided flag so a future NEW position there can pyramid again.
+        $curSyms = @($positions | ForEach-Object { $_.symbol })
+        $state.pyramided_syms = @($state.pyramided_syms | Where-Object { $curSyms -contains $_ })
+
+        # Active position management: staged exits + controlled pyramiding
+        Manage-OpenPositions $cfg $positions $state
 
         if ($swingMode) {
             # Swing positions are MEANT to be held overnight -- no EOD close.
@@ -1124,6 +1193,12 @@ function Run-Scan($cfg, $state) {
             $tif = if ($swingMode) { "gtc" } else { "day" }
             Submit-BracketOrder $cfg $symbol $signal.Side $validation.Sizing.Shares `
                 $signal.Entry $signal.T1 $signal.Stop $signal.Strategy $tif | Out-Null
+            # Journal the setup at entry -- regime/confidence/risk are only
+            # knowable NOW; the exit sync completes this record later.
+            Add-JournalEntry -symbol $symbol -strategy $signal.Strategy -side $signal.Side `
+                -entry $signal.Entry -stop $signal.Stop -qty $validation.Sizing.Shares `
+                -riskUsd $validation.Sizing.ActualRisk -confidence $signal.Confidence `
+                -regime $regime.Regime -reason $signal.Reason
             $state.trades_today++
             $sameScanEntries += $symbol
             $enteredThisScan = $true   # one entry per scan -- wait for next cycle
