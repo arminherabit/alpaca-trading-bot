@@ -1,0 +1,42 @@
+[
+  {
+    "Time": "2026-07-20T14:29:14.1307578Z",
+    "Event": "Unusual move: 0.22x avg volume, +4.2% today",
+    "AffectedTickers": [
+      "INTC"
+    ],
+    "Impact": "Price +4.2% on 0.22x relative volume vs 20-day avg.",
+    "RecommendedAction": "Monitor",
+    "HeadlineIds": null
+  },
+  {
+    "Time": "2026-07-21T16:39:28.2822141Z",
+    "Event": "Unusual move: 0.68x avg volume, +4.9% today",
+    "AffectedTickers": [
+      "TSM"
+    ],
+    "Impact": "Price +4.9% on 0.68x relative volume vs 20-day avg.",
+    "RecommendedAction": "Monitor",
+    "HeadlineIds": null
+  },
+  {
+    "Time": "2026-07-21T16:39:28.2833971Z",
+    "Event": "Unusual move: 0.54x avg volume, +7.7% today",
+    "AffectedTickers": [
+      "INTC"
+    ],
+    "Impact": "Price +7.7% on 0.54x relative volume vs 20-day avg.",
+    "RecommendedAction": "Monitor",
+    "HeadlineIds": null
+  },
+  {
+    "Time": "2026-07-21T16:39:28.2837541Z",
+    "Event": "Unusual move: 0.57x avg volume, +4.0% today",
+    "AffectedTickers": [
+      "MSTR"
+    ],
+    "Impact": "Price +4.0% on 0.57x relative volume vs 20-day avg.",
+    "RecommendedAction": "Monitor",
+    "HeadlineIds": null
+  }
+]

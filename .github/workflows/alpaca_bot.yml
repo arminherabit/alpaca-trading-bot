@@ -6,6 +6,15 @@ on:
     # the external cron-job.org pinger via repository_dispatch below.
     - cron: '0,20,40 13-20 * * 1-5'
   workflow_dispatch:        # Manual trigger from GitHub UI
+    inputs:
+      sentinel_only:
+        description: "Run TrumpMarketSentinel only (no trading engine, no orders)"
+        type: boolean
+        default: false
+      premarket:
+        description: "Run pre-market movers preview only (no trading engine, no orders)"
+        type: boolean
+        default: false
   repository_dispatch:      # External trigger via GitHub API (cron-job.org)
     types: [run-bot]
 
@@ -39,13 +48,31 @@ jobs:
           sudo apt-get install -y powershell
 
       - name: Run Alpaca bot scan
+        if: ${{ github.event.inputs.sentinel_only != 'true' && github.event.inputs.premarket != 'true' }}
         shell: pwsh
         env:
           ALPACA_API_KEY:    ${{ secrets.ALPACA_API_KEY }}
           ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
         run: pwsh ./alpaca_bot.ps1 -Once
 
+      - name: Run TrumpMarketSentinel only (manual, no trades)
+        if: ${{ github.event.inputs.sentinel_only == 'true' }}
+        shell: pwsh
+        env:
+          ALPACA_API_KEY:    ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
+        run: pwsh ./alpaca_bot.ps1 -SentinelOnly
+
+      - name: Run pre-market movers preview only (manual, no trades)
+        if: ${{ github.event.inputs.premarket == 'true' }}
+        shell: pwsh
+        env:
+          ALPACA_API_KEY:    ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
+        run: pwsh ./alpaca_bot.ps1 -PreMarket
+
       - name: Generate dashboard
+        if: ${{ github.event.inputs.sentinel_only != 'true' && github.event.inputs.premarket != 'true' }}
         shell: pwsh
         env:
           ALPACA_API_KEY:    ${{ secrets.ALPACA_API_KEY }}
@@ -53,6 +80,7 @@ jobs:
         run: pwsh ./alpaca_dashboard_html.ps1 -GenerateOnly
 
       - name: Upload dashboard artifact
+        if: ${{ github.event.inputs.sentinel_only != 'true' && github.event.inputs.premarket != 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: alpaca-dashboard
@@ -64,6 +92,6 @@ jobs:
         run: |
           git config user.name  "alpaca-bot[bot]"
           git config user.email "alpaca-bot@users.noreply.github.com"
-          git add -f alpaca_state.json alpaca_dashboard.html alpaca_ticker_memory.json earnings_calendar.json 2>/dev/null || true
+          git add -f alpaca_state.json alpaca_dashboard.html alpaca_ticker_memory.json earnings_calendar.json trump_sentinel_log.json premarket_log.json 2>/dev/null || true
           git diff --staged --quiet || git commit -m "alpaca: state + memory + dashboard $(date -u +%Y-%m-%dT%H:%M:%SZ) [skip ci]"
           git push || true

@@ -7,10 +7,12 @@
 #   If require_approval=false AND paper_trading=true, auto-executes.
 
 param(
-    [switch]$Once,     # Run one scan cycle then exit
-    [switch]$Approve,  # Approve pending trades and submit orders
-    [switch]$Cancel,   # Cancel all open orders and flatten positions
-    [string]$ApproveId # Approve a specific pending trade by ID
+    [switch]$Once,         # Run one scan cycle then exit
+    [switch]$Approve,      # Approve pending trades and submit orders
+    [switch]$Cancel,       # Cancel all open orders and flatten positions
+    [string]$ApproveId,    # Approve a specific pending trade by ID
+    [switch]$SentinelOnly, # One-off TrumpMarketSentinel scan only -- no trading engine, no orders
+    [switch]$PreMarket     # One-off pre-market movers preview -- no trading engine, no orders
 )
 
 . (Join-Path $PSScriptRoot "alpaca_client.ps1")
@@ -22,6 +24,8 @@ param(
 . (Join-Path $PSScriptRoot "alpaca_regime.ps1")
 . (Join-Path $PSScriptRoot "alpaca_news.ps1")
 . (Join-Path $PSScriptRoot "alpaca_earnings.ps1")
+. (Join-Path $PSScriptRoot "alpaca_trump_sentinel.ps1")
+. (Join-Path $PSScriptRoot "alpaca_premarket.ps1")
 
 $StatePath   = Join-Path $PSScriptRoot "alpaca_state.json"
 $PendingPath = Join-Path $PSScriptRoot "pending_approval.json"
@@ -731,6 +735,17 @@ function Run-Scan($cfg, $state) {
     # repeatedly thanks to the recorded_exits dedup set.
     $state = Sync-ClosedTrades $cfg $state
 
+    # ── TrumpMarketSentinel: Trump/administration headline + volume watch ───
+    # Advisory-only, runs every cycle (including pre/post market and weekends)
+    # since news catalysts aren't bound to trading hours. Never places orders.
+    Invoke-TrumpMarketSentinel $cfg | Out-Null
+
+    # ── Pre-market movers preview: once per day, 06:00-09:30 ET ─────────────
+    # Self-gated inside the function; a no-op the rest of the day. Runs
+    # BEFORE the market-open gate on purpose -- pre-market is exactly when
+    # the market is closed. Advisory-only, never places orders.
+    Invoke-PreMarketPreview $cfg | Out-Null
+
     # Market hours check
     if (-not (Test-MarketOpen $cfg)) {
         Write-Host "  Market closed -- waiting." -ForegroundColor DarkGray
@@ -1152,6 +1167,17 @@ function Run-Scan($cfg, $state) {
 
 $cfg   = Load-AlpacaConfig
 $state = Load-State
+
+if ($SentinelOnly) {
+    $alerts = Invoke-TrumpMarketSentinel $cfg
+    if ($alerts.Count -eq 0) { Write-Host "  [TRUMP-SENTINEL] No significant alerts this run." -ForegroundColor DarkGray }
+    exit 0
+}
+
+if ($PreMarket) {
+    Invoke-PreMarketPreview $cfg -Force | Out-Null
+    exit 0
+}
 
 if ($Cancel) {
     Invoke-CancelAll $cfg
