@@ -401,6 +401,23 @@ Known limit: only Alpaca's licensed news wire is wired in — there is no live
 X or Truth Social feed, so headline-only catalysts (a raw social post with no
 wire pickup yet) won't be caught until financial media covers it.
 
+### Pre-Market Movers Preview (`alpaca_premarket.ps1`)
+Runs once per trading day between 06:00 and 09:30 ET (self-gated inside the
+scan cycle; `-PreMarket` switch or the `premarket` workflow input runs it
+on demand). Combines the three earliest public signals of who moves today:
+
+1. **Scheduled catalysts** — earnings within the next 5 days for the
+   sentinel + config watchlists (from the cached Nasdaq calendar). The only
+   genuine "advance knowledge" that legally exists.
+2. **Pre-market gaps** — snapshot price vs yesterday's close, from 4:00 AM
+   ET. IEX pre-market prints are sparse, so gaps are indicative.
+3. **Overnight news** — 16h lookback covering post-close through pre-open,
+   including the top 5 off-watchlist mention leaders as FYI.
+
+Output prints in the scan log and appends to `premarket_log.json` (persisted
+by CI, last 30 previews). Advisory only — never places orders, and it is
+NOT prediction: it surfaces public information early, nothing more.
+
 ```
 days_to_earnings <= 2           -> HARD REJECT (gap risk through stops)
 days_to_earnings in (2, 10]     -> +1.0 screener score (run-up drift)
@@ -573,6 +590,7 @@ All persisted to the repo by the workflow after every run (`[skip ci]` commits).
 | `alpaca_news.ps1` | News catalysts + sentiment lexicon |
 | `alpaca_earnings.ps1` | Nasdaq earnings cache |
 | `alpaca_trump_sentinel.ps1` | TrumpMarketSentinel — Trump/policy headline + volume watch, advisory alerts |
+| `alpaca_premarket.ps1` | Pre-market movers preview — gaps, upcoming earnings, overnight news (advisory) |
 | `alpaca_cycle_screener.ps1` | Cycle-leader overlay (news accel, sector heat, themes) |
 | `alpaca_dashboard_html.ps1` | HTML dashboard generator |
 | `.github/workflows/alpaca_bot.yml` | Trigger + runner + state persistence |

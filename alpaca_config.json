@@ -50,5 +50,10 @@
   "trump_sentinel_watchlist":       ["DJT", "PLTR", "LMT", "INTC", "RTX", "NOC", "GD", "TSM", "MSTR", "BA"],
   "trump_sentinel_lookback_hours":  6,
   "trump_sentinel_min_rel_volume":  2.0,
-  "trump_sentinel_min_move_pct":    3.0
+  "trump_sentinel_min_move_pct":    3.0,
+
+  "premarket_enabled":                  true,
+  "premarket_min_gap_pct":              1.5,
+  "premarket_earnings_lookahead_days":  5,
+  "premarket_extra_tickers":            []
 }
