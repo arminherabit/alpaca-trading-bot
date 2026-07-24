@@ -1,5 +1,6 @@
 {
-  "open": [
+  "open": [],
+  "closed": [
     {
       "opened_at": "2026-07-23T17:11:41.4177934Z",
       "symbol": "UNH",
@@ -11,8 +12,13 @@
       "risk_usd": 207.45,
       "confidence": 90,
       "regime": "RANGING",
-      "reason": "EMA20 pullback reclaim (trendQ 1.62 ATR, RS +3.4%)"
+      "reason": "EMA20 pullback reclaim (trendQ 1.62 ATR, RS +3.4%)",
+      "closed_at": "2026-07-24T13:50:31.8033425Z",
+      "exit": 422.42,
+      "pnl": -1.72,
+      "r_multiple": -0.01,
+      "hold_days": 1,
+      "outcome": "SCRATCH"
     }
-  ],
-  "closed": []
+  ]
 }
