@@ -238,6 +238,26 @@ function New-ProtectiveStop {
         else                       { [Math]::Round($entry + $buf, 2) }
     }
 
+    # BREAKEVEN mode needs a CUSHION. If the trade is only marginally green,
+    # a stop at entry+0.1% sits essentially at market and the next tick kills
+    # a position that still had days to work (UNH 2026-07-24: +0.2% unrealized,
+    # BE stop planted 0.1% under market, scratched out one scan later).
+    # Without at least 1% of room, fall back to MAXLOSS geometry so the trade
+    # keeps space to breathe while still being capped.
+    if ($Mode -eq "BREAKEVEN") {
+        $mkt = [double]$position.current_price
+        if ($mkt -gt 0) {
+            $cushionOk = if ($side -eq "sell") { $mkt -ge $stopPx * 1.01 } else { $mkt -le $stopPx * 0.99 }
+            if (-not $cushionOk) {
+                $wide = if ($side -eq "sell") { [Math]::Round($entry * 0.98, 2) } else { [Math]::Round($entry * 1.02, 2) }
+                Write-Host ("    [PROTECT] {0,-6} BE stop `${1:F2} too close to market `${2:F2} -- widening to `${3:F2}" -f `
+                    $sym, $stopPx, $mkt, $wide) -ForegroundColor Yellow
+                $stopPx = $wide
+                $Mode   = "MAXLOSS"
+            }
+        }
+    }
+
     # If the protective level is ALREADY breached, a stop on that side is
     # invalid (sell-stop must sit below market, buy-stop above) and Alpaca
     # rejects it -- leaving the position naked and the bot retrying the same
@@ -659,7 +679,7 @@ function Close-StalePositions($cfg, $positions) {
 # A GTC bracket whose ENTRY never filled is a stale bet: the signal was
 # priced off a level that the market rejected. Cancel any unfilled parent
 # bracket older than today so it can't fill days later in a different tape.
-function Cancel-StaleEntries($cfg) {
+function Cancel-StaleEntries($cfg, $heldSyms = $null) {
     $etToday = (Get-EasternTime).ToString("yyyy-MM-dd")
     $orders  = Invoke-AlpacaApi $cfg "GET" "/v2/orders?status=open&nested=true&limit=100"
     if ($null -eq $orders) { return }
@@ -667,6 +687,13 @@ function Cancel-StaleEntries($cfg) {
     foreach ($o in $arr) {
         if ($null -eq $o) { continue }
         if ($o.order_class -ne "bracket") { continue }
+        # HARD GUARD: if we hold a position in this symbol, its bracket is
+        # live PROTECTION, never a stale entry -- regardless of what
+        # filled_qty reports on the parent. Canceling it strips the stop.
+        # (UNH 2026-07-24: parent showed filled_qty=0 while the position was
+        # open; canceling killed the stop, the fallback then planted a
+        # BE stop at market, and the trade scratched out on the next tick.)
+        if ($null -ne $heldSyms -and $heldSyms.ContainsKey($o.symbol)) { continue }
         $filledQty = if ($o.filled_qty) { [double]$o.filled_qty } else { 0 }
         if ($filledQty -gt 0) { continue }   # entry filled -- legs are live protection
         try {
@@ -970,8 +997,9 @@ function Run-Scan($cfg, $state) {
         Write-Host ""
     }
 
-    # Swing mode: kill unfilled GTC entry brackets from prior days
-    if ($swingMode) { Cancel-StaleEntries $cfg }
+    # Swing mode: kill unfilled GTC entry brackets from prior days.
+    # Held symbols are excluded -- their brackets are live protection.
+    if ($swingMode) { Cancel-StaleEntries $cfg $allPosSyms }
 
     # Skip new entries if at max positions or outside window
     if ($posCount -ge [int]$cfg.max_positions) {
