@@ -3,7 +3,7 @@
   "wins": 0,
   "losses": 0,
   "pnl_today": 0.0,
-  "last_scan": "2026-07-25T06:50:48.3917331+00:00",
+  "last_scan": "2026-07-27T07:00:38.4266493+00:00",
   "session_start": "2026-05-14T04:50:22.4733863+00:00",
   "watchlist_date": "2026-07-24",
   "active_watchlist": [
@@ -79,6 +79,6 @@
   ],
   "equity_at_open": 94962.62,
   "equity_at_open_date": "2026-07-24",
-  "last_review_week": "2026-W30",
+  "last_review_week": "2026-W31",
   "pyramided_syms": []
 }
