@@ -1,5 +1,19 @@
 {
-  "open": [],
+  "open": [
+    {
+      "opened_at": "2026-07-29T14:01:49.2205343Z",
+      "symbol": "SNOW",
+      "strategy": "BRKOUT",
+      "side": "buy",
+      "entry": 283.62,
+      "stop": 257.82,
+      "qty": 14,
+      "risk_usd": 361.2,
+      "confidence": 100,
+      "regime": "RANGING",
+      "reason": "20d-high break (ext 0.33 ATR, volPace 2.6x, RS +12.8%)"
+    }
+  ],
   "closed": [
     {
       "opened_at": "2026-07-23T17:11:41.4177934Z",
