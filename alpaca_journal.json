@@ -25,6 +25,19 @@
       "confidence": 95,
       "regime": "NEUTRAL",
       "reason": "20d-high break (ext 0.09 ATR, volPace 1.8x, RS +18.4%)"
+    },
+    {
+      "opened_at": "2026-07-31T14:10:37.7493973Z",
+      "symbol": "AMZN",
+      "strategy": "BRKOUT",
+      "side": "buy",
+      "entry": 268.18,
+      "stop": 253.72,
+      "qty": 32,
+      "risk_usd": 462.72,
+      "confidence": 85,
+      "regime": "NEUTRAL",
+      "reason": "20d-high break (ext 1.40 ATR, volPace 8.6x, RS +11.5%)"
     }
   ],
   "closed": [
