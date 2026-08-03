@@ -38,6 +38,19 @@
       "confidence": 85,
       "regime": "NEUTRAL",
       "reason": "20d-high break (ext 1.40 ATR, volPace 8.6x, RS +11.5%)"
+    },
+    {
+      "opened_at": "2026-08-03T13:40:45.3420129Z",
+      "symbol": "SNOW",
+      "strategy": "PYRA",
+      "side": "buy",
+      "entry": 312.39,
+      "stop": 283.54,
+      "qty": 7,
+      "risk_usd": 201.95,
+      "confidence": 0,
+      "regime": "",
+      "reason": "half-size add at +1R, stop at BE"
     }
   ],
   "closed": [
