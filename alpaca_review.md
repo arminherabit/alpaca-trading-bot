@@ -22,3 +22,7 @@ No closed trades this week.
 
 **By regime:** RANGING 0/1 $-1.72
 
+
+## Week ending 2026-08-02
+No closed trades this week.
+
