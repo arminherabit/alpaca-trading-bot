@@ -51,6 +51,19 @@
       "confidence": 0,
       "regime": "",
       "reason": "half-size add at +1R, stop at BE"
+    },
+    {
+      "opened_at": "2026-08-04T14:10:41.2455175Z",
+      "symbol": "MSFT",
+      "strategy": "PYRA",
+      "side": "buy",
+      "entry": 495.12,
+      "stop": 460.45,
+      "qty": 7,
+      "risk_usd": 242.69,
+      "confidence": 0,
+      "regime": "",
+      "reason": "half-size add at +1R, stop at BE"
     }
   ],
   "closed": [
