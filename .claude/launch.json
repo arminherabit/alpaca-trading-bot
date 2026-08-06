@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Alpaca Bot (loop)",
+      "runtimeExecutable": "pwsh",
+      "runtimeArgs": ["./alpaca_bot.ps1"],
+      "port": null
+    },
+    {
+      "name": "Dashboard Server",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "8080"],
+      "port": 8080
+    },
+    {
+      "name": "Flow Diagram Generator",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["generate_flow.py"],
+      "port": null
+    }
+  ]
+}

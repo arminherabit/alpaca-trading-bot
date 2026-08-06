@@ -2,9 +2,11 @@ name: Alpaca Day Trading Bot
 
 on:
   schedule:
-    # Backup cron — GitHub scheduler is unreliable; primary trigger is
-    # the external cron-job.org pinger via repository_dispatch below.
-    - cron: '0,20,40 13-20 * * 1-5'
+    # Sparse BACKUP cron only — cron-job.org is the primary trigger. A swing
+    # bot holding multi-day positions does not need frequent scans, and a
+    # dense backup cron just adds load during GitHub runner-capacity crunches.
+    # Hourly on the hour during market hours is a sufficient safety net.
+    - cron: '5 13-20 * * 1-5'
   workflow_dispatch:        # Manual trigger from GitHub UI
   repository_dispatch:      # External trigger via GitHub API (cron-job.org)
     types: [run-bot]
