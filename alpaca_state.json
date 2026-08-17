@@ -3,7 +3,7 @@
   "wins": 0,
   "losses": 0,
   "pnl_today": 0.0,
-  "last_scan": "2026-08-15T06:50:28.2521005+00:00",
+  "last_scan": "2026-08-17T07:00:37.9889966+00:00",
   "session_start": "2026-05-14T04:50:22.4733863+00:00",
   "watchlist_date": "2026-08-14",
   "active_watchlist": [
@@ -81,7 +81,7 @@
   ],
   "equity_at_open": 96237.44,
   "equity_at_open_date": "2026-08-14",
-  "last_review_week": "2026-W33",
+  "last_review_week": "2026-W34",
   "pyramided_syms": [
     "SNOW",
     "MSFT"

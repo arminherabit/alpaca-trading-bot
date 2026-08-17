@@ -30,3 +30,7 @@ No closed trades this week.
 ## Week ending 2026-08-09
 No closed trades this week.
 
+
+## Week ending 2026-08-16
+No closed trades this week.
+
