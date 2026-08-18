@@ -94,34 +94,34 @@
     <span class="badge" style="color:#3fb950;  border-color:#3fb950;">OPEN</span>
     <span class="badge" style="color:var(--sub); border-color:var(--border);">Closes 8:00 PM</span>
   </div>
-  <span class="gen-time">Generated: 2026-08-18 13:33:20 &nbsp;|&nbsp; Auto-refresh: 30s</span>
+  <span class="gen-time">Generated: 2026-08-18 13:40:45 &nbsp;|&nbsp; Auto-refresh: 30s</span>
 </header>
 
 <!-- Account Stats -->
 <div class="grid-top">
   <div class="stat-card">
     <div class="label">Equity</div>
-    <div class="value blue">$95,516.67</div>
+    <div class="value blue">$95,703.51</div>
     <div class="sub">Paper account</div>
   </div>
   <div class="stat-card">
     <div class="label">Day P&amp;L</div>
-    <div class="value red">$-110.45</div>
-    <div class="sub">-0.12%</div>
+    <div class="value green">$76.39</div>
+    <div class="sub">+0.08%</div>
   </div>
   <div class="stat-card">
     <div class="label">Buying Power</div>
-    <div class="value">$332,232.66</div>
-    <div class="sub">Cash: $70,245.54</div>
+    <div class="value">$342,569.29</div>
+    <div class="sub">Cash: $78,529.58</div>
   </div>
   <div class="stat-card">
     <div class="label">Trades Today</div>
     <div class="value">0</div>
-    <div class="sub">W: 0 &nbsp;/&nbsp; L: 0</div>
+    <div class="sub">W: 0 &nbsp;/&nbsp; L: 1</div>
   </div>
   <div class="stat-card">
     <div class="label">Open Positions</div>
-    <div class="value">3 <span style="font-size:14px;color:var(--sub)">/ 3</span></div>
+    <div class="value">2 <span style="font-size:14px;color:var(--sub)">/ 3</span></div>
     <div class="sub">Max 3 allowed</div>
   </div>
   <div class="stat-card">
@@ -157,8 +157,8 @@
 </footer>
 
 <script>
-const positions = [{"symbol":"AMZN","side":"long","qty":32.0,"entry":268.000625,"current":258.395,"stop":265.32,"target":274.7,"rr":2.5,"unrlPnl":-307.38,"unrlPct":-3.58,"projProfit":214.38,"projLoss":85.78,"pctToTarget":6.31,"pctToStop":-2.68,"progress":0,"value":8268.64},{"symbol":"MSFT","side":"long","qty":21.0,"entry":471.363333,"current":477.87,"stop":466.65,"target":483.15,"rr":2.5,"unrlPnl":136.64,"unrlPct":1.38,"projProfit":247.52,"projLoss":98.98,"pctToTarget":1.1,"pctToStop":2.35,"progress":68,"value":10035.27},{"symbol":"SNOW","side":"long","qty":21.0,"entry":292.84,"current":331.78,"stop":289.91,"target":300.16,"rr":2.5,"unrlPnl":817.74,"unrlPct":13.3,"projProfit":153.72,"projLoss":61.53,"pctToTarget":-9.53,"pctToStop":12.62,"progress":100,"value":6967.38}];
-const closed    = ;
+const positions = [{"symbol":"MSFT","side":"long","qty":21.0,"entry":471.363333,"current":483.81,"stop":466.65,"target":483.15,"rr":2.5,"unrlPnl":261.38,"unrlPct":2.64,"projProfit":247.52,"projLoss":98.98,"pctToTarget":-0.14,"pctToStop":3.55,"progress":100,"value":10160.01},{"symbol":"SNOW","side":"long","qty":21.0,"entry":292.84,"current":333.946,"stop":289.91,"target":300.16,"rr":2.5,"unrlPnl":863.23,"unrlPct":14.04,"projProfit":153.72,"projLoss":61.53,"pctToTarget":-10.12,"pctToStop":13.19,"progress":100,"value":7012.87}];
+const closed    = {"symbol":"AMZN","side":"sell","qty":"32","fillPrice":258.88,"filledAt":"13:36:04","orderType":"market"};
 
 function fmt(n, d=2) {
   return (n >= 0 ? '+' : '') + Number(n).toFixed(d);
