@@ -27,19 +27,6 @@
       "reason": "20d-high break (ext 0.09 ATR, volPace 1.8x, RS +18.4%)"
     },
     {
-      "opened_at": "2026-08-03T13:40:45.3420129Z",
-      "symbol": "SNOW",
-      "strategy": "PYRA",
-      "side": "buy",
-      "entry": 312.39,
-      "stop": 283.54,
-      "qty": 7,
-      "risk_usd": 201.95,
-      "confidence": 0,
-      "regime": "",
-      "reason": "half-size add at +1R, stop at BE"
-    },
-    {
       "opened_at": "2026-08-04T14:10:41.2455175Z",
       "symbol": "MSFT",
       "strategy": "PYRA",
@@ -104,6 +91,25 @@
       "r_multiple": -0.63,
       "hold_days": 12,
       "outcome": "LOSS"
+    },
+    {
+      "opened_at": "2026-08-03T13:40:45.3420129Z",
+      "symbol": "SNOW",
+      "strategy": "PYRA",
+      "side": "buy",
+      "entry": 312.39,
+      "stop": 283.54,
+      "qty": 7,
+      "risk_usd": 201.95,
+      "confidence": 0,
+      "regime": "",
+      "reason": "half-size add at +1R, stop at BE",
+      "closed_at": "2026-08-19T13:34:57.9747452Z",
+      "exit": 321.04,
+      "pnl": 189.84,
+      "r_multiple": 0.94,
+      "hold_days": 12,
+      "outcome": "WIN"
     }
   ]
 }
