@@ -53,7 +53,7 @@
       "reason": "20d-high break (ext 0.19 ATR, volPace 2.4x, RS +6.8%)"
     },
     {
-      "opened_at": "2026-08-19T13:50:39.6439310Z",
+      "opened_at": "2026-08-19T13:50:39.643931Z",
       "symbol": "XOM",
       "strategy": "BRKOUT",
       "side": "buy",
@@ -64,6 +64,19 @@
       "confidence": 100,
       "regime": "BULL",
       "reason": "20d-high break (ext 0.35 ATR, volPace 2.2x, RS +5.2%)"
+    },
+    {
+      "opened_at": "2026-08-19T14:01:48.6390152Z",
+      "symbol": "MRNA",
+      "strategy": "BRKOUT",
+      "side": "buy",
+      "entry": 133.13,
+      "stop": 126.17,
+      "qty": 89,
+      "risk_usd": 619.44,
+      "confidence": 80,
+      "regime": "BULL",
+      "reason": "20d-high break (ext 19.42 ATR, volPace 36.9x, RS +126.2%)"
     }
   ],
   "closed": [
