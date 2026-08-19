@@ -51,6 +51,19 @@
       "confidence": 100,
       "regime": "BULL",
       "reason": "20d-high break (ext 0.19 ATR, volPace 2.4x, RS +6.8%)"
+    },
+    {
+      "opened_at": "2026-08-19T13:50:39.6439310Z",
+      "symbol": "XOM",
+      "strategy": "BRKOUT",
+      "side": "buy",
+      "entry": 166.9,
+      "stop": 159.73,
+      "qty": 86,
+      "risk_usd": 616.62,
+      "confidence": 100,
+      "regime": "BULL",
+      "reason": "20d-high break (ext 0.35 ATR, volPace 2.2x, RS +5.2%)"
     }
   ],
   "closed": [
