@@ -64,6 +64,19 @@
       "confidence": 80,
       "regime": "BULL",
       "reason": "20d-high break (ext 19.42 ATR, volPace 36.9x, RS +126.2%)"
+    },
+    {
+      "opened_at": "2026-08-20T13:50:42.8686080Z",
+      "symbol": "CMG",
+      "strategy": "PULLBK",
+      "side": "buy",
+      "entry": 34.3,
+      "stop": 33.24,
+      "qty": 361,
+      "risk_usd": 382.66,
+      "confidence": 75,
+      "regime": "BULL",
+      "reason": "EMA20 pullback reclaim (trendQ 0.10 ATR, RS +3.3%)"
     }
   ],
   "closed": [
