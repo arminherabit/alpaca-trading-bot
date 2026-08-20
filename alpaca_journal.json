@@ -27,19 +27,6 @@
       "reason": "20d-high break (ext 0.09 ATR, volPace 1.8x, RS +18.4%)"
     },
     {
-      "opened_at": "2026-08-04T14:10:41.2455175Z",
-      "symbol": "MSFT",
-      "strategy": "PYRA",
-      "side": "buy",
-      "entry": 495.12,
-      "stop": 460.45,
-      "qty": 7,
-      "risk_usd": 242.69,
-      "confidence": 0,
-      "regime": "",
-      "reason": "half-size add at +1R, stop at BE"
-    },
-    {
       "opened_at": "2026-08-18T14:00:56.3589737Z",
       "symbol": "PFE",
       "strategy": "BRKOUT",
@@ -136,6 +123,25 @@
       "r_multiple": 0.94,
       "hold_days": 12,
       "outcome": "WIN"
+    },
+    {
+      "opened_at": "2026-08-04T14:10:41.2455175Z",
+      "symbol": "MSFT",
+      "strategy": "PYRA",
+      "side": "buy",
+      "entry": 495.12,
+      "stop": 460.45,
+      "qty": 7,
+      "risk_usd": 242.69,
+      "confidence": 0,
+      "regime": "",
+      "reason": "half-size add at +1R, stop at BE",
+      "closed_at": "2026-08-20T13:40:41.5567355Z",
+      "exit": 481.78,
+      "pnl": -258.93,
+      "r_multiple": -1.07,
+      "hold_days": 12,
+      "outcome": "LOSS"
     }
   ]
 }
