@@ -66,19 +66,6 @@
       "reason": "20d-high break (ext 19.42 ATR, volPace 36.9x, RS +126.2%)"
     },
     {
-      "opened_at": "2026-08-20T13:50:42.868608Z",
-      "symbol": "CMG",
-      "strategy": "PULLBK",
-      "side": "buy",
-      "entry": 34.3,
-      "stop": 33.24,
-      "qty": 361,
-      "risk_usd": 382.66,
-      "confidence": 75,
-      "regime": "BULL",
-      "reason": "EMA20 pullback reclaim (trendQ 0.10 ATR, RS +3.3%)"
-    },
-    {
       "opened_at": "2026-08-24T13:39:50.8509843Z",
       "symbol": "CMG",
       "strategy": "PYRA",
@@ -168,6 +155,25 @@
       "r_multiple": -1.07,
       "hold_days": 12,
       "outcome": "LOSS"
+    },
+    {
+      "opened_at": "2026-08-20T13:50:42.868608Z",
+      "symbol": "CMG",
+      "strategy": "PULLBK",
+      "side": "buy",
+      "entry": 34.3,
+      "stop": 33.24,
+      "qty": 361,
+      "risk_usd": 382.66,
+      "confidence": 75,
+      "regime": "BULL",
+      "reason": "EMA20 pullback reclaim (trendQ 0.10 ATR, RS +3.3%)",
+      "closed_at": "2026-08-24T15:18:15.1068373Z",
+      "exit": 38.02,
+      "pnl": 1346.0,
+      "r_multiple": 3.52,
+      "hold_days": 2,
+      "outcome": "WIN"
     }
   ]
 }
