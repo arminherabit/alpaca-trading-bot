@@ -77,6 +77,19 @@
       "confidence": 0,
       "regime": "",
       "reason": "half-size add at +1R, stop at BE"
+    },
+    {
+      "opened_at": "2026-08-25T15:20:22.8430593Z",
+      "symbol": "PFE",
+      "strategy": "PYRA",
+      "side": "buy",
+      "entry": 28.52,
+      "stop": 27.33,
+      "qty": 287,
+      "risk_usd": 341.53,
+      "confidence": 0,
+      "regime": "",
+      "reason": "half-size add at +1R, stop at BE"
     }
   ],
   "closed": [

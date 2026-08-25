@@ -94,25 +94,25 @@
     <span class="badge" style="color:#3fb950;  border-color:#3fb950;">OPEN</span>
     <span class="badge" style="color:var(--sub); border-color:var(--border);">Closes 8:00 PM</span>
   </div>
-  <span class="gen-time">Generated: 2026-08-25 15:10:39 &nbsp;|&nbsp; Auto-refresh: 30s</span>
+  <span class="gen-time">Generated: 2026-08-25 15:20:25 &nbsp;|&nbsp; Auto-refresh: 30s</span>
 </header>
 
 <!-- Account Stats -->
 <div class="grid-top">
   <div class="stat-card">
     <div class="label">Equity</div>
-    <div class="value blue">$96,995.75</div>
+    <div class="value blue">$97,017.24</div>
     <div class="sub">Paper account</div>
   </div>
   <div class="stat-card">
     <div class="label">Day P&amp;L</div>
-    <div class="value green">$4.58</div>
-    <div class="sub">+0%</div>
+    <div class="value green">$26.07</div>
+    <div class="sub">+0.03%</div>
   </div>
   <div class="stat-card">
     <div class="label">Buying Power</div>
-    <div class="value">$343,569.49</div>
-    <div class="sub">Cash: $59,984.49</div>
+    <div class="value">$333,824.59</div>
+    <div class="sub">Cash: $51,813.60</div>
   </div>
   <div class="stat-card">
     <div class="label">Trades Today</div>
@@ -157,8 +157,8 @@
 </footer>
 
 <script>
-const positions = [{"symbol":"CMG","side":"long","qty":180.0,"entry":37.37,"current":37.675,"stop":37.0,"target":38.3,"rr":2.51,"unrlPnl":54.9,"unrlPct":0.82,"projProfit":167.4,"projLoss":66.6,"pctToTarget":1.66,"pctToStop":1.79,"progress":52,"value":6781.5},{"symbol":"PFE","side":"long","qty":574.0,"entry":27.3,"current":28.445,"stop":27.03,"target":27.98,"rr":2.52,"unrlPnl":657.23,"unrlPct":4.19,"projProfit":390.32,"projLoss":154.98,"pctToTarget":-1.63,"pctToStop":4.97,"progress":100,"value":16327.43},{"symbol":"XOM","side":"long","qty":86.0,"entry":166.89,"current":161.655,"stop":165.22,"target":171.06,"rr":2.5,"unrlPnl":-450.21,"unrlPct":-3.14,"projProfit":358.62,"projLoss":143.62,"pctToTarget":5.82,"pctToStop":-2.21,"progress":0,"value":13902.33}];
-const closed    = ;
+const positions = [{"symbol":"CMG","side":"long","qty":180.0,"entry":37.37,"current":37.655,"stop":37.0,"target":38.3,"rr":2.51,"unrlPnl":51.3,"unrlPct":0.76,"projProfit":167.4,"projLoss":66.6,"pctToTarget":1.71,"pctToStop":1.74,"progress":50,"value":6777.9},{"symbol":"PFE","side":"long","qty":861.0,"entry":27.69,"current":28.46,"stop":27.41,"target":28.38,"rr":2.46,"unrlPnl":662.97,"unrlPct":2.78,"projProfit":594.09,"projLoss":241.08,"pctToTarget":-0.28,"pctToStop":3.69,"progress":100,"value":24504.06},{"symbol":"XOM","side":"long","qty":86.0,"entry":166.89,"current":161.88,"stop":165.22,"target":171.06,"rr":2.5,"unrlPnl":-430.86,"unrlPct":-3.0,"projProfit":358.62,"projLoss":143.62,"pctToTarget":5.67,"pctToStop":-2.06,"progress":0,"value":13921.68}];
+const closed    = {"symbol":"PFE","side":"buy","qty":"287","fillPrice":28.47,"filledAt":"15:20:23","orderType":"limit"};
 
 function fmt(n, d=2) {
   return (n >= 0 ? '+' : '') + Number(n).toFixed(d);
