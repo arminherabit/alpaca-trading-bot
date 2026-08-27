@@ -77,6 +77,19 @@
       "confidence": 0,
       "regime": "",
       "reason": "half-size add at +1R, stop at BE"
+    },
+    {
+      "opened_at": "2026-08-27T13:50:31.1571065Z",
+      "symbol": "INTU",
+      "strategy": "PULLBK",
+      "side": "buy",
+      "entry": 345.62,
+      "stop": 323.63,
+      "qty": 28,
+      "risk_usd": 615.72,
+      "confidence": 83,
+      "regime": "BULL",
+      "reason": "EMA20 pullback reclaim (trendQ 0.90 ATR, RS +6.0%)"
     }
   ],
   "closed": [
@@ -187,7 +200,7 @@
       "confidence": 100,
       "regime": "BULL",
       "reason": "20d-high break (ext 0.35 ATR, volPace 2.2x, RS +5.2%)",
-      "closed_at": "2026-08-26T13:40:28.3098780Z",
+      "closed_at": "2026-08-26T13:40:28.309878Z",
       "exit": 158.84,
       "pnl": -692.3,
       "r_multiple": -1.12,
