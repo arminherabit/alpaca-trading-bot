@@ -52,3 +52,21 @@ No closed trades this week.
 
 **By regime:** NEUTRAL 0/1 $-291.98
 
+
+## Week ending 2026-08-30
+
+| Metric | Value |
+|---|---|
+| Trades | 2 (1W / 1L, 50%) |
+| Net P&L | $653.7 |
+| Profit factor | 1.94 |
+| Expectancy / trade | $326.85 |
+| Avg R | 1.2 |
+| Avg hold | 3.5 days |
+| Best | CMG PULLBK $1346 (3.52R) |
+| Worst | XOM BRKOUT $-692.3 (-1.12R) |
+
+**By strategy:** BRKOUT 0/1 $-692.3 | PULLBK 1/1 $1346
+
+**By regime:** BULL 1/2 $653.7
+
