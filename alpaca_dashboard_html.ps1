@@ -19,6 +19,45 @@ $positions = Get-Positions $cfg
 $orders    = Get-Orders    $cfg "all"
 $clock     = Get-MarketClock $cfg
 
+# Returns the LIVE protective stop / target legs for a position, or $null.
+#
+# Must query status=all&nested=true: a bracket's stop child is exposed ONLY as a
+# leg of its parent, and once the entry fills the parent has status=filled, so
+# status=open never returns it. The old code filtered `order_class -eq bracket`
+# over a non-nested list, never matched, and silently fell back to a FABRICATED
+# stop at entry*0.99 -- so the dashboard displayed invented protection levels
+# that had nothing to do with the real orders. Show nothing rather than a lie.
+function Get-LiveExitLegs($cfg, $position) {
+    $sym          = $position.symbol
+    $expectedSide = if ($position.side -eq "long") { "sell" } else { "buy" }
+    $stopTypes    = @("stop","stop_limit","trailing_stop","stop_loss")
+    $deadStatus   = @("filled","canceled","cancelled","expired","rejected","done_for_day","replaced")
+
+    $raw = Invoke-AlpacaApi $cfg "GET" "/v2/orders?status=all&nested=true&symbols=$sym&limit=200"
+    if ($null -eq $raw) { return @{ stop = 0.0; target = 0.0 } }
+    $arr = if ($raw -is [System.Array]) { $raw } else { @($raw) }
+
+    $stopPrice = 0.0; $targetPrice = 0.0
+    foreach ($order in $arr) {
+        if ($null -eq $order -or $order.symbol -ne $sym) { continue }
+        $candidates = @($order)
+        if ($order.legs -and $order.legs.Count -gt 0) { $candidates += @($order.legs) }
+        foreach ($o in $candidates) {
+            if ($null -eq $o -or $o.side -ne $expectedSide) { continue }
+            if ($deadStatus -contains $o.status) { continue }
+            $t = if ($o.order_type) { $o.order_type } else { $o.type }
+            if ($stopPrice -eq 0.0 -and ($stopTypes -contains $t)) {
+                if ($o.stop_price)      { $stopPrice = [double]$o.stop_price }
+                elseif ($o.hwm)         { $stopPrice = [double]$o.hwm }
+            }
+            elseif ($targetPrice -eq 0.0 -and $t -eq "limit" -and $o.limit_price) {
+                $targetPrice = [double]$o.limit_price
+            }
+        }
+    }
+    return @{ stop = $stopPrice; target = $targetPrice }
+}
+
 $state = if (Test-Path (Join-Path $PSScriptRoot "alpaca_state.json")) {
     Get-Content (Join-Path $PSScriptRoot "alpaca_state.json") | ConvertFrom-Json
 } else {
@@ -35,46 +74,36 @@ foreach ($p in $positions) {
     $unrlPnl = [double]$p.unrealized_pl
     $unrlPct = [double]$p.unrealized_plpc * 100
 
-    # Try to find matching bracket order for stop/target
-    $bracketOrders = @($orders | Where-Object {
-        $_.symbol -eq $p.symbol -and $_.order_class -eq "bracket"
-    })
-    $stopPrice   = 0.0
-    $targetPrice = 0.0
-    if ($bracketOrders.Count -gt 0) {
-        $legs = $bracketOrders[0]
-        # Stop leg
-        $stopLeg   = $legs.legs | Where-Object { $_.type -eq "stop" }      | Select-Object -First 1
-        $targetLeg = $legs.legs | Where-Object { $_.type -eq "limit" }     | Select-Object -First 1
-        if ($null -ne $stopLeg)   { $stopPrice   = [double]$stopLeg.stop_price    }
-        if ($null -ne $targetLeg) { $targetPrice = [double]$targetLeg.limit_price }
-    }
+    # Real live protection only. A zero here means "no live stop / target found"
+    # and the card renders it as UNPROTECTED -- never as an invented price.
+    $legs        = Get-LiveExitLegs $cfg $p
+    $stopPrice   = [double]$legs.stop
+    $targetPrice = [double]$legs.target
+    $hasStop     = $stopPrice   -gt 0
+    $hasTarget   = $targetPrice -gt 0
 
-    # Fallback: estimate from state or use ATR-based defaults
-    if ($stopPrice   -eq 0) { $stopPrice   = if ($side -eq "long") { [Math]::Round($entry * 0.99, 2) } else { [Math]::Round($entry * 1.01, 2) } }
-    if ($targetPrice -eq 0) { $targetPrice = if ($side -eq "long") { [Math]::Round($entry * 1.025, 2) } else { [Math]::Round($entry * 0.975, 2) } }
-
-    $riskPerShare   = [Math]::Abs($entry - $stopPrice)
-    $rewardPerShare = [Math]::Abs($targetPrice - $entry)
-    $rr             = if ($riskPerShare -gt 0) { [Math]::Round($rewardPerShare / $riskPerShare, 2) } else { 0 }
+    $riskPerShare   = if ($hasStop) { [Math]::Abs($entry - $stopPrice) } else { 0 }
+    $rewardPerShare = if ($hasTarget) { [Math]::Abs($targetPrice - $entry) } else { 0 }
+    $rr             = if ($riskPerShare -gt 0 -and $hasTarget) { [Math]::Round($rewardPerShare / $riskPerShare, 2) } else { 0 }
     $projProfit     = [Math]::Round($rewardPerShare * $qty, 2)
     $projLoss       = [Math]::Round($riskPerShare   * $qty, 2)
-    $pctToTarget    = if ($side -eq "long") {
+    $pctToTarget    = if (-not $hasTarget) { $null } elseif ($side -eq "long") {
         [Math]::Round(($targetPrice - $current) / $current * 100, 2)
     } else {
         [Math]::Round(($current - $targetPrice) / $current * 100, 2)
     }
-    $pctToStop      = if ($side -eq "long") {
+    $pctToStop      = if (-not $hasStop) { $null } elseif ($side -eq "long") {
         [Math]::Round(($current - $stopPrice) / $current * 100, 2)
     } else {
         [Math]::Round(($stopPrice - $current) / $current * 100, 2)
     }
 
-    # Progress bar: 0% = at stop, 100% = at target
+    # Progress bar: 0% = at stop, 100% = at target. Only meaningful when both
+    # real levels exist; otherwise the bar is suppressed by the renderer.
     $range    = $targetPrice - $stopPrice
-    $progress = if ($range -ne 0) {
+    $progress = if ($hasStop -and $hasTarget -and $range -ne 0) {
         [Math]::Max(0, [Math]::Min(100, [Math]::Round(($current - $stopPrice) / $range * 100, 1)))
-    } else { 50 }
+    } else { $null }
 
     $posData += [pscustomobject]@{
         symbol       = $p.symbol
@@ -142,8 +171,14 @@ $modeColor = if ($cfg.paper_trading) { "#d29922" } else { "#da3633" }
 # ── Serialise to JSON for embedding ───────────────────────────────────────────
 $posJson    = $posData    | ConvertTo-Json -Depth 5 -Compress
 $closedJson = $closedData | ConvertTo-Json -Depth 5 -Compress
-if ($posJson    -eq "null") { $posJson    = "[]" }
-if ($closedJson -eq "null") { $closedJson = "[]" }
+# ConvertTo-Json emits "" for an empty array and "null" for $null -- both are JS
+# syntax errors that killed the entire <script> block (and with it every
+# position card on the page). Normalise to a real empty array.
+if ([string]::IsNullOrWhiteSpace($posJson)    -or $posJson    -eq "null") { $posJson    = "[]" }
+if ([string]::IsNullOrWhiteSpace($closedJson) -or $closedJson -eq "null") { $closedJson = "[]" }
+# A single object is serialised bare; the JS expects an array.
+if (-not $posJson.StartsWith("["))    { $posJson    = "[$posJson]" }
+if (-not $closedJson.StartsWith("[")) { $closedJson = "[$closedJson]" }
 
 # ── HTML ──────────────────────────────────────────────────────────────────────
 $html = @"
@@ -308,6 +343,7 @@ $html = @"
 <script>
 const positions = $posJson;
 const closed    = $closedJson;
+"@ + @'
 
 function fmt(n, d=2) {
   return (n >= 0 ? '+' : '') + Number(n).toFixed(d);
@@ -325,6 +361,16 @@ if (!positions || positions.length === 0) {
     const pnlColor  = p.unrlPnl >= 0 ? '#3fb950' : '#f85149';
     const fillColor = p.progress > 66 ? '#3fb950' : p.progress > 33 ? '#d29922' : '#f85149';
     const isLong    = p.side === 'long';
+
+    // A null stop/target means no LIVE order was found on Alpaca. Say so loudly
+    // rather than printing a number the account does not actually have.
+    const hasStop   = p.stop   !== null && p.stop   > 0;
+    const hasTarget = p.target !== null && p.target > 0;
+    const hasBar    = p.progress !== null;
+    const stopVal   = hasStop   ? '$' + p.stop.toFixed(2)   : 'NONE';
+    const tgtVal    = hasTarget ? '$' + p.target.toFixed(2) : 'NONE';
+    const stopSub   = hasStop   ? p.pctToStop.toFixed(2)   + '% away' : 'no live stop order';
+    const tgtSub    = hasTarget ? p.pctToTarget.toFixed(2) + '% away' : 'no live target order';
 
     grid.innerHTML += `
     <div class="pos-card ${p.side}">
@@ -347,36 +393,40 @@ if (!positions || positions.length === 0) {
       <div class="price-row">
         <div class="price-cell">
           <div class="p-label">Entry</div>
-          <div class="p-val">${'$'}${p.entry.toFixed(2)}</div>
+          <div class="p-val">$${p.entry.toFixed(2)}</div>
           <div class="p-sub">Avg cost</div>
         </div>
         <div class="price-cell">
           <div class="p-label">Current</div>
-          <div class="p-val" style="color:${pnlColor}">${'$'}${p.current.toFixed(2)}</div>
+          <div class="p-val" style="color:${pnlColor}">$${p.current.toFixed(2)}</div>
           <div class="p-sub">${fmt(p.unrlPct)}% vs entry</div>
         </div>
         <div class="price-cell">
           <div class="p-label">Stop Loss</div>
-          <div class="p-val" style="color:#f85149">${'$'}${p.stop.toFixed(2)}</div>
-          <div class="p-sub">${p.pctToStop.toFixed(2)}% away</div>
+          <div class="p-val" style="color:#f85149">${stopVal}</div>
+          <div class="p-sub">${stopSub}</div>
         </div>
         <div class="price-cell">
           <div class="p-label">Target T1</div>
-          <div class="p-val" style="color:#3fb950">${'$'}${p.target.toFixed(2)}</div>
-          <div class="p-sub">${p.pctToTarget.toFixed(2)}% away</div>
+          <div class="p-val" style="color:#3fb950">${tgtVal}</div>
+          <div class="p-sub">${tgtSub}</div>
         </div>
       </div>
 
-      <div class="progress-wrap">
+      ${!hasStop ? `<div style="margin:10px 0;padding:8px 10px;border-radius:6px;
+        background:rgba(248,81,73,.12);border:1px solid #f85149;color:#f85149;
+        font-size:12px;font-weight:600">&#9888; UNPROTECTED &mdash; no live stop order on this position</div>` : ``}
+
+      ${hasBar ? `<div class="progress-wrap">
         <div class="progress-labels">
-          <span style="color:#f85149">STOP ${'$'}${p.stop.toFixed(2)}</span>
+          <span style="color:#f85149">STOP ${stopVal}</span>
           <span style="color:var(--sub)">${p.progress.toFixed(0)}% to target</span>
-          <span style="color:#3fb950">TARGET ${'$'}${p.target.toFixed(2)}</span>
+          <span style="color:#3fb950">TARGET ${tgtVal}</span>
         </div>
         <div class="progress-track">
           <div class="progress-fill" style="width:${p.progress}%;background:${fillColor}"></div>
         </div>
-      </div>
+      </div>` : ``}
 
       <div class="proj-row">
         <div class="proj-cell">
@@ -389,7 +439,7 @@ if (!positions || positions.length === 0) {
         </div>
         <div class="proj-cell">
           <div class="p-label">R:R Ratio</div>
-          <div class="p-val" style="color:${p.rr >= 2.5 ? '#3fb950' : '#d29922'}">1:${p.rr.toFixed(2)}</div>
+          <div class="p-val" style="color:${p.rr >= 2.5 ? '#3fb950' : '#d29922'}">${p.rr > 0 ? '1:' + p.rr.toFixed(2) : '&mdash;'}</div>
         </div>
       </div>
     </div>`;
@@ -407,12 +457,13 @@ if (!closed || closed.length === 0) {
       <td><strong>${o.symbol}</strong></td>
       <td><span class="tag ${tagClass}">${o.side.toUpperCase()}</span></td>
       <td>${o.qty}</td>
-      <td><strong>${'$'}${Number(o.fillPrice).toFixed(2)}</strong></td>
+      <td><strong>$${Number(o.fillPrice).toFixed(2)}</strong></td>
       <td style="color:var(--sub)">${o.orderType}</td>
       <td style="color:var(--sub)">${o.filledAt}</td>
     </tr>`;
   });
 }
+'@ + @"
 </script>
 </body>
 </html>
