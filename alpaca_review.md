@@ -70,3 +70,7 @@ No closed trades this week.
 
 **By regime:** BULL 1/2 $653.7
 
+
+## Week ending 2026-09-06
+No closed trades this week.
+
