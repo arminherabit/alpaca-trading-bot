@@ -64,32 +64,6 @@
       "confidence": 0,
       "regime": "",
       "reason": "half-size add at +1R, stop at BE"
-    },
-    {
-      "opened_at": "2026-08-25T15:20:22.8430593Z",
-      "symbol": "PFE",
-      "strategy": "PYRA",
-      "side": "buy",
-      "entry": 28.52,
-      "stop": 27.33,
-      "qty": 287,
-      "risk_usd": 341.53,
-      "confidence": 0,
-      "regime": "",
-      "reason": "half-size add at +1R, stop at BE"
-    },
-    {
-      "opened_at": "2026-08-27T13:50:31.1571065Z",
-      "symbol": "INTU",
-      "strategy": "PULLBK",
-      "side": "buy",
-      "entry": 345.62,
-      "stop": 323.63,
-      "qty": 28,
-      "risk_usd": 615.72,
-      "confidence": 83,
-      "regime": "BULL",
-      "reason": "EMA20 pullback reclaim (trendQ 0.90 ATR, RS +6.0%)"
     }
   ],
   "closed": [
@@ -205,6 +179,44 @@
       "pnl": -692.3,
       "r_multiple": -1.12,
       "hold_days": 5,
+      "outcome": "LOSS"
+    },
+    {
+      "opened_at": "2026-08-25T15:20:22.8430593Z",
+      "symbol": "PFE",
+      "strategy": "PYRA",
+      "side": "buy",
+      "entry": 28.52,
+      "stop": 27.33,
+      "qty": 287,
+      "risk_usd": 341.53,
+      "confidence": 0,
+      "regime": "",
+      "reason": "half-size add at +1R, stop at BE",
+      "closed_at": "2026-09-08T13:40:29.9571191Z",
+      "exit": 27.81,
+      "pnl": -188.48,
+      "r_multiple": -0.55,
+      "hold_days": 10,
+      "outcome": "LOSS"
+    },
+    {
+      "opened_at": "2026-08-27T13:50:31.1571065Z",
+      "symbol": "INTU",
+      "strategy": "PULLBK",
+      "side": "buy",
+      "entry": 345.62,
+      "stop": 323.63,
+      "qty": 28,
+      "risk_usd": 615.72,
+      "confidence": 83,
+      "regime": "BULL",
+      "reason": "EMA20 pullback reclaim (trendQ 0.90 ATR, RS +6.0%)",
+      "closed_at": "2026-09-08T13:40:30.1308598Z",
+      "exit": 320.22,
+      "pnl": -710.29,
+      "r_multiple": -1.15,
+      "hold_days": 8,
       "outcome": "LOSS"
     }
   ]
