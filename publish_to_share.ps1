@@ -47,13 +47,25 @@ function Write-Log([string]$msg, [string]$colour = 'Gray') {
 }
 
 # ── TLS ───────────────────────────────────────────────────────────────────────
-# GitHub requires TLS 1.2. On .NET 4.5+ that is SecurityProtocolType.Tls12; on
-# older frameworks the enum member does not exist, so the numeric value (3072)
-# is used directly. If the framework genuinely cannot do TLS 1.2 this still
-# fails, but at the connection, with a clearer message than an enum error.
+# GitHub requires TLS 1.2, and it is the CLR the script is HOSTED on that decides
+# whether TLS 1.2 exists -- not the newest .NET installed on the box. Mike-hp has
+# .NET 4.7, but PowerShell 2.0 loads CLR 2.0 by default, whose
+# SecurityProtocolType only defines Ssl3 and Tls (1.0), and every fetch died with
+# "The underlying connection was closed."
+#
+# refresh.cmd sets COMPLUS_version=v4.0.30319 so this process hosts on the .NET 4
+# runtime instead. The CLR version is logged because "which runtime am I on" is
+# the single most useful fact when this fails.
+$clr = [System.Environment]::Version
+Write-Log ("PowerShell {0} on CLR {1}" -f $PSVersionTable.PSVersion, $clr)
+if ($clr.Major -lt 4) {
+    Write-Log "CLR 2.0 detected -- TLS 1.2 is unavailable here and GitHub will refuse the connection." 'Yellow'
+    Write-Log "Run this through refresh.cmd, which sets COMPLUS_version=v4.0.30319." 'Yellow'
+}
 try {
     [Net.ServicePointManager]::SecurityProtocol = `
         [Net.ServicePointManager]::SecurityProtocol -bor 3072
+    Write-Log ("TLS: {0}" -f [Net.ServicePointManager]::SecurityProtocol)
 } catch {
     Write-Log "Could not enable TLS 1.2 ($($_.Exception.Message)); trying anyway." 'Yellow'
 }

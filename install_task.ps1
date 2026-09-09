@@ -35,7 +35,22 @@ if (-not (Test-Path $Destination)) { Write-Host "Destination not found: $Destina
 # ── Wrapper ───────────────────────────────────────────────────────────────────
 $dir = Split-Path $ScriptPath -Parent
 $cmd = Join-Path $dir 'refresh.cmd'
+
+# COMPLUS_version is the whole trick on this machine.
+#
+# Mike-hp has .NET 4.7 installed, so the framework CAN negotiate TLS 1.2 -- but
+# PowerShell 2.0 hosts on the CLR 2.0 runtime, whose SecurityProtocolType enum
+# only defines Ssl3 and Tls (1.0). GitHub dropped TLS 1.0 in 2018, so every
+# fetch died with "The underlying connection was closed."
+#
+# Setting COMPLUS_version for the child process makes that same powershell.exe
+# load the v4.0.30319 runtime instead, where Tls12 exists. It is per-process and
+# leaves nothing behind: no registry edit, no system-wide powershell.exe.config,
+# no security setting changed. Unset it and the machine behaves exactly as before.
 $body = "@echo off`r`n" +
+        "REM Host PowerShell 2.0 on the .NET 4 runtime so TLS 1.2 is available.`r`n" +
+        "REM Without this, GitHub refuses the connection (CLR 2.0 tops out at TLS 1.0).`r`n" +
+        "set COMPLUS_version=v4.0.30319`r`n" +
         'powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "' +
         $ScriptPath + '" -Destination "' + $Destination + '"' + "`r`n"
 [System.IO.File]::WriteAllText($cmd, $body, (New-Object System.Text.ASCIIEncoding))
@@ -57,14 +72,16 @@ if ($rc -ne 0) {
 Write-Host "Task registered: $TaskName (every $Minutes minutes)" -ForegroundColor Green
 
 # ── Publish once now ──────────────────────────────────────────────────────────
-# So the Desktop is current immediately rather than up to $Minutes from now.
-Write-Host "Running it once now..." -ForegroundColor Cyan
-& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $ScriptPath -Destination $Destination
+# Invoked through refresh.cmd, not directly, so this first run exercises exactly
+# what the scheduled task will run -- COMPLUS_version included. Running the .ps1
+# straight from here would test a different code path and could pass while the
+# task fails.
+Write-Host "Running it once now (via refresh.cmd, same as the task will)..." -ForegroundColor Cyan
+& cmd.exe /c "`"$cmd`""
 if ($LASTEXITCODE -ne 0) {
     Write-Host ""
     Write-Host "The task is registered, but this first run failed -- see the error above." -ForegroundColor Yellow
-    Write-Host "The most likely cause on this Windows version is TLS: GitHub requires TLS 1.2," -ForegroundColor Yellow
-    Write-Host "which Windows 7 does not enable by default." -ForegroundColor Yellow
+    Write-Host "If it is still a TLS error, the .NET 4 runtime did not take effect." -ForegroundColor Yellow
     exit 1
 }
 
