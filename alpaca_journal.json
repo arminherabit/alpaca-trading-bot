@@ -1,32 +1,6 @@
 {
   "open": [
     {
-      "opened_at": "2026-07-29T14:01:49.2205343Z",
-      "symbol": "SNOW",
-      "strategy": "BRKOUT",
-      "side": "buy",
-      "entry": 283.62,
-      "stop": 257.82,
-      "qty": 14,
-      "risk_usd": 361.2,
-      "confidence": 100,
-      "regime": "RANGING",
-      "reason": "20d-high break (ext 0.33 ATR, volPace 2.6x, RS +12.8%)"
-    },
-    {
-      "opened_at": "2026-07-31T13:50:30.0549937Z",
-      "symbol": "MSFT",
-      "strategy": "BRKOUT",
-      "side": "buy",
-      "entry": 460.04,
-      "stop": 428.67,
-      "qty": 14,
-      "risk_usd": 439.18,
-      "confidence": 95,
-      "regime": "NEUTRAL",
-      "reason": "20d-high break (ext 0.09 ATR, volPace 1.8x, RS +18.4%)"
-    },
-    {
       "opened_at": "2026-08-18T14:00:56.3589737Z",
       "symbol": "PFE",
       "strategy": "BRKOUT",
@@ -38,19 +12,6 @@
       "confidence": 100,
       "regime": "BULL",
       "reason": "20d-high break (ext 0.19 ATR, volPace 2.4x, RS +6.8%)"
-    },
-    {
-      "opened_at": "2026-08-19T14:01:48.6390152Z",
-      "symbol": "MRNA",
-      "strategy": "BRKOUT",
-      "side": "buy",
-      "entry": 133.13,
-      "stop": 126.17,
-      "qty": 89,
-      "risk_usd": 619.44,
-      "confidence": 80,
-      "regime": "BULL",
-      "reason": "20d-high break (ext 19.42 ATR, volPace 36.9x, RS +126.2%)"
     },
     {
       "opened_at": "2026-08-24T13:39:50.8509843Z",
@@ -218,6 +179,53 @@
       "r_multiple": -1.15,
       "hold_days": 8,
       "outcome": "LOSS"
+    }
+  ],
+  "orphaned": [
+    {
+      "opened_at": "2026-07-29T14:01:49.2205343Z",
+      "symbol": "SNOW",
+      "strategy": "BRKOUT",
+      "side": "buy",
+      "entry": 283.62,
+      "stop": 257.82,
+      "qty": 14,
+      "risk_usd": 361.2,
+      "confidence": 100,
+      "regime": "RANGING",
+      "reason": "20d-high break (ext 0.33 ATR, volPace 2.6x, RS +12.8%)",
+      "orphaned_at": "2026-09-09T13:30:47.2607009Z",
+      "orphan_reason": "position not held; exit never journaled"
+    },
+    {
+      "opened_at": "2026-07-31T13:50:30.0549937Z",
+      "symbol": "MSFT",
+      "strategy": "BRKOUT",
+      "side": "buy",
+      "entry": 460.04,
+      "stop": 428.67,
+      "qty": 14,
+      "risk_usd": 439.18,
+      "confidence": 95,
+      "regime": "NEUTRAL",
+      "reason": "20d-high break (ext 0.09 ATR, volPace 1.8x, RS +18.4%)",
+      "orphaned_at": "2026-09-09T13:30:47.3888651Z",
+      "orphan_reason": "position not held; exit never journaled"
+    },
+    {
+      "opened_at": "2026-08-19T14:01:48.6390152Z",
+      "symbol": "MRNA",
+      "strategy": "BRKOUT",
+      "side": "buy",
+      "entry": 133.13,
+      "stop": 126.17,
+      "qty": 89,
+      "risk_usd": 619.44,
+      "confidence": 80,
+      "regime": "BULL",
+      "reason": "20d-high break (ext 19.42 ATR, volPace 36.9x, RS +126.2%)",
+      "orphaned_at": "2026-09-09T13:30:47.3929202Z",
+      "orphan_reason": "position not held; exit never journaled"
     }
   ]
 }
