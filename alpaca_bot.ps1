@@ -630,11 +630,39 @@ function Get-WeekdayCount([datetime]$from, [datetime]$to) {
     return $count
 }
 
+# Cancels a position's live orders and market-closes it. Shared by the
+# hold_days_max time stop and the stall cut below.
+function Close-PositionNow($cfg, $pos) {
+    $sym = $pos.symbol
+    $openOrders = Invoke-AlpacaApi $cfg "GET" "/v2/orders?status=open&symbols=$sym&limit=20"
+    if ($null -ne $openOrders) {
+        $oArr = if ($openOrders -is [System.Array]) { $openOrders } else { @($openOrders) }
+        foreach ($o in $oArr) {
+            if ($null -ne $o) { try { Invoke-AlpacaApi $cfg "DELETE" "/v2/orders/$($o.id)" | Out-Null } catch {} }
+        }
+        Start-Sleep -Milliseconds 500
+    }
+    $qty = [int][Math]::Abs([double]$pos.qty)
+    $closeSide = if ($pos.side -eq "long") { "sell" } else { "buy" }
+    Submit-MarketOrder $cfg $sym $closeSide $qty | Out-Null
+}
+
 # Time stop: a swing trade that hasn't resolved in hold_days_max trading days
 # is dead capital -- the catalyst didn't play out. Close it, free the slot.
+#
+# Also enforces the STALL CUT. The staged exit ladder (+1R BE, +1.5R ratchet,
+# +2R trail) only ever acts on winners; a loser gets nothing but its original
+# stop and the full hold window to drift into it. INTU sat at -0.4R for four
+# straight sessions logging "holding, <+1R", then gapped out at -1.15R for
+# -$710. A trade that is meaningfully underwater a week in has been falsified:
+# take the smaller loss and free the slot rather than paying full freight.
 function Close-StalePositions($cfg, $positions) {
     $maxHold = if ($cfg.hold_days_max) { [int]$cfg.hold_days_max } else { 12 }
     $etNow   = Get-EasternTime
+
+    $stallOn   = ($null -eq $cfg.stall_cut_enabled) -or $cfg.stall_cut_enabled
+    $stallDays = if ($cfg.stall_cut_days) { [int]$cfg.stall_cut_days } else { 7 }
+    $stallR    = if ($null -ne $cfg.stall_cut_r) { [double]$cfg.stall_cut_r } else { -0.5 }
 
     foreach ($pos in $positions) {
         $sym = $pos.symbol
@@ -652,27 +680,34 @@ function Close-StalePositions($cfg, $positions) {
         # a 12-day threshold
         $ageDays = Get-WeekdayCount ([datetime]::Parse($entryFill.filled_at).ToUniversalTime()) ([datetime]::UtcNow)
 
+        $pnl = [double]$pos.unrealized_pl
+
         if ($ageDays -lt $maxHold) {
+            # Not yet at the hard time stop -- but check the stall cut.
+            if ($stallOn -and $ageDays -ge $stallDays -and $pnl -lt 0) {
+                # Reconstruct 1R the same way Manage-OpenPositions does:
+                # 2.0x daily ATR, the multiple the entry stop was sized on.
+                $absQty = [Math]::Abs([double]$pos.qty)
+                $dBars  = Get-DailyBars $cfg $sym
+                $dATR   = if ($dBars -and $dBars.Count -ge 15) { Get-ATR $dBars 14 } else { 0 }
+                $riskPS = 2.0 * $dATR
+                if ($riskPS -gt 0 -and $absQty -gt 0) {
+                    $rMult = ($pnl / $absQty) / $riskPS
+                    if ($rMult -le $stallR) {
+                        Write-Host ("    [STALL-CUT] {0,-6} {1:F1}R after {2} trading days (limit {3:F1}R/{4}d) -- closing (unrealized `${5:F2})" -f `
+                            $sym, $rMult, $ageDays, $stallR, $stallDays, $pnl) -ForegroundColor Yellow
+                        Close-PositionNow $cfg $pos
+                        continue
+                    }
+                }
+            }
             Write-Host ("    [HOLD] {0,-6} day {1}/{2} of max hold" -f $sym, $ageDays, $maxHold) -ForegroundColor DarkGray
             continue
         }
 
-        $pnl = [double]$pos.unrealized_pl
         Write-Host ("    [TIME-STOP] {0,-6} held {1} trading days (max {2}) -- closing (unrealized `${3:F2})" -f `
             $sym, $ageDays, $maxHold, $pnl) -ForegroundColor Yellow
-
-        # Cancel bracket legs first, then market-close
-        $openOrders = Invoke-AlpacaApi $cfg "GET" "/v2/orders?status=open&symbols=$sym&limit=20"
-        if ($null -ne $openOrders) {
-            $oArr = if ($openOrders -is [System.Array]) { $openOrders } else { @($openOrders) }
-            foreach ($o in $oArr) {
-                if ($null -ne $o) { try { Invoke-AlpacaApi $cfg "DELETE" "/v2/orders/$($o.id)" | Out-Null } catch {} }
-            }
-            Start-Sleep -Milliseconds 500
-        }
-        $qty = [int][Math]::Abs([double]$pos.qty)
-        $closeSide = if ($pos.side -eq "long") { "sell" } else { "buy" }
-        Submit-MarketOrder $cfg $sym $closeSide $qty | Out-Null
+        Close-PositionNow $cfg $pos
     }
 }
 
@@ -982,6 +1017,9 @@ function Run-Scan($cfg, $state) {
         # pyramided flag so a future NEW position there can pyramid again.
         $curSyms = @($positions | ForEach-Object { $_.symbol })
         $state.pyramided_syms = @($state.pyramided_syms | Where-Object { $curSyms -contains $_ })
+
+        # Retire journal 'open' rows whose position is long gone.
+        Reconcile-Journal $curSyms | Out-Null
 
         # Active position management: staged exits + controlled pyramiding
         Manage-OpenPositions $cfg $positions $state

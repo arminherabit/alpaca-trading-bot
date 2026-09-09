@@ -7,7 +7,14 @@
 
   "scan_mode":     "swing",
   "hold_days_max": 12,
-  "pyramiding_enabled": true,
+
+  "//pyramiding": "DISABLED 2026-09-09. Live record 1W/2L, net -$257 (SNOW +190, MSFT -259, PFE -188). The add is placed at +1R with its stop at BE, so it carries a full -1R of its own risk to capture the tail of a move that has already run. Re-enable only on evidence.",
+  "pyramiding_enabled": false,
+
+  "//stall_cut": "A losing swing trade that has gone nowhere for a week is dead capital that still holds a full stop's worth of risk. INTU sat at -0.4R for four sessions, then gapped out at -1.15R (-$710). Cut positions worse than stall_cut_r after stall_cut_days weekdays instead of waiting for hold_days_max.",
+  "stall_cut_enabled": true,
+  "stall_cut_days":    7,
+  "stall_cut_r":      -0.5,
 
   "base_url_paper": "https://paper-api.alpaca.markets",
   "base_url_live":  "https://api.alpaca.markets",

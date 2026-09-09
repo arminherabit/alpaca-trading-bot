@@ -108,6 +108,42 @@ function Complete-JournalEntry {
     return $rec
 }
 
+# Drops journal 'open' rows for symbols the account no longer holds.
+#
+# Complete-JournalEntry only fires from Sync-ClosedTrades, which works a 30-day
+# lookback and skips exits already in recorded_exits. An exit that closed before
+# the journal existed -- or outside that window -- leaves its 'open' row behind
+# forever (SNOW, MSFT and MRNA sat there for six weeks). Those rows make the
+# book look bigger than it is and skew any open-risk reading.
+#
+# Conservative by symbol, not by row: a symbol is only orphaned when the account
+# holds NONE of it. That keeps a partially-closed campaign (PFE original still
+# held after its PYRA tranche exited) intact. Orphans go to their own bucket
+# rather than 'closed' -- their exit price and P&L are unrecoverable, and
+# inventing them would poison expectancy stats.
+function Reconcile-Journal([string[]]$heldSymbols) {
+    $j = Load-Journal
+    if (-not $j.open -or @($j.open).Count -eq 0) { return 0 }
+
+    $held    = @($heldSymbols)
+    $orphans = @($j.open | Where-Object { $held -notcontains $_.symbol })
+    if ($orphans.Count -eq 0) { return 0 }
+
+    if ($null -eq $j.PSObject.Properties['orphaned']) {
+        $j | Add-Member -NotePropertyName orphaned -NotePropertyValue @() -Force
+    }
+    foreach ($o in $orphans) {
+        $o | Add-Member -NotePropertyName orphaned_at -NotePropertyValue ((Get-Date).ToUniversalTime().ToString("o")) -Force
+        $o | Add-Member -NotePropertyName orphan_reason -NotePropertyValue "position not held; exit never journaled" -Force
+        Write-Host ("  [JOURNAL] {0,-6} {1} orphaned -- opened {2}, no longer held" -f `
+            $o.symbol, $o.strategy, $o.opened_at.Substring(0,10)) -ForegroundColor DarkYellow
+    }
+    $j.orphaned = @($j.orphaned) + $orphans
+    $j.open     = @($j.open | Where-Object { $held -contains $_.symbol })
+    Save-Journal $j
+    return $orphans.Count
+}
+
 # Weekly self-review: aggregates the last N days of closed journal entries.
 # Returns a stats object; Write-WeeklyReview renders it to alpaca_review.md.
 function Get-JournalStats([int]$daysBack = 7) {
