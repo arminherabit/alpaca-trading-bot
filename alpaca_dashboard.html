@@ -94,25 +94,25 @@
     <span class="badge" style="color:#3fb950;  border-color:#3fb950;">OPEN</span>
     <span class="badge" style="color:var(--sub); border-color:var(--border);">Closes 8:00 PM</span>
   </div>
-  <span class="gen-time">Generated: 2026-09-09 14:10:38 &nbsp;|&nbsp; Auto-refresh: 30s</span>
+  <span class="gen-time">Generated: 2026-09-09 14:20:29 &nbsp;|&nbsp; Auto-refresh: 30s</span>
 </header>
 
 <!-- Account Stats -->
 <div class="grid-top">
   <div class="stat-card">
     <div class="label">Equity</div>
-    <div class="value blue">$95,300.05</div>
+    <div class="value blue">$95,330.96</div>
     <div class="sub">Paper account</div>
   </div>
   <div class="stat-card">
     <div class="label">Day P&amp;L</div>
-    <div class="value red">$-49.40</div>
-    <div class="sub">-0.05%</div>
+    <div class="value red">$-18.49</div>
+    <div class="sub">-0.02%</div>
   </div>
   <div class="stat-card">
     <div class="label">Buying Power</div>
-    <div class="value">$348,621.13</div>
-    <div class="sub">Cash: $72,482.50</div>
+    <div class="value">$347,668.60</div>
+    <div class="sub">Cash: $67,284.94</div>
   </div>
   <div class="stat-card">
     <div class="label">Trades Today</div>
@@ -121,7 +121,7 @@
   </div>
   <div class="stat-card">
     <div class="label">Open Positions</div>
-    <div class="value">2 <span style="font-size:14px;color:var(--sub)">/ 3</span></div>
+    <div class="value">3 <span style="font-size:14px;color:var(--sub)">/ 3</span></div>
     <div class="sub">Max 3 allowed</div>
   </div>
   <div class="stat-card">
@@ -157,8 +157,8 @@
 </footer>
 
 <script>
-const positions = [{"symbol":"PFE","side":"long","qty":574.0,"entry":27.885,"current":27.795,"stop":27.33,"target":31.08,"rr":5.76,"unrlPnl":-51.66,"unrlPct":-0.32,"projProfit":1833.93,"projLoss":318.57,"pctToTarget":11.82,"pctToStop":1.67,"progress":12,"value":15954.33},{"symbol":"XOM","side":"long","qty":42.0,"entry":163.724524,"current":163.41,"stop":156.96,"target":187.42,"rr":3.5,"unrlPnl":-13.21,"unrlPct":-0.19,"projProfit":995.21,"projLoss":284.11,"pctToTarget":14.69,"pctToStop":3.95,"progress":21,"value":6863.22}];
-const closed    = [{"symbol":"XOM","side":"buy","qty":"42","fillPrice":163.72,"filledAt":"14:01:17","orderType":"limit"},{"symbol":"CMG","side":"sell","qty":"180","fillPrice":36.74,"filledAt":"13:32:44","orderType":"market"}];
+const positions = [{"symbol":"AMD","side":"long","qty":10.0,"entry":519.756,"current":520.1936,"stop":473.53,"target":681.74,"rr":3.5,"unrlPnl":4.38,"unrlPct":0.08,"projProfit":1619.84,"projLoss":462.26,"pctToTarget":31.06,"pctToStop":8.97,"progress":22,"value":5201.94},{"symbol":"PFE","side":"long","qty":574.0,"entry":27.885,"current":27.865,"stop":27.33,"target":31.08,"rr":5.76,"unrlPnl":-11.48,"unrlPct":-0.07,"projProfit":1833.93,"projLoss":318.57,"pctToTarget":11.54,"pctToStop":1.92,"progress":14,"value":15994.51},{"symbol":"XOM","side":"long","qty":42.0,"entry":163.724524,"current":163.085,"stop":156.96,"target":187.42,"rr":3.5,"unrlPnl":-26.86,"unrlPct":-0.39,"projProfit":995.21,"projLoss":284.11,"pctToTarget":14.92,"pctToStop":3.76,"progress":20,"value":6849.57}];
+const closed    = [{"symbol":"XOM","side":"buy","qty":"42","fillPrice":163.72,"filledAt":"14:01:17","orderType":"limit"},{"symbol":"AMD","side":"buy","qty":"10","fillPrice":519.76,"filledAt":"14:16:33","orderType":"limit"},{"symbol":"CMG","side":"sell","qty":"180","fillPrice":36.74,"filledAt":"13:32:44","orderType":"market"}];
 function fmt(n, d=2) {
   return (n >= 0 ? '+' : '') + Number(n).toFixed(d);
 }
