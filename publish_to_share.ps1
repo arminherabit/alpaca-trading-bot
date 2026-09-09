@@ -29,7 +29,11 @@
 
 [CmdletBinding()]
 param(
-    [string]$Destination = '\\Mike-hp\c\Users\Public\Desktop',
+    # NOTE the share name: \\Mike-hp\Users, NOT \\Mike-hp\c. Both resolve to the
+    # same folder on disk, but the "C" share is read-only at the SHARE level, so
+    # every write through it is denied regardless of the NTFS permissions on the
+    # folder. Reached via "Users" the same Desktop is writable.
+    [string]$Destination = '\\Mike-hp\Users\Public\Desktop',
     [string]$FileName    = "AK's Stocks Swing Trader.html",
     [string]$SourceUrl   = 'https://raw.githubusercontent.com/arminherabit/alpaca-trading-bot/master/docs/index.html'
 )
