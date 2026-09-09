@@ -6,14 +6,18 @@
 # C:\Users\Public\Desktop, so the task needs no network credential and the
 # refresh does not depend on any other machine being awake.
 #
-# The task runs as the invoking user, interactive-only -- so it needs no stored
-# password. It therefore refreshes while someone is logged on, which is the only
-# time a file on the Desktop is being looked at anyway.
+# POWERSHELL 2.0 COMPATIBLE. Mike-hp is a Windows 7-era box running PowerShell
+# 2.0, where the entire ScheduledTasks module (New-ScheduledTaskAction,
+# Register-ScheduledTask, Get-ScheduledTask) does not exist -- it arrived in
+# PowerShell 3.0. This uses schtasks.exe, which ships with Windows itself.
+#
+# The task command lives in a small .cmd wrapper rather than being passed inline
+# to schtasks: /TR values need nested quoting that is painful to get right and
+# silently truncates at the first space when wrong.
 #
 # Usage (on Mike-hp):
 #   powershell -NoProfile -ExecutionPolicy Bypass -File "C:\Users\Public\AlpacaDashboard\install_task.ps1"
 
-[CmdletBinding()]
 param(
     [string]$TaskName    = 'AK Swing Trader Dashboard',
     [string]$ScriptPath  = 'C:\Users\Public\AlpacaDashboard\publish_to_share.ps1',
@@ -23,47 +27,48 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-if (-not (Test-Path -LiteralPath $ScriptPath)) {
-    Write-Host "Publisher not found: $ScriptPath" -ForegroundColor Red
+Write-Host ("PowerShell {0} on {1}" -f $PSVersionTable.PSVersion, (Get-WmiObject Win32_OperatingSystem).Caption) -ForegroundColor DarkGray
+
+if (-not (Test-Path $ScriptPath))  { Write-Host "Publisher not found: $ScriptPath" -ForegroundColor Red; exit 1 }
+if (-not (Test-Path $Destination)) { Write-Host "Destination not found: $Destination" -ForegroundColor Red; exit 1 }
+
+# ── Wrapper ───────────────────────────────────────────────────────────────────
+$dir = Split-Path $ScriptPath -Parent
+$cmd = Join-Path $dir 'refresh.cmd'
+$body = "@echo off`r`n" +
+        'powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "' +
+        $ScriptPath + '" -Destination "' + $Destination + '"' + "`r`n"
+[System.IO.File]::WriteAllText($cmd, $body, (New-Object System.Text.ASCIIEncoding))
+Write-Host "Wrapper written: $cmd" -ForegroundColor Green
+
+# ── Register ──────────────────────────────────────────────────────────────────
+# /SC MINUTE /MO n is a true recurring trigger and does not expire. (The 24-hour
+# expiry trap belongs to /RI, the repetition modifier, which is not used here.)
+# No /RU or /RP: the task runs as the invoking user, so Windows never asks to
+# store a password.
+Write-Host "Registering scheduled task..." -ForegroundColor Cyan
+$out = & schtasks.exe /Create /TN $TaskName /TR $cmd /SC MINUTE /MO $Minutes /F 2>&1
+$rc  = $LASTEXITCODE
+$out | ForEach-Object { Write-Host "  $_" -ForegroundColor DarkGray }
+if ($rc -ne 0) {
+    Write-Host "schtasks failed (exit $rc). The task was NOT created." -ForegroundColor Red
     exit 1
 }
-if (-not (Test-Path -LiteralPath $Destination)) {
-    Write-Host "Destination not found: $Destination" -ForegroundColor Red
-    exit 1
-}
-
-$argLine = '-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "{0}" -Destination "{1}"' -f $ScriptPath, $Destination
-
-$action = New-ScheduledTaskAction -Execute 'powershell.exe' -Argument $argLine
-
-# -Once + RepetitionInterval with an indefinite duration is the combination that
-# survives reboots and keeps repeating; a bare MINUTE trigger expires after a day
-# on some Windows builds.
-$trigger = New-ScheduledTaskTrigger -Once -At (Get-Date).AddMinutes(1) `
-             -RepetitionInterval (New-TimeSpan -Minutes $Minutes) `
-             -RepetitionDuration ([TimeSpan]::MaxValue)
-
-$settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
-              -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Minutes 5) `
-              -MultipleInstances IgnoreNew
-
-try {
-    Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger `
-        -Settings $settings -Force `
-        -Description 'Refreshes the AK Stocks Swing Trader dashboard on the Public Desktop from GitHub.' | Out-Null
-} catch {
-    Write-Host "Could not register the task: $($_.Exception.Message)" -ForegroundColor Red
-    exit 1
-}
-
 Write-Host "Task registered: $TaskName (every $Minutes minutes)" -ForegroundColor Green
 
-# Publish once now so the Desktop is current immediately rather than in 10 minutes.
+# ── Publish once now ──────────────────────────────────────────────────────────
+# So the Desktop is current immediately rather than up to $Minutes from now.
 Write-Host "Running it once now..." -ForegroundColor Cyan
-& $ScriptPath -Destination $Destination
-
-$t = Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
-if ($null -ne $t) {
-    Write-Host ("State: {0}" -f $t.State) -ForegroundColor Green
-    Write-Host "To remove it later:  Unregister-ScheduledTask -TaskName '$TaskName' -Confirm:`$false" -ForegroundColor DarkGray
+& powershell.exe -NoProfile -ExecutionPolicy Bypass -File $ScriptPath -Destination $Destination
+if ($LASTEXITCODE -ne 0) {
+    Write-Host ""
+    Write-Host "The task is registered, but this first run failed -- see the error above." -ForegroundColor Yellow
+    Write-Host "The most likely cause on this Windows version is TLS: GitHub requires TLS 1.2," -ForegroundColor Yellow
+    Write-Host "which Windows 7 does not enable by default." -ForegroundColor Yellow
+    exit 1
 }
+
+Write-Host ""
+& schtasks.exe /Query /TN $TaskName /FO LIST 2>&1 | Select-String 'TaskName|Status|Next Run' |
+    ForEach-Object { Write-Host "  $_" -ForegroundColor DarkGray }
+Write-Host "To remove it later:  schtasks /Delete /TN `"$TaskName`" /F" -ForegroundColor DarkGray
