@@ -257,24 +257,26 @@
       "added_count": 4
     },
     "CMG": {
-      "trades": 2,
+      "trades": 3,
       "wins": 1,
-      "losses": 1,
-      "total_pnl": 1275.9,
-      "avg_pnl": 637.95,
-      "win_rate": 0.5,
-      "score": 1.3,
-      "consecutive_losses": 0,
+      "losses": 2,
+      "total_pnl": 1163.04,
+      "avg_pnl": 387.68,
+      "win_rate": 0.333,
+      "score": 0.9,
+      "consecutive_losses": 1,
       "best_strategy": "",
       "strategy_wins": {
         "EMA": 0,
-        "PULLBK": 1
+        "PULLBK": 1,
+        "PYRA": 0
       },
       "strategy_trades": {
         "EMA": 1,
-        "PULLBK": 1
+        "PULLBK": 1,
+        "PYRA": 1
       },
-      "last_trade": "2026-08-24T15:18:15.2045911+00:00",
+      "last_trade": "2026-09-09T13:40:38.6037568+00:00",
       "added_count": 3
     },
     "ZS": {
@@ -719,9 +721,9 @@
       "added_count": 0
     }
   },
-  "last_updated": "2026-09-08T14:01:28.1765546+00:00",
+  "last_updated": "2026-09-09T13:40:38.6397369+00:00",
   "last_screened": "2026-09-08T14:01:28.1707097+00:00",
-  "total_trades": 64,
+  "total_trades": 65,
   "strategy_stats": {
     "EMA": {
       "trades": 17,
@@ -762,15 +764,15 @@
       "profit_factor": 0.46
     },
     "PYRA": {
-      "trades": 3,
+      "trades": 4,
       "wins": 1,
-      "losses": 2,
-      "total_pnl": -257.57,
-      "win_rate": 0.333,
-      "avg_pnl": -85.86,
+      "losses": 3,
+      "total_pnl": -370.43,
+      "win_rate": 0.25,
+      "avg_pnl": -92.61,
       "gross_profit": 190.0,
-      "gross_loss": 447.0,
-      "profit_factor": 0.43
+      "gross_loss": 560.0,
+      "profit_factor": 0.34
     }
   },
   "hour_stats": {
@@ -799,15 +801,15 @@
       "avg_pnl": -128.3
     },
     "9": {
-      "trades": 21,
+      "trades": 22,
       "wins": 7,
-      "losses": 14,
-      "total_pnl": -2701.12,
-      "win_rate": 0.333,
-      "avg_pnl": -128.62,
+      "losses": 15,
+      "total_pnl": -2813.98,
+      "win_rate": 0.318,
+      "avg_pnl": -127.91,
       "gross_profit": 770.0,
-      "gross_loss": 2143.0,
-      "profit_factor": 0.36
+      "gross_loss": 2256.0,
+      "profit_factor": 0.34
     },
     "10": {
       "trades": 4,

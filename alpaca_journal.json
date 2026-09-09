@@ -12,19 +12,6 @@
       "confidence": 100,
       "regime": "BULL",
       "reason": "20d-high break (ext 0.19 ATR, volPace 2.4x, RS +6.8%)"
-    },
-    {
-      "opened_at": "2026-08-24T13:39:50.8509843Z",
-      "symbol": "CMG",
-      "strategy": "PYRA",
-      "side": "buy",
-      "entry": 37.42,
-      "stop": 34.33,
-      "qty": 180,
-      "risk_usd": 556.2,
-      "confidence": 0,
-      "regime": "",
-      "reason": "half-size add at +1R, stop at BE"
     }
   ],
   "closed": [
@@ -178,6 +165,25 @@
       "pnl": -710.29,
       "r_multiple": -1.15,
       "hold_days": 8,
+      "outcome": "LOSS"
+    },
+    {
+      "opened_at": "2026-08-24T13:39:50.8509843Z",
+      "symbol": "CMG",
+      "strategy": "PYRA",
+      "side": "buy",
+      "entry": 37.42,
+      "stop": 34.33,
+      "qty": 180,
+      "risk_usd": 556.2,
+      "confidence": 0,
+      "regime": "",
+      "reason": "half-size add at +1R, stop at BE",
+      "closed_at": "2026-09-09T13:40:38.5351584Z",
+      "exit": 36.74,
+      "pnl": -112.86,
+      "r_multiple": -0.2,
+      "hold_days": 12,
       "outcome": "LOSS"
     }
   ],
