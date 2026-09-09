@@ -35,10 +35,23 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install PowerShell
+      # PowerShell ships preinstalled on ubuntu-latest, so this is a no-op on a
+      # healthy runner. It used to run `apt-get update` unconditionally under
+      # `bash -e`, which meant ANY unhealthy apt source on the image killed the
+      # whole scan: on 2026-09-09 a hash-sum mismatch on Google's Chrome repo --
+      # nothing to do with this bot -- failed four consecutive runs. Skip the
+      # install when pwsh is present, and never let a broken third-party repo
+      # index be fatal.
+      - name: Ensure PowerShell
         run: |
-          sudo apt-get update -qq
+          if command -v pwsh >/dev/null 2>&1; then
+            echo "pwsh already present: $(pwsh --version)"
+            exit 0
+          fi
+          echo "pwsh missing -- installing"
+          sudo apt-get update -qq || echo "apt-get update reported errors; continuing"
           sudo apt-get install -y powershell
+          command -v pwsh >/dev/null 2>&1 || { echo "::error::PowerShell install failed"; exit 1; }
 
       - name: Run Alpaca bot scan
         shell: pwsh

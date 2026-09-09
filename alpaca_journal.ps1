@@ -32,6 +32,18 @@ function Save-Journal($j) {
     $j | ConvertTo-Json -Depth 10 | Set-Content $JournalPath
 }
 
+# Journal timestamps come back from ConvertFrom-Json as EITHER a string or a
+# [datetime], depending on the host: PowerShell 7 (the GitHub runner) coerces
+# ISO-8601 strings to DateTime, Windows PowerShell 5.1 (local) leaves them as
+# strings. Code that assumed one shape threw "[System.DateTime] does not contain
+# a method named 'Substring'" in CI while passing locally. Normalise once here
+# and let every caller work in UTC DateTime.
+function _Journal-AsUtc($value) {
+    if ($value -is [datetime]) { return ([datetime]$value).ToUniversalTime() }
+    return ([datetime]::Parse([string]$value, [System.Globalization.CultureInfo]::InvariantCulture,
+            [System.Globalization.DateTimeStyles]::RoundtripKind)).ToUniversalTime()
+}
+
 function _Journal-WeekdayCount([datetime]$from, [datetime]$to) {
     $count = 0; $d = $from.Date.AddDays(1)
     while ($d -le $to.Date) {
@@ -85,14 +97,14 @@ function Complete-JournalEntry {
         $qtyMatch = @($cands | Where-Object { [int]$_.qty -eq $qty })
         if ($qtyMatch.Count -gt 0) { $cands = $qtyMatch }
     }
-    $rec = $cands | Sort-Object { [datetime]::Parse($_.opened_at) } -Descending | Select-Object -First 1
+    $rec = $cands | Sort-Object { _Journal-AsUtc $_.opened_at } -Descending | Select-Object -First 1
     if ($null -eq $rec) { return $null }
     $j.open = @($j.open | Where-Object { $_ -ne $rec })
 
     $rMult = if ($rec.risk_usd -gt 0) { [Math]::Round($pnl / $rec.risk_usd, 2) } else { 0.0 }
     $outcome = if ([Math]::Abs($rMult) -lt 0.15) { "SCRATCH" } elseif ($pnl -gt 0) { "WIN" } else { "LOSS" }
     $holdDays = 0
-    try { $holdDays = _Journal-WeekdayCount ([datetime]::Parse($rec.opened_at).ToUniversalTime()) ([datetime]::UtcNow) } catch {}
+    try { $holdDays = _Journal-WeekdayCount (_Journal-AsUtc $rec.opened_at) ([datetime]::UtcNow) } catch {}
 
     $rec | Add-Member -NotePropertyName closed_at  -NotePropertyValue ((Get-Date).ToUniversalTime().ToString("o")) -Force
     $rec | Add-Member -NotePropertyName exit       -NotePropertyValue ([Math]::Round($exitPrice, 2)) -Force
@@ -121,12 +133,26 @@ function Complete-JournalEntry {
 # held after its PYRA tranche exited) intact. Orphans go to their own bucket
 # rather than 'closed' -- their exit price and P&L are unrecoverable, and
 # inventing them would poison expectancy stats.
-function Reconcile-Journal([string[]]$heldSymbols) {
+#
+# GRACE PERIOD is load-bearing. Add-JournalEntry runs when the entry ORDER is
+# submitted, but a swing entry is a GTC bracket that may not fill for hours or
+# days -- so a brand-new row legitimately has no position behind it yet. Without
+# the grace window this function orphaned AMD minutes after it was journaled,
+# while the trade was live and filling (2026-09-09). Only rows that have had at
+# least $graceDays weekdays to fill are eligible; an entry that never fills is
+# cleaned up by Cancel-StaleEntries regardless. Nothing here is urgent -- these
+# rows sat around for six weeks before anyone minded.
+function Reconcile-Journal([string[]]$heldSymbols, [int]$graceDays = 2) {
     $j = Load-Journal
     if (-not $j.open -or @($j.open).Count -eq 0) { return 0 }
 
     $held    = @($heldSymbols)
-    $orphans = @($j.open | Where-Object { $held -notcontains $_.symbol })
+    $orphans = @($j.open | Where-Object {
+        if ($held -contains $_.symbol) { return $false }
+        $age = 99
+        try { $age = _Journal-WeekdayCount (_Journal-AsUtc $_.opened_at) ([datetime]::UtcNow) } catch {}
+        $age -ge $graceDays
+    })
     if ($orphans.Count -eq 0) { return 0 }
 
     if ($null -eq $j.PSObject.Properties['orphaned']) {
@@ -136,10 +162,12 @@ function Reconcile-Journal([string[]]$heldSymbols) {
         $o | Add-Member -NotePropertyName orphaned_at -NotePropertyValue ((Get-Date).ToUniversalTime().ToString("o")) -Force
         $o | Add-Member -NotePropertyName orphan_reason -NotePropertyValue "position not held; exit never journaled" -Force
         Write-Host ("  [JOURNAL] {0,-6} {1} orphaned -- opened {2}, no longer held" -f `
-            $o.symbol, $o.strategy, $o.opened_at.Substring(0,10)) -ForegroundColor DarkYellow
+            $o.symbol, $o.strategy, (_Journal-AsUtc $o.opened_at).ToString("yyyy-MM-dd")) -ForegroundColor DarkYellow
     }
+    # Rebuild 'open' by exclusion, so rows still inside the grace window stay put.
+    $orphanIds = @($orphans)
     $j.orphaned = @($j.orphaned) + $orphans
-    $j.open     = @($j.open | Where-Object { $held -contains $_.symbol })
+    $j.open     = @($j.open | Where-Object { $orphanIds -notcontains $_ })
     Save-Journal $j
     return $orphans.Count
 }
@@ -150,7 +178,7 @@ function Get-JournalStats([int]$daysBack = 7) {
     $j = Load-Journal
     $cutoff = [datetime]::UtcNow.AddDays(-$daysBack)
     $rows = @($j.closed | Where-Object {
-        $_.closed_at -and ([datetime]::Parse($_.closed_at).ToUniversalTime() -ge $cutoff)
+        $_.closed_at -and ((_Journal-AsUtc $_.closed_at) -ge $cutoff)
     })
     if ($rows.Count -eq 0) { return $null }
 
