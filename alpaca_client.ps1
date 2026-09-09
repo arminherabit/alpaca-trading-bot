@@ -98,6 +98,45 @@ function Get-Orders($cfg, [string]$status = "open") {
     return $raw
 }
 
+# Returns the LIVE protective stop / target legs for a position, or $null.
+#
+# Must query status=all&nested=true: a bracket's stop child is exposed ONLY as a
+# leg of its parent, and once the entry fills the parent has status=filled, so
+# status=open never returns it. The old code filtered `order_class -eq bracket`
+# over a non-nested list, never matched, and silently fell back to a FABRICATED
+# stop at entry*0.99 -- so the dashboard displayed invented protection levels
+# that had nothing to do with the real orders. Show nothing rather than a lie.
+function Get-LiveExitLegs($cfg, $position) {
+    $sym          = $position.symbol
+    $expectedSide = if ($position.side -eq "long") { "sell" } else { "buy" }
+    $stopTypes    = @("stop","stop_limit","trailing_stop","stop_loss")
+    $deadStatus   = @("filled","canceled","cancelled","expired","rejected","done_for_day","replaced")
+
+    $raw = Invoke-AlpacaApi $cfg "GET" "/v2/orders?status=all&nested=true&symbols=$sym&limit=200"
+    if ($null -eq $raw) { return @{ stop = 0.0; target = 0.0 } }
+    $arr = if ($raw -is [System.Array]) { $raw } else { @($raw) }
+
+    $stopPrice = 0.0; $targetPrice = 0.0
+    foreach ($order in $arr) {
+        if ($null -eq $order -or $order.symbol -ne $sym) { continue }
+        $candidates = @($order)
+        if ($order.legs -and $order.legs.Count -gt 0) { $candidates += @($order.legs) }
+        foreach ($o in $candidates) {
+            if ($null -eq $o -or $o.side -ne $expectedSide) { continue }
+            if ($deadStatus -contains $o.status) { continue }
+            $t = if ($o.order_type) { $o.order_type } else { $o.type }
+            if ($stopPrice -eq 0.0 -and ($stopTypes -contains $t)) {
+                if ($o.stop_price)      { $stopPrice = [double]$o.stop_price }
+                elseif ($o.hwm)         { $stopPrice = [double]$o.hwm }
+            }
+            elseif ($targetPrice -eq 0.0 -and $t -eq "limit" -and $o.limit_price) {
+                $targetPrice = [double]$o.limit_price
+            }
+        }
+    }
+    return @{ stop = $stopPrice; target = $targetPrice }
+}
+
 function Submit-MarketOrder($cfg, [string]$symbol, [string]$side, [int]$qty) {
     if ($cfg.paper_trading) {
         Write-Host ("  [PAPER] {0} {1} x {2} MARKET" -f $side.ToUpper(), $qty, $symbol) -ForegroundColor Cyan

@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AK's Stocks Swing Trader — Status</title>
+<style>
+  :root {
+    color-scheme: light;
+    --plane:      #f9f9f7;
+    --surface:    #fcfcfb;
+    --ink:        #0b0b0b;
+    --ink-2:      #52514e;
+    --muted:      #898781;
+    --grid:       #e1e0d9;
+    --axis:       #c3c2b7;
+    --border:     rgba(11,11,11,0.10);
+    --pos:        #2a78d6;
+    --neg:        #e34948;
+    --good-text:  #006300;
+    --neg-text:   #b3312f;
+    --warn:       #fab219;
+    --crit:       #d03b3b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --plane:     #0d0d0d;
+      --surface:   #1a1a19;
+      --ink:       #ffffff;
+      --ink-2:     #c3c2b7;
+      --muted:     #898781;
+      --grid:      #2c2c2a;
+      --axis:      #383835;
+      --border:    rgba(255,255,255,0.10);
+      --pos:       #3987e5;
+      --neg:       #e66767;
+      --good-text: #0ca30c;
+      --neg-text:  #e66767;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --plane:     #0d0d0d;
+    --surface:   #1a1a19;
+    --ink:       #ffffff;
+    --ink-2:     #c3c2b7;
+    --muted:     #898781;
+    --grid:      #2c2c2a;
+    --axis:      #383835;
+    --border:    rgba(255,255,255,0.10);
+    --pos:       #3987e5;
+    --neg:       #e66767;
+    --good-text: #0ca30c;
+    --neg-text:  #e66767;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--plane); color: var(--ink);
+    font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 28px 20px 64px; }
+
+  /* ── header ─────────────────────────────────────────────── */
+  header { display: flex; flex-wrap: wrap; gap: 12px; align-items: baseline;
+           justify-content: space-between; margin-bottom: 22px; }
+  h1 { font-size: 19px; font-weight: 650; margin: 0; letter-spacing: -0.01em; }
+  .sub { color: var(--muted); font-size: 12px; margin-top: 3px; }
+  .badges { display: flex; gap: 7px; flex-wrap: wrap; align-items: center; }
+  .badge { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px;
+           border: 1px solid var(--border); color: var(--ink-2); background: var(--surface);
+           display: inline-flex; align-items: center; gap: 5px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+  .dot.open { background: #0ca30c; }
+
+  /* ── stat tiles ─────────────────────────────────────────── */
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(156px,1fr));
+           gap: 10px; margin-bottom: 26px; }
+  .tile { background: var(--surface); border: 1px solid var(--border);
+          border-radius: 10px; padding: 14px 16px; }
+  .tile .label { font-size: 11px; color: var(--muted); text-transform: uppercase;
+                 letter-spacing: 0.05em; font-weight: 600; }
+  .tile .val { font-size: 25px; font-weight: 640; margin-top: 6px;
+               letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .tile.hero .val { font-size: 33px; }
+  .tile .note { font-size: 12px; color: var(--ink-2); margin-top: 3px;
+                font-variant-numeric: tabular-nums; }
+  .up   { color: var(--good-text); }
+  .down { color: var(--neg-text); }
+
+  /* ── panels ─────────────────────────────────────────────── */
+  .panel { background: var(--surface); border: 1px solid var(--border);
+           border-radius: 10px; padding: 18px 18px 12px; margin-bottom: 20px; }
+  .phead { display: flex; justify-content: space-between; align-items: baseline;
+           gap: 12px; flex-wrap: wrap; margin-bottom: 4px; }
+  h2 { font-size: 14px; font-weight: 640; margin: 0; }
+  .psub { font-size: 12px; color: var(--muted); }
+  .chart { width: 100%; overflow-x: auto; }
+  svg { display: block; max-width: 100%; height: auto; }
+  .gridline { stroke: var(--grid); stroke-width: 1; }
+  .axisline { stroke: var(--axis); stroke-width: 1; }
+  .tick { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+
+  /* ── table ──────────────────────────────────────────────── */
+  .tbl-scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: right; font-size: 11px; color: var(--muted); font-weight: 600;
+       text-transform: uppercase; letter-spacing: 0.04em; padding: 8px 10px;
+       border-bottom: 1px solid var(--border); white-space: nowrap; }
+  th:first-child, td:first-child { text-align: left; }
+  td { text-align: right; padding: 10px; border-bottom: 1px solid var(--border);
+       font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tbody tr:last-child td { border-bottom: none; }
+  .sym { font-weight: 640; }
+  .tag { font-size: 10px; font-weight: 600; color: var(--muted); margin-left: 6px;
+         border: 1px solid var(--border); padding: 1px 5px; border-radius: 4px; }
+  .rail { width: 96px; height: 6px; border-radius: 3px; background: var(--grid);
+          position: relative; display: inline-block; vertical-align: middle; }
+  .rail > i { position: absolute; inset: 0 auto 0 0; border-radius: 3px;
+              background: var(--pos); display: block; }
+  .daycell { color: var(--ink-2); }
+  .daycell.near { color: var(--crit); font-weight: 620; }
+
+  /* ── tooltip ────────────────────────────────────────────── */
+  .tip { position: fixed; pointer-events: none; opacity: 0; transition: opacity .1s;
+         background: var(--surface); border: 1px solid var(--border);
+         box-shadow: 0 6px 20px rgba(0,0,0,.14); border-radius: 8px;
+         padding: 9px 11px; font-size: 12px; z-index: 20; min-width: 132px;
+         font-variant-numeric: tabular-nums; }
+  .tip .t-d { color: var(--muted); font-size: 11px; margin-bottom: 3px; }
+  .tip .t-v { font-weight: 640; font-size: 14px; }
+
+  .foot { color: var(--muted); font-size: 11.5px; line-height: 1.7; margin-top: 22px; }
+  details.tv { margin-top: 10px; }
+  details.tv summary { cursor: pointer; font-size: 12px; color: var(--ink-2);
+                       padding: 4px 0; }
+  .legend { display: flex; gap: 14px; font-size: 12px; color: var(--ink-2);
+            align-items: center; }
+  .key { display: inline-flex; align-items: center; gap: 6px; }
+  .swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div>
+    <h1>AK's Stocks Swing Trader</h1>
+    <div class="sub" id="gen"></div>
+  </div>
+  <div class="badges">
+    <span class="badge" id="b-market"></span>
+    <span class="badge" id="b-mode"></span>
+    <span class="badge" id="b-regime"></span>
+  </div>
+</header>
+
+<div class="tiles" id="tiles"></div>
+
+<!-- ── Equity curve ─────────────────────────────────────── -->
+<section class="panel">
+  <div class="phead">
+    <h2>Account equity</h2>
+    <span class="psub" id="eqsub"></span>
+  </div>
+  <div class="chart"><svg id="eqchart" role="img"
+      ></svg></div>
+  <details class="tv"><summary>View equity as a table</summary>
+    <div class="tbl-scroll"><table id="eqtable"></table></div>
+  </details>
+</section>
+
+<!-- ── Positions ────────────────────────────────────────── -->
+<section class="panel">
+  <div class="phead">
+    <h2>Open positions</h2>
+    <span class="psub" id="possub"></span>
+  </div>
+  <div class="tbl-scroll"><table id="postable"></table></div>
+</section>
+
+<!-- ── Closed trades ────────────────────────────────────── -->
+<section class="panel">
+  <div class="phead">
+    <h2>Closed trades — profit &amp; loss</h2>
+    <span class="psub" id="pnlsub"></span>
+  </div>
+  <div class="legend" style="margin:8px 0 2px">
+    <span class="key"><span class="swatch" style="background:var(--pos)"></span>Win</span>
+    <span class="key"><span class="swatch" style="background:var(--neg)"></span>Loss</span>
+  </div>
+  <div class="chart"><svg id="pnlchart" role="img"
+      ></svg></div>
+  <details class="tv"><summary>View closed trades as a table</summary>
+    <div class="tbl-scroll"><table id="pnltable"></table></div>
+  </details>
+</section>
+
+<p class="foot">
+  Paper trading on Alpaca. The account is shared with another bot; only trades tagged by
+  this bot are shown. Equity reflects the whole account.<br>
+  Closed-trade statistics cover the journaled swing era only and exclude the earlier
+  day-trading period, which the equity curve still includes.
+</p>
+
+<div class="tip" id="tip"></div>
+</div>
+
+<script id="payload" type="application/json">__DATA__</script>
+<script>
+const D = JSON.parse(document.getElementById('payload').textContent);
+const usd = (n, d = 2) => (n < 0 ? '−$' : '$') + Math.abs(n).toLocaleString('en-US', {minimumFractionDigits: d, maximumFractionDigits: d});
+const sgn = (n, d = 2) => (n < 0 ? '−' : '+') + '$' + Math.abs(n).toLocaleString('en-US', {minimumFractionDigits: d, maximumFractionDigits: d});
+const pct = n => (n < 0 ? '−' : '+') + Math.abs(n).toFixed(2) + '%';
+const cls = n => n < 0 ? 'down' : 'up';
+
+/* ── header, filled from data ──────────────────────────── */
+document.getElementById('gen').textContent = 'Generated ' + D.generated;
+const bm = document.getElementById('b-market');
+bm.innerHTML = `<span class="dot${D.marketOpen ? ' open' : ''}"></span>Market ${D.marketOpen ? 'open' : 'closed'}`;
+document.getElementById('b-mode').textContent = D.paper ? 'Paper' : 'LIVE';
+document.getElementById('b-regime').textContent =
+  'Regime ' + D.regime +
+  (D.vix ? ' · VIX ' + Number(D.vix).toFixed(1) : '') +
+  ' · ' + D.sizeMult + '× size';
+const fmtDay = s => new Date(s + 'T00:00:00Z').toLocaleDateString('en-US', {day:'numeric', month:'short', year:'numeric', timeZone:'UTC'});
+document.getElementById('eqsub').textContent =
+  D.eq.length ? `Daily close · ${D.eq.length} sessions since ${fmtDay(D.eq[0].d)}` : 'No history yet';
+document.getElementById('pnlsub').textContent =
+  D.closed.length ? `Swing era, journaled · ${D.closed.length} trades since ${fmtDay(D.closed[0].d)}` : 'No closed trades yet';
+document.getElementById('eqchart').setAttribute('aria-label',
+  D.eq.length ? `Line chart of account equity, ${usd(D.eq[0].e)} on ${fmtDay(D.eq[0].d)} to ${usd(D.equity)} on ${fmtDay(D.eq[D.eq.length-1].d)}` : 'Equity chart, no data');
+document.getElementById('pnlchart').setAttribute('aria-label',
+  `Bar chart of profit and loss for ${D.closed.length} closed trades`);
+
+/* ── derived stats ─────────────────────────────────────── */
+const totalPnl  = D.equity - D.startEquity;
+const totalPct  = totalPnl / D.startEquity * 100;
+const peak      = Math.max(...D.eq.map(r => r.e));
+const trough    = Math.min(...D.eq.map(r => r.e));
+const maxDD     = (trough - peak) / peak * 100;
+const unreal    = D.positions.reduce((s, p) => s + p.unrlPnl, 0);
+const openRisk  = D.positions.reduce((s, p) => s + p.risk, 0);
+const exposure  = D.positions.reduce((s, p) => s + p.value, 0);
+const wins      = D.closed.filter(c => c.pnl > 0);
+const losses    = D.closed.filter(c => c.pnl <= 0);
+const grossW    = wins.reduce((s, c) => s + c.pnl, 0);
+const grossL    = Math.abs(losses.reduce((s, c) => s + c.pnl, 0));
+const netClosed = grossW - grossL;
+const pf        = grossL > 0 ? grossW / grossL : 0;
+const winRate   = wins.length / D.closed.length * 100;
+
+/* ── stat tiles ────────────────────────────────────────── */
+document.getElementById('tiles').innerHTML = `
+  <div class="tile hero">
+    <div class="label">Equity</div>
+    <div class="val">${usd(D.equity)}</div>
+    <div class="note ${cls(D.dayPnl)}">${sgn(D.dayPnl)} today</div>
+  </div>
+  <div class="tile">
+    <div class="label">Total P&amp;L</div>
+    <div class="val ${cls(totalPnl)}">${sgn(totalPnl)}</div>
+    <div class="note ${cls(totalPnl)}">${pct(totalPct)} since inception</div>
+  </div>
+  <div class="tile">
+    <div class="label">Unrealized</div>
+    <div class="val ${cls(unreal)}">${sgn(unreal)}</div>
+    <div class="note">${D.positions.length} of ${D.maxPositions} slots open</div>
+  </div>
+  <div class="tile">
+    <div class="label">Win rate</div>
+    <div class="val">${winRate.toFixed(0)}%</div>
+    <div class="note">${wins.length}W / ${losses.length}L · PF ${pf.toFixed(2)}</div>
+  </div>
+  <div class="tile">
+    <div class="label">Open risk</div>
+    <div class="val">${usd(openRisk, 0)}</div>
+    <div class="note">${(openRisk / D.equity * 100).toFixed(2)}% of equity at stop</div>
+  </div>
+  <div class="tile">
+    <div class="label">Max drawdown</div>
+    <div class="val down">${maxDD.toFixed(1)}%</div>
+    <div class="note">Peak ${usd(peak, 0)}</div>
+  </div>`;
+
+/* ── tooltip helper ────────────────────────────────────── */
+const tip = document.getElementById('tip');
+function showTip(evt, html) {
+  tip.innerHTML = html; tip.style.opacity = 1;
+  const r = tip.getBoundingClientRect();
+  let x = evt.clientX + 14, y = evt.clientY - r.height - 12;
+  if (x + r.width > innerWidth - 8)  x = evt.clientX - r.width - 14;
+  if (y < 8) y = evt.clientY + 18;
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+}
+const hideTip = () => tip.style.opacity = 0;
+
+/* ── equity line chart ─────────────────────────────────── */
+(function () {
+  const svg = document.getElementById('eqchart');
+  const W = 1010, H = 290, M = {t: 14, r: 62, b: 26, l: 8};
+  const iw = W - M.l - M.r, ih = H - M.t - M.b;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('width', W); svg.setAttribute('height', H);
+
+  if (D.eq.length < 2) { svg.closest('.panel').querySelector('.chart').innerHTML =
+      '<p style="color:var(--muted);font-size:12px;padding:18px 2px">Not enough history yet — the curve appears once two sessions are recorded.</p>';
+    document.getElementById('eqtable').innerHTML = ''; return; }
+  const vals = D.eq.map(r => r.e);
+  const lo = Math.min(...vals), hi = Math.max(...vals);
+  const pad = (hi - lo) * 0.12 || 1;
+  const y0 = lo - pad, y1 = hi + pad;
+  const X = i => M.l + (i / (D.eq.length - 1)) * iw;
+  const Y = v => M.t + ih - ((v - y0) / (y1 - y0)) * ih;
+
+  let s = '';
+  // gridlines + y ticks (round numbers)
+  const span = y1 - y0;
+  const step = [250, 500, 1000, 2500, 5000, 10000, 25000].find(s => span / s <= 7) || 50000;
+  for (let g = Math.ceil(y0 / step) * step; g <= y1; g += step) {
+    s += `<line class="gridline" x1="${M.l}" x2="${M.l + iw}" y1="${Y(g).toFixed(1)}" y2="${Y(g).toFixed(1)}"/>`;
+    s += `<text class="tick" x="${M.l + iw + 8}" y="${(Y(g) + 4).toFixed(1)}">${(g / 1000).toFixed(1)}k</text>`;
+  }
+  // baseline at starting equity — the reference that matters
+  s += `<line class="axisline" stroke-dasharray="0" x1="${M.l}" x2="${M.l + iw}" y1="${Y(D.startEquity).toFixed(1)}" y2="${Y(D.startEquity).toFixed(1)}" stroke="var(--axis)"/>`;
+  s += `<text class="tick" x="${M.l + 4}" y="${(Y(D.startEquity) - 6).toFixed(1)}">start ${(D.startEquity / 1000).toFixed(0)}k</text>`;
+
+  // month ticks
+  let lastM = '';
+  D.eq.forEach((r, i) => {
+    const m = r.d.slice(0, 7);
+    if (m !== lastM) {
+      lastM = m;
+      const lbl = new Date(r.d + 'T00:00:00Z').toLocaleDateString('en-US', {month: 'short', timeZone: 'UTC'});
+      s += `<text class="tick" x="${X(i).toFixed(1)}" y="${H - 8}" text-anchor="middle">${lbl}</text>`;
+    }
+  });
+
+  // area wash + line
+  const line = D.eq.map((r, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)},${Y(r.e).toFixed(1)}`).join('');
+  s += `<path d="${line}L${X(D.eq.length - 1).toFixed(1)},${Y(y0).toFixed(1)}L${X(0).toFixed(1)},${Y(y0).toFixed(1)}Z" fill="var(--pos)" opacity="0.10"/>`;
+  s += `<path d="${line}" fill="none" stroke="var(--pos)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+
+  // end marker + direct label (endpoint only)
+  const li = D.eq.length - 1;
+  s += `<circle cx="${X(li).toFixed(1)}" cy="${Y(D.eq[li].e).toFixed(1)}" r="4.5" fill="var(--pos)" stroke="var(--surface)" stroke-width="2"/>`;
+
+  // hover layer
+  s += `<g id="eqhover" style="opacity:0"><line class="axisline" id="eqx" y1="${M.t}" y2="${M.t + ih}"/><circle id="eqdot" r="4.5" fill="var(--pos)" stroke="var(--surface)" stroke-width="2"/></g>`;
+  s += `<rect id="eqhit" x="${M.l}" y="${M.t}" width="${iw}" height="${ih}" fill="transparent"/>`;
+  svg.innerHTML = s;
+
+  const hov = svg.querySelector('#eqhover'), hx = svg.querySelector('#eqx'), hd = svg.querySelector('#eqdot');
+  svg.querySelector('#eqhit').addEventListener('mousemove', e => {
+    const b = svg.getBoundingClientRect();
+    const px = (e.clientX - b.left) / b.width * W;
+    let i = Math.round((px - M.l) / iw * (D.eq.length - 1));
+    i = Math.max(0, Math.min(D.eq.length - 1, i));
+    const d = D.eq[i].d, v = D.eq[i].e;
+    hov.style.opacity = 1;
+    hx.setAttribute('x1', X(i)); hx.setAttribute('x2', X(i));
+    hd.setAttribute('cx', X(i)); hd.setAttribute('cy', Y(v));
+    const delta = v - D.startEquity;
+    showTip(e, `<div class="t-d">${new Date(d + 'T00:00:00Z').toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC'})}</div>
+      <div class="t-v">${usd(v)}</div>
+      <div class="${cls(delta)}" style="font-size:12px">${sgn(delta)} vs start</div>`);
+  });
+  svg.querySelector('#eqhit').addEventListener('mouseleave', () => { hov.style.opacity = 0; hideTip(); });
+
+  document.getElementById('eqtable').innerHTML =
+    '<thead><tr><th>Date</th><th>Equity</th><th>vs start</th></tr></thead><tbody>' +
+    D.eq.slice().reverse().map(({d, e: v}) =>
+      `<tr><td>${d}</td><td>${usd(v)}</td><td class="${cls(v - D.startEquity)}">${sgn(v - D.startEquity)}</td></tr>`).join('') +
+    '</tbody>';
+})();
+
+/* ── positions table ───────────────────────────────────── */
+(function () {
+  document.getElementById('possub').textContent =
+    `${usd(exposure, 0)} exposure · ${(exposure / D.equity * 100).toFixed(0)}% of equity`;
+  if (!D.positions.length) {
+    document.getElementById('postable').outerHTML =
+      '<p style="color:var(--muted);font-size:12px;padding:6px 2px">No open positions — the bot is flat.</p>';
+    return;
+  }
+  document.getElementById('postable').innerHTML =
+    `<thead><tr>
+       <th>Symbol</th><th>Qty</th><th>Entry</th><th>Last</th><th>Stop</th>
+       <th>Unrealized</th><th>Risk</th><th>Stop &rarr; target</th><th>Day</th>
+     </tr></thead><tbody>` +
+    D.positions.map(p => {
+      const near = p.day >= 10;
+      return `<tr>
+        <td class="sym">${p.symbol}<span class="tag">${p.strategy}</span></td>
+        <td>${p.qty.toLocaleString()}</td>
+        <td>$${p.entry.toFixed(2)}</td>
+        <td>$${p.current.toFixed(2)}</td>
+        <td>${p.stop > 0 ? '$' + p.stop.toFixed(2) : '<span style="color:var(--crit);font-weight:620">none</span>'}</td>
+        <td class="${cls(p.unrlPnl)}">${sgn(p.unrlPnl)}<br><span style="font-size:11px">${pct(p.unrlPct)}</span></td>
+        <td>${usd(p.risk, 0)}</td>
+        <td>${p.progress === null ? '<span style="color:var(--muted)">—</span>' :
+              `<span class="rail" title="${p.progress}% of the way from stop to target"><i style="width:${p.progress}%"></i></span>`}</td>
+        <td class="daycell ${near ? 'near' : ''}">${p.day}/12</td>
+      </tr>`;
+    }).join('') + '</tbody>';
+})();
+
+/* ── closed-trade P&L bars ─────────────────────────────── */
+(function () {
+  const svg = document.getElementById('pnlchart');
+  const rows = D.closed;
+  if (!rows.length) { svg.closest('.panel').querySelector('.chart').innerHTML =
+      '<p style="color:var(--muted);font-size:12px;padding:18px 2px">No closed trades journaled yet.</p>';
+    document.getElementById('pnltable').innerHTML = ''; return; }
+  const W = 1010, H = 250, M = {t: 12, r: 10, b: 44, l: 58};
+  const iw = W - M.l - M.r, ih = H - M.t - M.b;
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('width', W); svg.setAttribute('height', H);
+
+  const vals = rows.map(r => r.pnl);
+  const hi = Math.max(...vals, 0), lo = Math.min(...vals, 0);
+  const pad = (hi - lo) * 0.1;
+  const y0 = lo - pad, y1 = hi + pad;
+  const Y = v => M.t + ih - ((v - y0) / (y1 - y0)) * ih;
+  const band = iw / rows.length;
+  const bw = Math.min(24, band - 14);
+
+  let s = '';
+  const span = y1 - y0;
+  const step = [50, 100, 250, 500, 1000, 2500, 5000].find(s => span / s <= 7) || 10000;
+  for (let g = Math.ceil(y0 / step) * step; g <= y1; g += step) {
+    s += `<line class="gridline" x1="${M.l}" x2="${M.l + iw}" y1="${Y(g).toFixed(1)}" y2="${Y(g).toFixed(1)}"/>`;
+    s += `<text class="tick" x="${M.l - 8}" y="${(Y(g) + 4).toFixed(1)}" text-anchor="end">${g < 0 ? '−' : ''}$${Math.abs(g).toLocaleString()}</text>`;
+  }
+  s += `<line class="axisline" x1="${M.l}" x2="${M.l + iw}" y1="${Y(0).toFixed(1)}" y2="${Y(0).toFixed(1)}"/>`;
+
+  rows.forEach((r, i) => {
+    const {d, sym, st: strat, r: R, pnl, out} = r;
+    const cx = M.l + band * i + band / 2;
+    const up = pnl >= 0;
+    const yTop = up ? Y(pnl) : Y(0);
+    const h = Math.max(2, Math.abs(Y(pnl) - Y(0)));
+    // 4px rounded data-end, square at the baseline
+    const rr = Math.min(4, h);
+    const path = up
+      ? `M${cx - bw / 2},${Y(0)} L${cx - bw / 2},${yTop + rr} Q${cx - bw / 2},${yTop} ${cx - bw / 2 + rr},${yTop} L${cx + bw / 2 - rr},${yTop} Q${cx + bw / 2},${yTop} ${cx + bw / 2},${yTop + rr} L${cx + bw / 2},${Y(0)} Z`
+      : `M${cx - bw / 2},${Y(0)} L${cx - bw / 2},${yTop + h - rr} Q${cx - bw / 2},${yTop + h} ${cx - bw / 2 + rr},${yTop + h} L${cx + bw / 2 - rr},${yTop + h} Q${cx + bw / 2},${yTop + h} ${cx + bw / 2},${yTop + h - rr} L${cx + bw / 2},${Y(0)} Z`;
+    s += `<path d="${path}" fill="var(--${up ? 'pos' : 'neg'})" data-i="${i}"/>`;
+    s += `<text class="tick" x="${cx}" y="${H - 26}" text-anchor="middle" style="font-weight:600;fill:var(--ink-2)">${sym}</text>`;
+    s += `<text class="tick" x="${cx}" y="${H - 12}" text-anchor="middle">${strat}</text>`;
+  });
+  // direct label on the extremes only
+  [vals.indexOf(hi), vals.indexOf(lo)].forEach(i => {
+    const pnl = vals[i], cx = M.l + band * i + band / 2, up = pnl >= 0;
+    s += `<text class="tick" x="${cx}" y="${(up ? Y(pnl) - 8 : Y(pnl) + 15).toFixed(1)}" text-anchor="middle" style="font-weight:640;fill:var(--ink)">${sgn(pnl, 0)}</text>`;
+  });
+  s += `<rect x="${M.l}" y="${M.t}" width="${iw}" height="${ih}" fill="transparent" id="pnlhit"/>`;
+  svg.innerHTML = s;
+
+  svg.querySelector('#pnlhit').addEventListener('mousemove', e => {
+    const b = svg.getBoundingClientRect();
+    const px = (e.clientX - b.left) / b.width * W;
+    let i = Math.floor((px - M.l) / band);
+    if (i < 0 || i >= rows.length) { hideTip(); return; }
+    const {d, sym, st: strat, r: R, pnl, out, hold} = rows[i];
+    showTip(e, `<div class="t-d">${d} · ${strat}</div>
+      <div class="t-v">${sym} ${sgn(pnl)}</div>
+      <div style="font-size:12px;color:var(--ink-2)">${R > 0 ? '+' : ''}${R.toFixed(2)}R · ${out} · held ${hold}d</div>`);
+  });
+  svg.querySelector('#pnlhit').addEventListener('mouseleave', hideTip);
+
+  document.getElementById('pnltable').innerHTML =
+    '<thead><tr><th>Closed</th><th>Symbol</th><th>Setup</th><th>R</th><th>P&amp;L</th><th>Outcome</th><th>Held</th></tr></thead><tbody>' +
+    rows.slice().reverse().map(({d, sym, st, r: R, pnl, out, hold}) =>
+      `<tr><td>${d}</td><td class="sym">${sym}</td><td>${st}</td>
+       <td class="${cls(R)}">${R > 0 ? '+' : ''}${R.toFixed(2)}R</td>
+       <td class="${cls(pnl)}">${sgn(pnl)}</td><td>${out}</td><td>${hold}d</td></tr>`).join('') +
+    `<tr><td colspan="4" style="font-weight:640">Net</td>
+       <td class="${cls(netClosed)}" style="font-weight:640">${sgn(netClosed)}</td><td colspan="2"></td></tr></tbody>`;
+})();
+</script>
+</body>
+</html>
