@@ -1,19 +1,6 @@
 {
   "open": [
     {
-      "opened_at": "2026-08-18T14:00:56.3589737Z",
-      "symbol": "PFE",
-      "strategy": "BRKOUT",
-      "side": "buy",
-      "entry": 27.3,
-      "stop": 26.22,
-      "qty": 574,
-      "risk_usd": 619.92,
-      "confidence": 100,
-      "regime": "BULL",
-      "reason": "20d-high break (ext 0.19 ATR, volPace 2.4x, RS +6.8%)"
-    },
-    {
       "opened_at": "2026-09-09T14:01:07.4508903Z",
       "symbol": "XOM",
       "strategy": "PULLBK",
@@ -38,6 +25,19 @@
       "confidence": 95,
       "regime": "NEUTRAL",
       "reason": "20d-high break (ext 0.11 ATR, volPace 2.7x, RS +10.5%)"
+    },
+    {
+      "opened_at": "2026-09-10T13:50:26.6088600Z",
+      "symbol": "AAPL",
+      "strategy": "PULLBK",
+      "side": "buy",
+      "entry": 320.05,
+      "stop": 310.86,
+      "qty": 31,
+      "risk_usd": 284.89,
+      "confidence": 88,
+      "regime": "NEUTRAL",
+      "reason": "EMA20 pullback reclaim (trendQ 0.52 ATR, RS +7.7%)"
     }
   ],
   "closed": [
@@ -211,6 +211,25 @@
       "r_multiple": -0.2,
       "hold_days": 12,
       "outcome": "LOSS"
+    },
+    {
+      "opened_at": "2026-08-18T14:00:56.3589737Z",
+      "symbol": "PFE",
+      "strategy": "BRKOUT",
+      "side": "buy",
+      "entry": 27.3,
+      "stop": 26.22,
+      "qty": 574,
+      "risk_usd": 619.92,
+      "confidence": 100,
+      "regime": "BULL",
+      "reason": "20d-high break (ext 0.19 ATR, volPace 2.4x, RS +6.8%)",
+      "closed_at": "2026-09-10T13:50:23.8196478Z",
+      "exit": 27.44,
+      "pnl": 81.86,
+      "r_multiple": 0.13,
+      "hold_days": 17,
+      "outcome": "SCRATCH"
     }
   ],
   "orphaned": [
