@@ -22,7 +22,12 @@ param(
     [string]$TaskName    = 'AK Swing Trader Dashboard',
     [string]$ScriptPath  = 'C:\Users\Public\AlpacaDashboard\publish_to_share.ps1',
     [string]$Destination = 'C:\Users\Public\Desktop',
-    [int]   $Minutes     = 10
+    # 2, not 10. The page's own freshness is bounded by the bot's ~10 min build
+    # cadence; a 10-minute pull on top of that stacked a second, unsynchronised
+    # delay, so the Desktop copy could sit ~25 min behind the account. Polling
+    # every 2 minutes collapses the pull-side term to near zero. Each poll is a
+    # single ~28 KB fetch, so the cost is negligible.
+    [int]   $Minutes     = 2
 )
 
 $ErrorActionPreference = 'Stop'

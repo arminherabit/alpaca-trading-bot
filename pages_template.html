@@ -217,7 +217,26 @@ const pct = n => (n < 0 ? '−' : '+') + Math.abs(n).toFixed(2) + '%';
 const cls = n => n < 0 ? 'down' : 'up';
 
 /* ── header, filled from data ──────────────────────────── */
-document.getElementById('gen').textContent = 'Generated ' + D.generated;
+// Absolute time alone hides staleness: a reader has to know the bot's cadence
+// AND do UTC arithmetic to notice the page is old. Show the age directly, keep
+// it ticking, and flag it once it exceeds what the pipeline should ever produce.
+// Cadence: the bot rebuilds every ~10 min, the Desktop copy pulls every ~2 min.
+const genEl = document.getElementById('gen');
+const genAt = new Date(D.generated.replace(' UTC', '').replace(' ', 'T') + ':00Z');
+function paintAge() {
+  if (isNaN(genAt)) { genEl.textContent = 'Generated ' + D.generated; return; }
+  const mins = Math.max(0, Math.round((Date.now() - genAt.getTime()) / 60000));
+  const rel = mins < 1 ? 'just now'
+            : mins < 60 ? mins + ' min ago'
+            : Math.floor(mins / 60) + 'h ' + (mins % 60) + 'm ago';
+  genEl.textContent = 'Generated ' + D.generated + ' · ' + rel;
+  genEl.style.color = mins > 30 ? 'var(--crit)' : '';
+  genEl.title = mins > 30
+    ? 'This page is older than the refresh cycle should allow -- the publisher may have stopped.'
+    : '';
+}
+paintAge();
+setInterval(paintAge, 30000);
 const bm = document.getElementById('b-market');
 bm.innerHTML = `<span class="dot${D.marketOpen ? ' open' : ''}"></span>Market ${D.marketOpen ? 'open' : 'closed'}`;
 document.getElementById('b-mode').textContent = D.paper ? 'Paper' : 'LIVE';
@@ -250,7 +269,7 @@ const grossW    = wins.reduce((s, c) => s + c.pnl, 0);
 const grossL    = Math.abs(losses.reduce((s, c) => s + c.pnl, 0));
 const netClosed = grossW - grossL;
 const pf        = grossL > 0 ? grossW / grossL : 0;
-const winRate   = wins.length / D.closed.length * 100;
+const winRate   = D.closed.length ? wins.length / D.closed.length * 100 : null;  // 0/0 rendered as NaN%
 
 /* ── stat tiles ────────────────────────────────────────── */
 document.getElementById('tiles').innerHTML = `
@@ -271,7 +290,7 @@ document.getElementById('tiles').innerHTML = `
   </div>
   <div class="tile">
     <div class="label">Win rate</div>
-    <div class="val">${winRate.toFixed(0)}%</div>
+    <div class="val">${winRate === null ? '&mdash;' : winRate.toFixed(0) + '%'}</div>
     <div class="note">${wins.length}W / ${losses.length}L · PF ${pf.toFixed(2)}</div>
   </div>
   <div class="tile">
