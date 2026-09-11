@@ -91,27 +91,27 @@
   <h1>&#9650; ALPACA TRADING DASHBOARD</h1>
   <div class="badges">
     <span class="badge" style="color:#d29922; border-color:#d29922;">PAPER TRADING</span>
-    <span class="badge" style="color:#8b949e;  border-color:#8b949e;">CLOSED</span>
-    <span class="badge" style="color:var(--sub); border-color:var(--border);"></span>
+    <span class="badge" style="color:#3fb950;  border-color:#3fb950;">OPEN</span>
+    <span class="badge" style="color:var(--sub); border-color:var(--border);">Closes 8:00 PM</span>
   </div>
-  <span class="gen-time">Generated: 2026-09-11 17:00:16 &nbsp;|&nbsp; Auto-refresh: 30s</span>
+  <span class="gen-time">Generated: 2026-09-11 17:10:24 &nbsp;|&nbsp; Auto-refresh: 30s</span>
 </header>
 
 <!-- Account Stats -->
 <div class="grid-top">
   <div class="stat-card">
     <div class="label">Equity</div>
-    <div class="value blue">$95,582.77</div>
+    <div class="value blue">$95,553.07</div>
     <div class="sub">Paper account</div>
   </div>
   <div class="stat-card">
     <div class="label">Day P&amp;L</div>
-    <div class="value green">$366.41</div>
-    <div class="sub">+0.38%</div>
+    <div class="value green">$336.71</div>
+    <div class="sub">+0.35%</div>
   </div>
   <div class="stat-card">
     <div class="label">Buying Power</div>
-    <div class="value">$355,372.18</div>
+    <div class="value">$355,289.03</div>
     <div class="sub">Cash: $73,117.03</div>
   </div>
   <div class="stat-card">
@@ -157,7 +157,7 @@
 </footer>
 
 <script>
-const positions = [{"symbol":"AAPL","side":"long","qty":31.0,"entry":319.978065,"current":334.805,"stop":310.86,"target":352.22,"rr":3.54,"unrlPnl":459.63,"unrlPct":4.63,"projProfit":999.5,"projLoss":282.66,"pctToTarget":5.2,"pctToStop":7.15,"progress":58,"value":10378.96},{"symbol":"AMD","side":"long","qty":10.0,"entry":519.756,"current":513.2,"stop":473.53,"target":681.74,"rr":3.5,"unrlPnl":-65.56,"unrlPct":-1.26,"projProfit":1619.84,"projLoss":462.26,"pctToTarget":32.84,"pctToStop":7.73,"progress":19,"value":5132.0},{"symbol":"XOM","side":"long","qty":42.0,"entry":163.724524,"current":165.59,"stop":156.96,"target":187.42,"rr":3.5,"unrlPnl":78.35,"unrlPct":1.14,"projProfit":995.21,"projLoss":284.11,"pctToTarget":13.18,"pctToStop":5.21,"progress":28,"value":6954.78}];
+const positions = [{"symbol":"AAPL","side":"long","qty":31.0,"entry":319.978065,"current":334.3201,"stop":310.86,"target":352.22,"rr":3.54,"unrlPnl":444.6,"unrlPct":4.48,"projProfit":999.5,"projLoss":282.66,"pctToTarget":5.35,"pctToStop":7.02,"progress":57,"value":10363.92},{"symbol":"AMD","side":"long","qty":10.0,"entry":519.756,"current":512.69,"stop":473.53,"target":681.74,"rr":3.5,"unrlPnl":-70.66,"unrlPct":-1.36,"projProfit":1619.84,"projLoss":462.26,"pctToTarget":32.97,"pctToStop":7.64,"progress":19,"value":5126.9},{"symbol":"XOM","side":"long","qty":42.0,"entry":163.724524,"current":165.355,"stop":156.96,"target":187.42,"rr":3.5,"unrlPnl":68.48,"unrlPct":1.0,"projProfit":995.21,"projLoss":284.11,"pctToTarget":13.34,"pctToStop":5.08,"progress":28,"value":6944.91}];
 const closed    = [];
 function fmt(n, d=2) {
   return (n >= 0 ? '+' : '') + Number(n).toFixed(d);
