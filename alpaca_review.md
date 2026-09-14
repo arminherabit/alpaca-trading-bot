@@ -74,3 +74,21 @@ No closed trades this week.
 ## Week ending 2026-09-06
 No closed trades this week.
 
+
+## Week ending 2026-09-13
+
+| Metric | Value |
+|---|---|
+| Trades | 4 (1W / 3L, 25%) |
+| Net P&L | $-929.77 |
+| Profit factor | 0.08 |
+| Expectancy / trade | $-232.44 |
+| Avg R | -0.44 |
+| Avg hold | 11.8 days |
+| Best | PFE BRKOUT $81.86 (0.13R) |
+| Worst | INTU PULLBK $-710.29 (-1.15R) |
+
+**By strategy:** BRKOUT 1/1 $81.86 | PULLBK 0/1 $-710.29 | PYRA 0/2 $-301.34
+
+**By regime:** BULL 1/2 $-628.43
+
