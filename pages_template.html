@@ -3,6 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- A file:// page never reloads by itself: a tab left open shows the copy that
+     was on disk when it was opened, however many times the file has been
+     replaced since. Reload every 5 minutes so an open dashboard stays current. -->
+<meta http-equiv="refresh" content="300">
 <title>AK's Stocks Swing Trader — Status</title>
 <style>
   :root {
@@ -202,7 +206,8 @@
   Paper trading on Alpaca. The account is shared with another bot; only trades tagged by
   this bot are shown. Equity reflects the whole account.<br>
   Closed-trade statistics cover the journaled swing era only and exclude the earlier
-  day-trading period, which the equity curve still includes.
+  day-trading period, which the equity curve still includes.<br>
+  This page reloads itself every 5 minutes.
 </p>
 
 <div class="tip" id="tip"></div>
