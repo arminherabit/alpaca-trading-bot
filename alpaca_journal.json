@@ -1,19 +1,6 @@
 {
   "open": [
     {
-      "opened_at": "2026-09-09T14:01:07.4508903Z",
-      "symbol": "XOM",
-      "strategy": "PULLBK",
-      "side": "buy",
-      "entry": 163.73,
-      "stop": 156.96,
-      "qty": 42,
-      "risk_usd": 284.34,
-      "confidence": 95,
-      "regime": "NEUTRAL",
-      "reason": "EMA20 pullback reclaim (trendQ 1.21 ATR, RS +3.3%)"
-    },
-    {
       "opened_at": "2026-09-09T13:50:36.0865533Z",
       "symbol": "AMD",
       "strategy": "BRKOUT",
@@ -27,7 +14,7 @@
       "reason": "20d-high break (ext 0.11 ATR, volPace 2.7x, RS +10.5%)"
     },
     {
-      "opened_at": "2026-09-10T13:50:26.6088600Z",
+      "opened_at": "2026-09-10T13:50:26.60886Z",
       "symbol": "AAPL",
       "strategy": "PULLBK",
       "side": "buy",
@@ -38,6 +25,19 @@
       "confidence": 88,
       "regime": "NEUTRAL",
       "reason": "EMA20 pullback reclaim (trendQ 0.52 ATR, RS +7.7%)"
+    },
+    {
+      "opened_at": "2026-09-21T13:50:23.7505033Z",
+      "symbol": "SPCX",
+      "strategy": "PULLBK",
+      "side": "buy",
+      "entry": 155.22,
+      "stop": 142.48,
+      "qty": 30,
+      "risk_usd": 382.2,
+      "confidence": 80,
+      "regime": "BULL",
+      "reason": "EMA20 pullback reclaim (trendQ 0.23 ATR, RS +13.2%)"
     }
   ],
   "closed": [
@@ -230,6 +230,25 @@
       "r_multiple": 0.13,
       "hold_days": 17,
       "outcome": "SCRATCH"
+    },
+    {
+      "opened_at": "2026-09-09T14:01:07.4508903Z",
+      "symbol": "XOM",
+      "strategy": "PULLBK",
+      "side": "buy",
+      "entry": 163.73,
+      "stop": 156.96,
+      "qty": 42,
+      "risk_usd": 284.34,
+      "confidence": 95,
+      "regime": "NEUTRAL",
+      "reason": "EMA20 pullback reclaim (trendQ 1.21 ATR, RS +3.3%)",
+      "closed_at": "2026-09-21T13:50:21.6236768Z",
+      "exit": 160.1,
+      "pnl": -152.23,
+      "r_multiple": -0.54,
+      "hold_days": 8,
+      "outcome": "LOSS"
     }
   ],
   "orphaned": [
