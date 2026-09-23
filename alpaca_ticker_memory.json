@@ -29,7 +29,7 @@
         "PULLBK": 2
       },
       "last_trade": "2026-06-23T13:40:36.8884942+00:00",
-      "added_count": 296
+      "added_count": 297
     },
     "QQQ": {
       "trades": 12,
@@ -54,7 +54,7 @@
         "PULLBK": 4
       },
       "last_trade": "2026-07-08T15:31:08.1753324+00:00",
-      "added_count": 296
+      "added_count": 297
     },
     "NVDA": {
       "trades": 2,
@@ -75,7 +75,7 @@
         "EMA": 1
       },
       "last_trade": "2026-06-11T19:28:12.9688165+00:00",
-      "added_count": 37
+      "added_count": 38
     },
     "AMD": {
       "trades": 1,
@@ -138,7 +138,7 @@
         "BRKOUT": 1
       },
       "last_trade": "2026-08-18T13:40:37.7555717+00:00",
-      "added_count": 14
+      "added_count": 15
     },
     "SQQQ": {
       "trades": 1,
@@ -216,7 +216,7 @@
         "EMA": 1
       },
       "last_trade": "2026-06-10T04:20:31.2996407+00:00",
-      "added_count": 1
+      "added_count": 2
     },
     "PLTR": {
       "trades": 2,
@@ -353,7 +353,7 @@
         "VWAP": 1
       },
       "last_trade": "2026-06-12T17:20:33.4920208+00:00",
-      "added_count": 11
+      "added_count": 12
     },
     "RDW": {
       "trades": 1,
@@ -545,7 +545,7 @@
         "BRKOUT": 2
       },
       "last_trade": "2026-07-23T17:10:31.487374+00:00",
-      "added_count": 5
+      "added_count": 6
     },
     "SOFI": {
       "trades": 1,
@@ -725,8 +725,8 @@
       "added_count": 0
     }
   },
-  "last_updated": "2026-09-22T14:00:58.2692019+00:00",
-  "last_screened": "2026-09-22T14:00:58.2602063+00:00",
+  "last_updated": "2026-09-23T14:01:28.7996439+00:00",
+  "last_screened": "2026-09-23T14:01:28.7925057+00:00",
   "total_trades": 67,
   "strategy_stats": {
     "EMA": {
