@@ -94,25 +94,25 @@
     <span class="badge" style="color:#8b949e;  border-color:#8b949e;">CLOSED</span>
     <span class="badge" style="color:var(--sub); border-color:var(--border);">Opens Wed 1:30 PM</span>
   </div>
-  <span class="gen-time">Generated: 2026-09-23 07:52:22 &nbsp;|&nbsp; Auto-refresh: 30s</span>
+  <span class="gen-time">Generated: 2026-09-23 08:00:28 &nbsp;|&nbsp; Auto-refresh: 30s</span>
 </header>
 
 <!-- Account Stats -->
 <div class="grid-top">
   <div class="stat-card">
     <div class="label">Equity</div>
-    <div class="value blue">$0.00</div>
+    <div class="value blue">$96,576.40</div>
     <div class="sub">Paper account</div>
   </div>
   <div class="stat-card">
     <div class="label">Day P&amp;L</div>
-    <div class="value green">$0.00</div>
-    <div class="sub">+0%</div>
+    <div class="value green">$172.69</div>
+    <div class="sub">+0.18%</div>
   </div>
   <div class="stat-card">
     <div class="label">Buying Power</div>
-    <div class="value">$0.00</div>
-    <div class="sub">Cash: $0.00</div>
+    <div class="value">$360,635.49</div>
+    <div class="sub">Cash: $75,184.63</div>
   </div>
   <div class="stat-card">
     <div class="label">Trades Today</div>
@@ -121,7 +121,7 @@
   </div>
   <div class="stat-card">
     <div class="label">Open Positions</div>
-    <div class="value">0 <span style="font-size:14px;color:var(--sub)">/ 3</span></div>
+    <div class="value">3 <span style="font-size:14px;color:var(--sub)">/ 3</span></div>
     <div class="sub">Max 3 allowed</div>
   </div>
   <div class="stat-card">
@@ -157,7 +157,7 @@
 </footer>
 
 <script>
-const positions = [];
+const positions = [{"symbol":"AAPL","side":"long","qty":31.0,"entry":319.978065,"current":340.4508,"stop":330.67,"target":352.22,"rr":3.02,"unrlPnl":634.65,"unrlPct":6.4,"projProfit":999.5,"projLoss":331.45,"pctToTarget":3.46,"pctToStop":2.87,"progress":45,"value":10553.97},{"symbol":"AMD","side":"long","qty":10.0,"entry":519.756,"current":620.76,"stop":593.294,"target":0.0,"rr":0,"unrlPnl":1010.04,"unrlPct":19.43,"projProfit":0.0,"projLoss":735.38,"pctToTarget":null,"pctToStop":4.42,"progress":null,"value":6207.6},{"symbol":"SPCX","side":"long","qty":30.0,"entry":155.22,"current":154.34,"stop":142.48,"target":199.81,"rr":3.5,"unrlPnl":-26.4,"unrlPct":-0.57,"projProfit":1337.7,"projLoss":382.2,"pctToTarget":29.46,"pctToStop":7.68,"progress":21,"value":4630.2}];
 const closed    = [];
 function fmt(n, d=2) {
   return (n >= 0 ? '+' : '') + Number(n).toFixed(d);
