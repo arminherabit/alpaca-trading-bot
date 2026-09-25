@@ -25,6 +25,19 @@
       "confidence": 80,
       "regime": "BULL",
       "reason": "EMA20 pullback reclaim (trendQ 0.23 ATR, RS +13.2%)"
+    },
+    {
+      "opened_at": "2026-09-25T13:50:24.5545829Z",
+      "symbol": "MSFT",
+      "strategy": "PULLBK",
+      "side": "buy",
+      "entry": 515.42,
+      "stop": 493.85,
+      "qty": 17,
+      "risk_usd": 366.69,
+      "confidence": 85,
+      "regime": "BULL",
+      "reason": "EMA20 pullback reclaim (trendQ 1.85 ATR, RS +2.3%)"
     }
   ],
   "closed": [
