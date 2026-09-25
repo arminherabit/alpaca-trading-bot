@@ -1,9 +1,9 @@
 {
   "trades_today": 0,
-  "wins": 0,
+  "wins": 1,
   "losses": 0,
-  "pnl_today": 0.0,
-  "last_scan": "2026-09-25T13:30:26.9646067+00:00",
+  "pnl_today": 1146.8,
+  "last_scan": "2026-09-25T13:40:23.0341589+00:00",
   "session_start": "2026-05-14T04:50:22.4733863+00:00",
   "watchlist_date": "2026-09-24",
   "active_watchlist": [
@@ -87,7 +87,8 @@
     "7acb0ba4-9f94-434e-b639-04ce66dccfc3",
     "a46f127f-a8c1-41e7-90df-64c3a8a52e64",
     "aa60361b-58e6-4ea8-871e-5831693194fc",
-    "74200b52-0e4c-4c7f-8f3d-8351c5a72c25"
+    "74200b52-0e4c-4c7f-8f3d-8351c5a72c25",
+    "a17b83c5-0ebb-4f88-ab41-8dfce6846971"
   ],
   "equity_at_open": 96363.07,
   "equity_at_open_date": "2026-09-25",

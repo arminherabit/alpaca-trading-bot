@@ -1,19 +1,6 @@
 {
   "open": [
     {
-      "opened_at": "2026-09-09T13:50:36.0865533Z",
-      "symbol": "AMD",
-      "strategy": "BRKOUT",
-      "side": "buy",
-      "entry": 519.8,
-      "stop": 473.53,
-      "qty": 10,
-      "risk_usd": 462.7,
-      "confidence": 95,
-      "regime": "NEUTRAL",
-      "reason": "20d-high break (ext 0.11 ATR, volPace 2.7x, RS +10.5%)"
-    },
-    {
       "opened_at": "2026-09-10T13:50:26.60886Z",
       "symbol": "AAPL",
       "strategy": "PULLBK",
@@ -249,6 +236,25 @@
       "r_multiple": -0.54,
       "hold_days": 8,
       "outcome": "LOSS"
+    },
+    {
+      "opened_at": "2026-09-09T13:50:36.0865533Z",
+      "symbol": "AMD",
+      "strategy": "BRKOUT",
+      "side": "buy",
+      "entry": 519.8,
+      "stop": 473.53,
+      "qty": 10,
+      "risk_usd": 462.7,
+      "confidence": 95,
+      "regime": "NEUTRAL",
+      "reason": "20d-high break (ext 0.11 ATR, volPace 2.7x, RS +10.5%)",
+      "closed_at": "2026-09-25T13:40:21.9639633Z",
+      "exit": 634.44,
+      "pnl": 1146.8,
+      "r_multiple": 2.48,
+      "hold_days": 12,
+      "outcome": "WIN"
     }
   ],
   "orphaned": [
