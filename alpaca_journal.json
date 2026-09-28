@@ -1,19 +1,6 @@
 {
   "open": [
     {
-      "opened_at": "2026-09-10T13:50:26.60886Z",
-      "symbol": "AAPL",
-      "strategy": "PULLBK",
-      "side": "buy",
-      "entry": 320.05,
-      "stop": 310.86,
-      "qty": 31,
-      "risk_usd": 284.89,
-      "confidence": 88,
-      "regime": "NEUTRAL",
-      "reason": "EMA20 pullback reclaim (trendQ 0.52 ATR, RS +7.7%)"
-    },
-    {
       "opened_at": "2026-09-21T13:50:23.7505033Z",
       "symbol": "SPCX",
       "strategy": "PULLBK",
@@ -266,6 +253,25 @@
       "exit": 634.44,
       "pnl": 1146.8,
       "r_multiple": 2.48,
+      "hold_days": 12,
+      "outcome": "WIN"
+    },
+    {
+      "opened_at": "2026-09-10T13:50:26.60886Z",
+      "symbol": "AAPL",
+      "strategy": "PULLBK",
+      "side": "buy",
+      "entry": 320.05,
+      "stop": 310.86,
+      "qty": 31,
+      "risk_usd": 284.89,
+      "confidence": 88,
+      "regime": "NEUTRAL",
+      "reason": "EMA20 pullback reclaim (trendQ 0.52 ATR, RS +7.7%)",
+      "closed_at": "2026-09-28T13:50:28.2352508Z",
+      "exit": 342.47,
+      "pnl": 697.29,
+      "r_multiple": 2.45,
       "hold_days": 12,
       "outcome": "WIN"
     }
