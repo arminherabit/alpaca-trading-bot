@@ -25,6 +25,19 @@
       "confidence": 85,
       "regime": "BULL",
       "reason": "EMA20 pullback reclaim (trendQ 1.85 ATR, RS +2.3%)"
+    },
+    {
+      "opened_at": "2026-09-28T14:01:08.6691749Z",
+      "symbol": "NVDA",
+      "strategy": "PULLBK",
+      "side": "buy",
+      "entry": 232.28,
+      "stop": 220.61,
+      "qty": 53,
+      "risk_usd": 618.51,
+      "confidence": 88,
+      "regime": "BULL",
+      "reason": "EMA20 pullback reclaim (trendQ 0.74 ATR, RS +6.9%)"
     }
   ],
   "closed": [
