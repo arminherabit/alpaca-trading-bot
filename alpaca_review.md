@@ -96,3 +96,21 @@ No closed trades this week.
 ## Week ending 2026-09-20
 No closed trades this week.
 
+
+## Week ending 2026-09-27
+
+| Metric | Value |
+|---|---|
+| Trades | 2 (1W / 1L, 50%) |
+| Net P&L | $994.57 |
+| Profit factor | 7.53 |
+| Expectancy / trade | $497.28 |
+| Avg R | 0.97 |
+| Avg hold | 10 days |
+| Best | AMD BRKOUT $1146.8 (2.48R) |
+| Worst | XOM PULLBK $-152.23 (-0.54R) |
+
+**By strategy:** BRKOUT 1/1 $1146.8 | PULLBK 0/1 $-152.23
+
+**By regime:** NEUTRAL 1/2 $994.57
+
