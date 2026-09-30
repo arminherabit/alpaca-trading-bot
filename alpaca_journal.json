@@ -27,7 +27,7 @@
       "reason": "EMA20 pullback reclaim (trendQ 0.74 ATR, RS +6.9%)"
     },
     {
-      "opened_at": "2026-09-30T13:50:32.5197800Z",
+      "opened_at": "2026-09-30T13:50:32.51978Z",
       "symbol": "ARM",
       "strategy": "PULLBK",
       "side": "buy",
@@ -38,6 +38,19 @@
       "confidence": 75,
       "regime": "BULL",
       "reason": "EMA20 pullback reclaim (trendQ 0.37 ATR, RS +22.7%)"
+    },
+    {
+      "opened_at": "2026-09-30T14:01:19.4857976Z",
+      "symbol": "CBNK",
+      "strategy": "BRKOUT",
+      "side": "buy",
+      "entry": 39.8,
+      "stop": 39.15,
+      "qty": 966,
+      "risk_usd": 627.9,
+      "confidence": 80,
+      "regime": "BULL",
+      "reason": "20d-high break (ext 8.73 ATR, volPace 5.2x, RS +9.3%)"
     }
   ],
   "closed": [
