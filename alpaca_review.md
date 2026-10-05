@@ -114,3 +114,21 @@ No closed trades this week.
 
 **By regime:** NEUTRAL 1/2 $994.57
 
+
+## Week ending 2026-10-04
+
+| Metric | Value |
+|---|---|
+| Trades | 3 (1W / 2L, 33%) |
+| Net P&L | $-95.49 |
+| Profit factor | 0.88 |
+| Expectancy / trade | $-31.83 |
+| Avg R | 0.33 |
+| Avg hold | 6.7 days |
+| Best | AAPL PULLBK $697.29 (2.45R) |
+| Worst | CBNK BRKOUT $-614.28 (-0.98R) |
+
+**By strategy:** BRKOUT 0/1 $-614.28 | PULLBK 1/2 $518.79
+
+**By regime:** BULL 0/2 $-792.78 | NEUTRAL 1/1 $697.29
+
