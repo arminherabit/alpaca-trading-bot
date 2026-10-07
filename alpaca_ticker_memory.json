@@ -29,7 +29,7 @@
         "PULLBK": 2
       },
       "last_trade": "2026-06-23T13:40:36.8884942+00:00",
-      "added_count": 306
+      "added_count": 307
     },
     "QQQ": {
       "trades": 12,
@@ -54,7 +54,7 @@
         "PULLBK": 4
       },
       "last_trade": "2026-07-08T15:31:08.1753324+00:00",
-      "added_count": 306
+      "added_count": 307
     },
     "NVDA": {
       "trades": 2,
@@ -119,7 +119,7 @@
         "PULLBK": 1
       },
       "last_trade": "2026-07-31T13:50:27.3628342+00:00",
-      "added_count": 11
+      "added_count": 12
     },
     "AMZN": {
       "trades": 2,
@@ -317,7 +317,7 @@
         "VWAP": 1
       },
       "last_trade": "2026-06-10T04:20:31.7186864+00:00",
-      "added_count": 40
+      "added_count": 41
     },
     "ORCL": {
       "trades": 1,
@@ -705,7 +705,7 @@
         "BRKOUT": 1
       },
       "last_trade": "2026-09-10T13:50:23.9326081+00:00",
-      "added_count": 1
+      "added_count": 2
     },
     "INTU": {
       "trades": 1,
@@ -743,7 +743,7 @@
         "PULLBK": 1
       },
       "last_trade": "2026-09-28T13:50:28.3864746+00:00",
-      "added_count": 1
+      "added_count": 2
     },
     "SPCX": {
       "trades": 1,
@@ -784,8 +784,8 @@
       "added_count": 0
     }
   },
-  "last_updated": "2026-10-06T14:00:47.6977094+00:00",
-  "last_screened": "2026-10-06T14:00:47.6917374+00:00",
+  "last_updated": "2026-10-07T14:01:32.4306340+00:00",
+  "last_screened": "2026-10-07T14:01:32.4241976+00:00",
   "total_trades": 71,
   "strategy_stats": {
     "EMA": {
