@@ -25,6 +25,19 @@
       "confidence": 88,
       "regime": "BULL",
       "reason": "EMA20 pullback reclaim (trendQ 0.74 ATR, RS +6.9%)"
+    },
+    {
+      "opened_at": "2026-10-09T14:01:38.5744379Z",
+      "symbol": "HUM",
+      "strategy": "BRKOUT",
+      "side": "buy",
+      "entry": 439.92,
+      "stop": 412.37,
+      "qty": 22,
+      "risk_usd": 606.1,
+      "confidence": 80,
+      "regime": "BULL",
+      "reason": "20d-high break (ext 1.77 ATR, volPace 13.3x, RS +5.8%)"
     }
   ],
   "closed": [
