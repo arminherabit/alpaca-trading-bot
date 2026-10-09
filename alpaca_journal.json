@@ -25,19 +25,6 @@
       "confidence": 88,
       "regime": "BULL",
       "reason": "EMA20 pullback reclaim (trendQ 0.74 ATR, RS +6.9%)"
-    },
-    {
-      "opened_at": "2026-09-30T13:50:32.51978Z",
-      "symbol": "ARM",
-      "strategy": "PULLBK",
-      "side": "buy",
-      "entry": 289.6,
-      "stop": 269.94,
-      "qty": 19,
-      "risk_usd": 373.54,
-      "confidence": 75,
-      "regime": "BULL",
-      "reason": "EMA20 pullback reclaim (trendQ 0.37 ATR, RS +22.7%)"
     }
   ],
   "closed": [
@@ -324,6 +311,25 @@
       "pnl": -614.28,
       "r_multiple": -0.98,
       "hold_days": 1,
+      "outcome": "LOSS"
+    },
+    {
+      "opened_at": "2026-09-30T13:50:32.51978Z",
+      "symbol": "ARM",
+      "strategy": "PULLBK",
+      "side": "buy",
+      "entry": 289.6,
+      "stop": 269.94,
+      "qty": 19,
+      "risk_usd": 373.54,
+      "confidence": 75,
+      "regime": "BULL",
+      "reason": "EMA20 pullback reclaim (trendQ 0.37 ATR, RS +22.7%)",
+      "closed_at": "2026-10-09T13:50:23.6861135Z",
+      "exit": 269.88,
+      "pnl": -372.55,
+      "r_multiple": -1.0,
+      "hold_days": 7,
       "outcome": "LOSS"
     }
   ],
