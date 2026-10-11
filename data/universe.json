@@ -1,207 +1,232 @@
 {
   "refreshed_at": "2026-10-11T00:00:00Z",
-  "source": "manual",
-  "note": "OWNER MUST FILL roic, rev_growth (YoY decimals) and fcf_positive from filings, then update refreshed_at. 0.0 placeholders fail the filter by design (spec 2.3).",
+  "source": "sec-edgar-companyfacts + public filings (owner-approved 2026-10-11)",
+  "note": "roic = NOPAT / avg invested capital (cash incl. short-term investments); rev_growth = TTM YoY; fcf_positive = TTM OCF - capex > 0. ttm_end = end of the TTM window. ORCL and CRWD are placeholders that fail by design.",
   "symbols": [
     {
       "symbol": "NVDA",
-      "roic": 0.0,
-      "rev_growth": 0.0,
-      "fcf_positive": false,
+      "roic": 1.288,
+      "rev_growth": 0.8338,
+      "fcf_positive": true,
+      "ttm_end": "2026-07-26",
       "refreshed_at": "2026-10-11T00:00:00Z",
-      "note": "PLACEHOLDER - OWNER MUST FILL"
+      "note": "sec-edgar-companyfacts, cash incl. short-term investments - PASS"
     },
     {
       "symbol": "MSFT",
-      "roic": 0.0,
-      "rev_growth": 0.0,
-      "fcf_positive": false,
+      "roic": 0.3586,
+      "rev_growth": 0.1779,
+      "fcf_positive": true,
+      "ttm_end": "2026-06-30",
       "refreshed_at": "2026-10-11T00:00:00Z",
-      "note": "PLACEHOLDER - OWNER MUST FILL"
+      "note": "sec-edgar-companyfacts, cash incl. short-term investments - PASS"
     },
     {
       "symbol": "AMD",
-      "roic": 0.0,
-      "rev_growth": 0.0,
-      "fcf_positive": false,
+      "roic": 0.097,
+      "rev_growth": 0.3954,
+      "fcf_positive": true,
+      "ttm_end": "2026-06-27",
       "refreshed_at": "2026-10-11T00:00:00Z",
-      "note": "PLACEHOLDER - OWNER MUST FILL"
+      "note": "sec-edgar-companyfacts, cash incl. short-term investments - FAIL"
     },
     {
       "symbol": "AAPL",
-      "roic": 0.0,
-      "rev_growth": 0.0,
-      "fcf_positive": false,
+      "roic": 1.0601,
+      "rev_growth": 0.1424,
+      "fcf_positive": true,
+      "ttm_end": "2026-06-27",
       "refreshed_at": "2026-10-11T00:00:00Z",
-      "note": "PLACEHOLDER - OWNER MUST FILL"
+      "note": "sec-edgar-companyfacts, cash incl. short-term investments - FAIL"
     },
     {
       "symbol": "AVGO",
-      "roic": 0.0,
-      "rev_growth": 0.0,
-      "fcf_positive": false,
+      "roic": 0.3091,
+      "rev_growth": 0.4869,
+      "fcf_positive": true,
+      "ttm_end": "2026-08-02",
       "refreshed_at": "2026-10-11T00:00:00Z",
-      "note": "PLACEHOLDER - OWNER MUST FILL"
+      "note": "sec-edgar-companyfacts, cash incl. short-term investments - PASS"
     },
     {
       "symbol": "META",
-      "roic": 0.0,
-      "rev_growth": 0.0,
-      "fcf_positive": false,
+      "roic": 0.3135,
+      "rev_growth": 0.2765,
+      "fcf_positive": true,
+      "ttm_end": "2026-06-30",
       "refreshed_at": "2026-10-11T00:00:00Z",
-      "note": "PLACEHOLDER - OWNER MUST FILL"
+      "note": "sec-edgar-companyfacts, cash incl. short-term investments - PASS"
     },
     {
       "symbol": "GOOGL",
-      "roic": 0.0,
-      "rev_growth": 0.0,
-      "fcf_positive": false,
+      "roic": 0.3036,
+      "rev_growth": 0.2005,
+      "fcf_positive": true,
+      "ttm_end": "2026-06-30",
       "refreshed_at": "2026-10-11T00:00:00Z",
-      "note": "PLACEHOLDER - OWNER MUST FILL"
+      "note": "sec-edgar-companyfacts, cash incl. short-term investments - PASS"
     },
     {
       "symbol": "AMZN",
-      "roic": 0.0,
-      "rev_growth": 0.0,
+      "roic": 0.169,
+      "rev_growth": 0.1577,
       "fcf_positive": false,
+      "ttm_end": "2026-06-30",
       "refreshed_at": "2026-10-11T00:00:00Z",
-      "note": "PLACEHOLDER - OWNER MUST FILL"
+      "note": "sec-edgar-companyfacts, cash incl. short-term investments - FAIL"
     },
     {
       "symbol": "V",
-      "roic": 0.0,
-      "rev_growth": 0.0,
-      "fcf_positive": false,
+      "roic": 0.4688,
+      "rev_growth": 0.1437,
+      "fcf_positive": true,
+      "ttm_end": "2026-03-31",
       "refreshed_at": "2026-10-11T00:00:00Z",
-      "note": "PLACEHOLDER - OWNER MUST FILL"
+      "note": "sec-edgar-companyfacts, cash incl. short-term investments - FAIL"
     },
     {
       "symbol": "MA",
-      "roic": 0.0,
-      "rev_growth": 0.0,
-      "fcf_positive": false,
+      "roic": 0.8974,
+      "rev_growth": 0.1601,
+      "fcf_positive": true,
+      "ttm_end": "2026-06-30",
       "refreshed_at": "2026-10-11T00:00:00Z",
-      "note": "PLACEHOLDER - OWNER MUST FILL"
+      "note": "sec-edgar-companyfacts, cash incl. short-term investments - PASS"
     },
     {
       "symbol": "COST",
-      "roic": 0.0,
-      "rev_growth": 0.0,
-      "fcf_positive": false,
+      "roic": 0.4364,
+      "rev_growth": 0.1014,
+      "fcf_positive": true,
+      "ttm_end": "2026-08-30",
       "refreshed_at": "2026-10-11T00:00:00Z",
-      "note": "PLACEHOLDER - OWNER MUST FILL"
+      "note": "sec-edgar-companyfacts, cash incl. short-term investments - FAIL"
     },
     {
       "symbol": "LLY",
-      "roic": 0.0,
-      "rev_growth": 0.0,
-      "fcf_positive": false,
+      "roic": 0.3977,
+      "rev_growth": 0.4958,
+      "fcf_positive": true,
+      "ttm_end": "2026-06-30",
       "refreshed_at": "2026-10-11T00:00:00Z",
-      "note": "PLACEHOLDER - OWNER MUST FILL"
+      "note": "filings research (10-K/10-Q) - PASS"
     },
     {
       "symbol": "NFLX",
-      "roic": 0.0,
-      "rev_growth": 0.0,
-      "fcf_positive": false,
+      "roic": 0.3581,
+      "rev_growth": 0.1602,
+      "fcf_positive": true,
+      "ttm_end": "2026-06-30",
       "refreshed_at": "2026-10-11T00:00:00Z",
-      "note": "PLACEHOLDER - OWNER MUST FILL"
+      "note": "sec-edgar-companyfacts, cash incl. short-term investments - PASS"
     },
     {
       "symbol": "NOW",
-      "roic": 0.0,
-      "rev_growth": 0.0,
-      "fcf_positive": false,
+      "roic": 0.1185,
+      "rev_growth": 0.2219,
+      "fcf_positive": true,
+      "ttm_end": "2026-06-30",
       "refreshed_at": "2026-10-11T00:00:00Z",
-      "note": "PLACEHOLDER - OWNER MUST FILL"
+      "note": "sec-edgar-companyfacts, cash incl. short-term investments - FAIL"
     },
     {
       "symbol": "CRWD",
       "roic": 0.0,
       "rev_growth": 0.0,
       "fcf_positive": false,
+      "ttm_end": "2026-07-31",
       "refreshed_at": "2026-10-11T00:00:00Z",
-      "note": "PLACEHOLDER - OWNER MUST FILL"
+      "note": "PLACEHOLDER - invested capital <= 0, ROIC not meaningful (computed rev_growth 0.243, FCF positive)"
     },
     {
       "symbol": "ANET",
-      "roic": 0.0,
-      "rev_growth": 0.0,
-      "fcf_positive": false,
+      "roic": 2.0989,
+      "rev_growth": 0.3257,
+      "fcf_positive": true,
+      "ttm_end": "2026-06-30",
       "refreshed_at": "2026-10-11T00:00:00Z",
-      "note": "PLACEHOLDER - OWNER MUST FILL"
+      "note": "filings research (10-K/10-Q) - PASS"
     },
     {
       "symbol": "KLAC",
-      "roic": 0.0,
-      "rev_growth": 0.0,
-      "fcf_positive": false,
+      "roic": 0.7271,
+      "rev_growth": 0.1171,
+      "fcf_positive": true,
+      "ttm_end": "2026-06-30",
       "refreshed_at": "2026-10-11T00:00:00Z",
-      "note": "PLACEHOLDER - OWNER MUST FILL"
+      "note": "filings research (10-K/10-Q) - FAIL"
     },
     {
       "symbol": "LRCX",
-      "roic": 0.0,
-      "rev_growth": 0.0,
-      "fcf_positive": false,
+      "roic": 0.7772,
+      "rev_growth": 0.2602,
+      "fcf_positive": true,
+      "ttm_end": "2026-06-28",
       "refreshed_at": "2026-10-11T00:00:00Z",
-      "note": "PLACEHOLDER - OWNER MUST FILL"
+      "note": "sec-edgar-companyfacts, cash incl. short-term investments - PASS"
     },
     {
       "symbol": "ISRG",
-      "roic": 0.0,
-      "rev_growth": 0.0,
-      "fcf_positive": false,
+      "roic": 0.2249,
+      "rev_growth": 0.2066,
+      "fcf_positive": true,
+      "ttm_end": "2026-06-30",
       "refreshed_at": "2026-10-11T00:00:00Z",
-      "note": "PLACEHOLDER - OWNER MUST FILL"
+      "note": "sec-edgar-companyfacts, cash incl. short-term investments - PASS"
     },
     {
       "symbol": "UBER",
-      "roic": 0.0,
-      "rev_growth": 0.0,
-      "fcf_positive": false,
+      "roic": 0.1691,
+      "rev_growth": 0.1668,
+      "fcf_positive": true,
+      "ttm_end": "2026-06-30",
       "refreshed_at": "2026-10-11T00:00:00Z",
-      "note": "PLACEHOLDER - OWNER MUST FILL"
+      "note": "sec-edgar-companyfacts, cash incl. short-term investments - FAIL"
     },
     {
       "symbol": "PANW",
-      "roic": 0.0,
-      "rev_growth": 0.0,
-      "fcf_positive": false,
+      "roic": 0.0271,
+      "rev_growth": 0.245,
+      "fcf_positive": true,
+      "ttm_end": "2026-07-31",
       "refreshed_at": "2026-10-11T00:00:00Z",
-      "note": "PLACEHOLDER - OWNER MUST FILL"
+      "note": "sec-edgar-companyfacts, cash incl. short-term investments - FAIL"
     },
     {
       "symbol": "INTU",
-      "roic": 0.0,
-      "rev_growth": 0.0,
-      "fcf_positive": false,
+      "roic": 0.22,
+      "rev_growth": 0.139,
+      "fcf_positive": true,
+      "ttm_end": "2026-07-31",
       "refreshed_at": "2026-10-11T00:00:00Z",
-      "note": "PLACEHOLDER - OWNER MUST FILL"
+      "note": "sec-edgar-companyfacts, cash incl. short-term investments - FAIL"
     },
     {
       "symbol": "ADBE",
-      "roic": 0.0,
-      "rev_growth": 0.0,
-      "fcf_positive": false,
+      "roic": 0.6349,
+      "rev_growth": 0.1203,
+      "fcf_positive": true,
+      "ttm_end": "2026-08-28",
       "refreshed_at": "2026-10-11T00:00:00Z",
-      "note": "PLACEHOLDER - OWNER MUST FILL"
+      "note": "sec-edgar-companyfacts, cash incl. short-term investments - FAIL"
     },
     {
       "symbol": "ORCL",
       "roic": 0.0,
       "rev_growth": 0.0,
       "fcf_positive": false,
+      "ttm_end": null,
       "refreshed_at": "2026-10-11T00:00:00Z",
-      "note": "PLACEHOLDER - OWNER MUST FILL"
+      "note": "PLACEHOLDER - pretax tag stale since 2018; not verified"
     },
     {
       "symbol": "TSM",
-      "roic": 0.0,
-      "rev_growth": 0.0,
-      "fcf_positive": false,
+      "roic": 0.6078,
+      "rev_growth": 0.3056,
+      "fcf_positive": true,
+      "ttm_end": "2026-06-30",
       "refreshed_at": "2026-10-11T00:00:00Z",
-      "note": "PLACEHOLDER - OWNER MUST FILL"
+      "note": "filings research (Taiwan-IFRS, NT$) - PASS"
     }
   ]
 }
