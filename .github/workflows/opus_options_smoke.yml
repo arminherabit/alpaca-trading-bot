@@ -1,0 +1,28 @@
+name: Opus options smoke
+
+# Manual, read-only smoke test against the live paper API and Nasdaq
+# (tools/opus_smoke.ps1). Writes to a temp dir only; places no orders.
+
+on:
+  workflow_dispatch:
+  # workflow_dispatch only works once the file is on the default branch; this
+  # runs it while the module is being reviewed on its branch.
+  push:
+    branches: [opus-options-dryrun]
+    paths: ['tools/opus_smoke.ps1', '.github/workflows/opus_options_smoke.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Smoke
+        shell: pwsh
+        env:
+          ALPACA_API_KEY:    ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
+        run: pwsh ./tools/opus_smoke.ps1
