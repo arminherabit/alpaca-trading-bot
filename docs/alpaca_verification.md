@@ -14,7 +14,7 @@ Required by spec v1.2 §6.4 and §9.7 step 2. Paper account `PA3YCA5A39KV`. Veri
 | Nasdaq earnings rate (one machine) | 104 requests (today−3 … today+100) in 40 s, zero errors | Local machine, browser headers as in `alpaca_earnings.ps1` |
 | Nasdaq from **GitHub Actions** | Backfill 100 dates in 55 s and refresh 74 dates in 40 s (4 requests in parallel), zero errors; ~2.3 s per request from the runner vs ~0.4 s locally | `tools/opus_smoke.ps1`, workflow run 38124826082 |
 | Nasdaq past its horizon | `rCode 200`, `data: null`, `bCodeMessage` code 1002 "No record found" = an empty day, not a failure | Dates 2026-12-04 … 2026-12-20 |
-| Nasdaq listing horizon | Rows by days ahead: 0–14: 406; 15–30: 2,801; 31–50: 1,188; 51–70: 79; 71–100: 0 | Same run |
+| Nasdaq listing horizon | Rows by days ahead: 0–14: 406; 15–30: 2,801; 31–50: 1,188; 51–70: 79; 71–100: 0 | Local 104-request run |
 | Nasdaq empty day | `status.rCode = 200`, `data.rows = null` (distinct from a failed request) | `date=2026-10-11` |
 
 **Never repeat the sign test with the market open.** A "+4.50 unfillable credit" is read as "willing to pay up to $4.50" and fills immediately.
