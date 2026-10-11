@@ -62,9 +62,12 @@ function Get-OpusEtTime([string]$date, [string]$hhmm) {
 # ── API adapters (mocked in tests) ────────────────────────────────────────────
 
 function Get-OpusClock { return Invoke-AlpacaApi $script:AlpacaCfg 'GET' '/v2/clock' }
-function Get-OpusCalendar([string]$start, [string]$end) { return Invoke-AlpacaApi $script:AlpacaCfg 'GET' "/v2/calendar?start=$start&end=$end" }
+# Array endpoints: PowerShell 7's Invoke-RestMethod emits a JSON array as ONE
+# object, so @(Get-OpusCalendar) used to be a 1-element array holding the whole
+# calendar (found by the live smoke run: "1 sessions"). Emit elements instead.
+function Get-OpusCalendar([string]$start, [string]$end) { $r = Invoke-AlpacaApi $script:AlpacaCfg 'GET' "/v2/calendar?start=$start&end=$end"; if ($null -ne $r) { foreach ($x in @($r)) { $x } } }
 function Get-OpusAccount { return Invoke-AlpacaApi $script:AlpacaCfg 'GET' '/v2/account' }
-function Get-OpusPositions { return Invoke-AlpacaApi $script:AlpacaCfg 'GET' '/v2/positions' }
+function Get-OpusPositions { $r = Invoke-AlpacaApi $script:AlpacaCfg 'GET' '/v2/positions'; if ($null -ne $r) { foreach ($x in @($r)) { $x } } }
 function Get-OpusOrderById([string]$id) { return Invoke-AlpacaApi $script:AlpacaCfg 'GET' "/v2/orders/$id" }
 function Get-OpusOrderByClientId([string]$cid) { return Invoke-AlpacaApi $script:AlpacaCfg 'GET' "/v2/orders:by_client_order_id?client_order_id=$cid" }
 

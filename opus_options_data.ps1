@@ -171,14 +171,24 @@ function Import-OpusUniverse($cfg, [string]$today) {
 # ── Earnings feed (2.3) ───────────────────────────────────────────────────────
 
 # One Nasdaq calendar day. Returns @{ Ok; Symbols } -- Ok = $false only when the
-# request or the response is unusable; a day with no rows is Ok with no symbols.
-function Invoke-OpusNasdaqDay([string]$date) {
+# request or the response is unusable. Two shapes mean "no earnings that day":
+#   data.rows = null                              (e.g. a weekend)
+#   data = null with bCodeMessage code 1002       ("No record found": every date
+#                                                  past Nasdaq's ~50-day horizon)
+# Treating the second as a failure made every 74-day refresh fail on its last
+# ~17 days, so the file was never written (found by the live smoke run).
+function Invoke-OpusNasdaqDay([string]$date, $headers = $script:OPUS_NASDAQ_HEADERS) {
     try {
         $r = Invoke-RestMethod -Uri "https://api.nasdaq.com/api/calendar/earnings?date=$date" -Method GET `
-                -Headers $script:OPUS_NASDAQ_HEADERS -UseBasicParsing -TimeoutSec 15
+                -Headers $headers -UseBasicParsing -TimeoutSec 20
     } catch { return @{ Ok = $false; Symbols = @(); Error = $_.Exception.Message } }
-    if ($null -eq $r -or $null -eq $r.status -or [int]$r.status.rCode -ne 200 -or $null -eq $r.data) {
+    if ($null -eq $r -or $null -eq $r.status -or [int]$r.status.rCode -ne 200) {
         return @{ Ok = $false; Symbols = @(); Error = 'unexpected response' }
+    }
+    if ($null -eq $r.data) {
+        $codes = @($r.status.bCodeMessage | Where-Object { $_ } | ForEach-Object { [int]$_.code })
+        if ($codes -contains 1002) { return @{ Ok = $true; Symbols = @() } }
+        return @{ Ok = $false; Symbols = @(); Error = 'data null without code 1002' }
     }
     $syms = @()
     foreach ($row in @($r.data.rows)) {
@@ -190,20 +200,45 @@ function Invoke-OpusNasdaqDay([string]$date) {
     return @{ Ok = $true; Symbols = $syms }
 }
 
-# Fetch every date in [from, to]. Retries each failing day once. Returns
-# @{ Ok; ByDate (date -> symbols); Failed (dates) }.
-function Get-OpusEarningsWindow([string]$from, [string]$to, [scriptblock]$Fetcher, [int]$delayMs = 250) {
-    if (-not $Fetcher) { $Fetcher = { param($d) Invoke-OpusNasdaqDay $d } }
+# Fetch every date in [from, to]. Returns @{ Ok; ByDate (date -> symbols); Failed; TimedOut }.
+#
+# Real Nasdaq ($Fetcher not given): 4 requests in parallel. From GitHub Actions
+# Nasdaq answers in ~2.3 s per request, so sequentially the one-time backfill
+# (100 dates) plus a daily refresh (74) took ~410 s -- past the step's 4-minute
+# timeout, which would kill the scan mid-write. Failed days are retried once,
+# sequentially. $deadlineSec bounds the whole call: running out of time is a
+# failure (nothing gets written) and the next scan simply tries again.
+function Get-OpusEarningsWindow([string]$from, [string]$to, [scriptblock]$Fetcher, [int]$delayMs = 250, [int]$deadlineSec = 150) {
+    $dates = @(); $d = $from
+    while ($d -le $to) { $dates += $d; $d = Add-OpusDays $d 1 }
+    $sw = [System.Diagnostics.Stopwatch]::StartNew()
     $byDate = @{}; $failed = @()
-    $d = $from
-    while ($d -le $to) {
-        $res = & $Fetcher $d
-        if (-not $res.Ok) { Start-Sleep -Milliseconds 1500; $res = & $Fetcher $d }
-        if (-not $res.Ok) { $failed += $d } else { $byDate[$d] = @($res.Symbols) }
-        if ($delayMs -gt 0) { Start-Sleep -Milliseconds $delayMs }
-        $d = Add-OpusDays $d 1
+
+    if (-not $Fetcher -and $PSVersionTable.PSVersion.Major -ge 7) {
+        $fnDef = ${function:Invoke-OpusNasdaqDay}.ToString(); $hdr = $script:OPUS_NASDAQ_HEADERS
+        $res = $dates | ForEach-Object -ThrottleLimit 4 -TimeoutSeconds $deadlineSec -Parallel {
+            ${function:Invoke-OpusNasdaqDay} = $using:fnDef
+            $r = Invoke-OpusNasdaqDay $_ $using:hdr
+            [pscustomobject]@{ Date = $_; Ok = $r.Ok; Symbols = @($r.Symbols) }
+        }
+        foreach ($x in @($res)) { if ($x.Ok) { $byDate[$x.Date] = @($x.Symbols) } }
+        foreach ($dt in $dates) {
+            if ($byDate.ContainsKey($dt)) { continue }
+            if ($sw.Elapsed.TotalSeconds -ge $deadlineSec) { $failed += $dt; continue }
+            $r = Invoke-OpusNasdaqDay $dt
+            if ($r.Ok) { $byDate[$dt] = @($r.Symbols) } else { $failed += $dt }
+        }
+    } else {
+        if (-not $Fetcher) { $Fetcher = { param($x) Invoke-OpusNasdaqDay $x } }
+        foreach ($dt in $dates) {
+            if ($sw.Elapsed.TotalSeconds -ge $deadlineSec) { $failed += $dt; continue }
+            $res = & $Fetcher $dt
+            if (-not $res.Ok) { Start-Sleep -Milliseconds 1500; $res = & $Fetcher $dt }
+            if (-not $res.Ok) { $failed += $dt } else { $byDate[$dt] = @($res.Symbols) }
+            if ($delayMs -gt 0) { Start-Sleep -Milliseconds $delayMs }
+        }
     }
-    return @{ Ok = ($failed.Count -eq 0); ByDate = $byDate; Failed = $failed }
+    return @{ Ok = ($failed.Count -eq 0); ByDate = $byDate; Failed = $failed; TimedOut = ($sw.Elapsed.TotalSeconds -ge $deadlineSec) }
 }
 
 function New-OpusEarningsFile { return [ordered]@{ refreshed_at = $null; source = 'nasdaq'; window = $null; backfill_completed_at = $null; symbols = @{} } }

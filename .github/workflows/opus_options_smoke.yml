@@ -9,7 +9,7 @@ on:
   # runs it while the module is being reviewed on its branch.
   push:
     branches: [opus-options-dryrun]
-    paths: ['tools/opus_smoke.ps1', '.github/workflows/opus_options_smoke.yml']
+    paths: ['tools/opus_smoke.ps1', 'opus_options*.ps1', '.github/workflows/opus_options_smoke.yml']
 
 permissions:
   contents: read

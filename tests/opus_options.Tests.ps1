@@ -421,6 +421,32 @@ Describe 'Earnings feed (T40, T41)' {
     }
 }
 
+Describe 'Live-API regressions (found by tools/opus_smoke.ps1)' {
+    It 'Nasdaq: data=null with code 1002 is an empty day, not a failure' {
+        Mock Invoke-RestMethod { [pscustomobject]@{ status = [pscustomobject]@{ rCode = 200; bCodeMessage = @([pscustomobject]@{ code = 1002; errorMessage = 'Earnings Calendar: No record found.' }) }; data = $null } }
+        $r = Invoke-OpusNasdaqDay '2026-12-15'
+        $r.Ok | Should -BeTrue; @($r.Symbols).Count | Should -Be 0
+    }
+    It 'Nasdaq: data=null without code 1002 is a failure' {
+        Mock Invoke-RestMethod { [pscustomobject]@{ status = [pscustomobject]@{ rCode = 200; bCodeMessage = $null }; data = $null } }
+        (Invoke-OpusNasdaqDay '2026-12-15').Ok | Should -BeFalse
+    }
+    It 'Nasdaq: weekend (rows null) is an empty day; rows are parsed' {
+        Mock Invoke-RestMethod { [pscustomobject]@{ status = [pscustomobject]@{ rCode = 200 }; data = [pscustomobject]@{ rows = $null } } }
+        (Invoke-OpusNasdaqDay '2026-10-11').Ok | Should -BeTrue
+        Mock Invoke-RestMethod { [pscustomobject]@{ status = [pscustomobject]@{ rCode = 200 }; data = [pscustomobject]@{ rows = @([pscustomobject]@{ symbol = 'nvda ' }, [pscustomobject]@{ symbol = 'BRK.B' }) } } }
+        (Invoke-OpusNasdaqDay '2026-11-18').Symbols | Should -Be @('NVDA', 'BRK.B')
+    }
+    It 'Calendar/positions: a JSON array emitted as ONE object (PowerShell 7 Invoke-RestMethod) is unrolled' {
+        Set-OpusAlpacaConfig ([pscustomobject]@{ paper_trading = $true })
+        Mock Invoke-AlpacaApi { Write-Output -NoEnumerate @([pscustomobject]@{ date = '2026-10-12' }, [pscustomobject]@{ date = '2026-10-13' }, [pscustomobject]@{ date = '2026-10-14' }) }
+        @(Get-OpusCalendar '2026-10-12' '2026-10-14').Count | Should -Be 3
+        @(Get-OpusPositions).Count | Should -Be 3
+        Mock Invoke-AlpacaApi { $null }
+        @(Get-OpusPositions).Count | Should -Be 0
+    }
+}
+
 Describe 'Orchestrator (T33, T35)' {
     BeforeAll {
         # Fixture repo: config + data in a temp root.
