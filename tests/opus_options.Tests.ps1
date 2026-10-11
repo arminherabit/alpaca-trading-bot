@@ -8,6 +8,10 @@ BeforeAll {
     $script:Cfg = Import-PowerShellDataFile (Join-Path $script:Root 'config/opus_options_config.psd1')
     Set-OpusConfig $script:Cfg
 
+    # Version-proof float assertion (Pester's -BeApproximately does not bind in the CI's Pester).
+    function Assert-Near($actual, $expected, [double]$tol = 1e-6) {
+        [Math]::Abs([double]$actual - [double]$expected) | Should -BeLessOrEqual $tol
+    }
     function New-Leg($strike, $delta, $bid, $ask, $oi = 5000, $type = 'call', $exp = '2026-11-20') {
         return @{ Occ = ('XYZ{0}{1}{2:00000000}' -f ($exp -replace '-', '').Substring(2), $type.Substring(0, 1).ToUpper(), [int]($strike * 1000))
                   Type = $type; Strike = [double]$strike; Expiration = $exp; Oi = [double]$oi; Bid = $bid; Ask = $ask; Delta = $delta; Iv = 0.3 }
@@ -33,27 +37,27 @@ BeforeAll {
 Describe '9.1 Indicators' {
     It 'T1 EMA (existing alpaca_indicators function)' {
         $e = Get-EMAArray ([double[]]@(10, 11, 12, 13, 14)) 3
-        $e[2] | Should -BeApproximately 11 -Tolerance 1e-6; $e[3] | Should -BeApproximately 12 -Tolerance 1e-6; $e[4] | Should -BeApproximately 13 -Tolerance 1e-6
+        Assert-Near ($e[2]) 11 1e-6; Assert-Near ($e[3]) 12 1e-6; Assert-Near ($e[4]) 13 1e-6
     }
     It 'T2 ATR Wilder n=3 (|H - C_prev| is the max component on bar 2)' {
         $b = @((New-Bar '2026-01-01' 9.5 10 9 9.5), (New-Bar '2026-01-02' 10 11 9 10), (New-Bar '2026-01-03' 13 14 12 13),
                (New-Bar '2026-01-04' 12 14 11 12), (New-Bar '2026-01-05' 12 15 10 12))
         # Existing Get-ATR rounds its output to 4 dp, hence 1e-4.
-        Get-ATR $b[0..3] 3 | Should -BeApproximately 3.0 -Tolerance 1e-4
-        Get-ATR $b 3 | Should -BeApproximately 3.666667 -Tolerance 1e-4
+        Assert-Near (Get-ATR $b[0..3] 3) 3.0 1e-4
+        Assert-Near (Get-ATR $b 3) 3.666667 1e-4
     }
     It 'T3 RS ratio form' {
         $s = @((New-Bar '2026-01-01' 100 100 100 100), (New-Bar '2026-01-02' 120 120 120 120))
         $p = @((New-Bar '2026-01-01' 400 400 400 400), (New-Bar '2026-01-02' 440 440 440 440))
-        (Get-OpusRsRatio $s $p 1).Value | Should -BeApproximately 0.090909 -Tolerance 1e-6
+        Assert-Near ((Get-OpusRsRatio $s $p 1).Value) 0.090909 1e-6
     }
     It 'T3b PULLBK RS difference form' {
         $bars = @(1..20 | ForEach-Object { New-Bar ('2026-01-{0:00}' -f $_) 100 100 100 100 })
         $spy  = @(1..20 | ForEach-Object { New-Bar ('2026-01-{0:00}' -f $_) 400 400 400 400 })
         $a = Get-OpusPullbackTrigger $bars 100 90 4 105 $spy 414 $script:Cfg
-        $a.Rs20Diff | Should -BeApproximately 1.5 -Tolerance 1e-6; $a.RsOk | Should -BeTrue
+        Assert-Near ($a.Rs20Diff) 1.5 1e-6; $a.RsOk | Should -BeTrue
         $b = Get-OpusPullbackTrigger $bars 100 90 4 105 $spy 414.40 $script:Cfg
-        $b.Rs20Diff | Should -BeApproximately 1.4 -Tolerance 1e-6; $b.RsOk | Should -BeFalse
+        Assert-Near ($b.Rs20Diff) 1.4 1e-6; $b.RsOk | Should -BeFalse
     }
     It 'T4 percentile' {
         $sc = @{}; for ($i = 0; $i -lt 25; $i++) { $sc[('S{0:00}' -f $i)] = 0.25 - 0.01 * $i }
@@ -141,19 +145,19 @@ Describe '9.3 Selection and sizing' {
     }
     It 'T13 debit cap' {
         $ok = Select-OpusSleeveAPair @((New-Leg 145 0.65 12.25 12.35), (New-Leg 165 0.2 3.25 3.35)) 150.40 $script:Cfg
-        $ok.Pair.DebitMid | Should -BeApproximately 9.00 -Tolerance 1e-6
+        Assert-Near ($ok.Pair.DebitMid) 9.00 1e-6
         $bad = Select-OpusSleeveAPair @((New-Leg 145 0.65 12.26 12.36), (New-Leg 165 0.2 3.25 3.35)) 150.40 $script:Cfg
         $bad.Pair | Should -BeNullOrEmpty; $bad.Reason | Should -Be 'DEBIT_TOO_HIGH'
     }
     It 'T14 sizing A' {
-        $a = Get-OpusSizingA 3.80 5000 1.0 $script:Cfg; $a.Contracts | Should -Be 1; ($a.Contracts * $a.Cost1) | Should -BeApproximately 380 -Tolerance 1e-6
+        $a = Get-OpusSizingA 3.80 5000 1.0 $script:Cfg; $a.Contracts | Should -Be 1; Assert-Near (($a.Contracts * $a.Cost1)) 380 1e-6
         (Get-OpusSizingA 4.01 5000 1.0 $script:Cfg).Reason | Should -Be 'SINGLE_CONTRACT_TOO_LARGE'
         (Get-OpusSizingA 3.80 20000 1.0 $script:Cfg).Contracts | Should -Be 3
         $dd = Get-OpusSizingA 3.80 5000 1.0 $script:Cfg   # drawdown mode does not scale size (P10)
-        $dd.SingleCap | Should -BeApproximately 400 -Tolerance 1e-6; $dd.Contracts | Should -Be 1
+        Assert-Near ($dd.SingleCap) 400 1e-6; $dd.Contracts | Should -Be 1
     }
     It 'T15 sizing B and credit floor' {
-        $b = Get-OpusSizingB 1.68 5 5000 0.75 $script:Cfg; $b.MaxLoss1 | Should -BeApproximately 332 -Tolerance 1e-6; $b.Contracts | Should -Be 1
+        $b = Get-OpusSizingB 1.68 5 5000 0.75 $script:Cfg; Assert-Near ($b.MaxLoss1) 332 1e-6; $b.Contracts | Should -Be 1
         (Get-OpusSizingB 1.68 5 4800 0.75 $script:Cfg).Ok | Should -BeTrue
         (Get-OpusSizingB 1.68 5 4700 0.75 $script:Cfg).Reason | Should -Be 'MAXLOSS_TOO_LARGE'
         $puts = @((New-Leg 185 -0.23 2.61 2.71 5000 'put'), (New-Leg 180 -0.15 0.95 1.05 5000 'put'))
@@ -162,7 +166,7 @@ Describe '9.3 Selection and sizing' {
     }
     It 'T16 long put exactly K_short - 5' {
         $puts = @((New-Leg 185 -0.225 2.60 2.75 5000 'put'), (New-Leg 180 -0.15 0.95 1.05 5000 'put'))
-        $r = Select-OpusSleeveBPair $puts 190 $script:Cfg; $r.Pair.Long.Strike | Should -Be 180; $r.Pair.CreditMid | Should -BeApproximately 1.68 -Tolerance 1e-9
+        $r = Select-OpusSleeveBPair $puts 190 $script:Cfg; $r.Pair.Long.Strike | Should -Be 180; Assert-Near ($r.Pair.CreditMid) 1.68 1e-9
         $puts2 = @((New-Leg 185 -0.225 2.60 2.75 5000 'put'), (New-Leg 184 -0.21 2.40 2.55 5000 'put'), (New-Leg 179 -0.12 0.70 0.75 5000 'put'))
         $r2 = Select-OpusSleeveBPair $puts2 190 $script:Cfg; $r2.Pair.Short.Strike | Should -Be 184; $r2.Pair.Long.Strike | Should -Be 179
     }
@@ -238,7 +242,7 @@ Describe '9.5 Guards' {
     }
     It 'T26 P10 drawdown mode' {
         $d = Update-OpusDrawdownMode 5000 5600 $false $null $script:Cfg
-        $d.DdMode | Should -BeTrue; $d.Drawdown | Should -BeApproximately 0.107143 -Tolerance 1e-6
+        $d.DdMode | Should -BeTrue; Assert-Near ($d.Drawdown) 0.107143 1e-6
         $ctx = @{ Cfg = $script:Cfg; OpusUnderlyings = @{}; StockHeld = @{}; EntriesToday = 0; Cooldown = @{}; DdMode = $true; OpenPlusWorking = 1 }
         Get-OpusSymbolBlock 'NVDA' '2026-10-12' $ctx | Should -Be 'DD_POSITION_LIMIT'
         $ctx.OpenPlusWorking = 0; Get-OpusSymbolBlock 'NVDA' '2026-10-12' $ctx | Should -BeNullOrEmpty
@@ -271,7 +275,7 @@ Describe '9.5 Guards' {
     }
     It 'T30 sleeve priority' {
         $o = Get-OpusSleeveOrder 380 0 5000 $script:Cfg
-        $o.First | Should -Be 'B'; $o.UA | Should -BeApproximately 0.844444 -Tolerance 1e-5
+        $o.First | Should -Be 'B'; Assert-Near ($o.UA) 0.844444 1e-5
     }
 }
 
@@ -338,7 +342,7 @@ Describe '9.6 Orders' {
         $swingBars = @($bars) + $partial; $swingSpy = @($spy) + $spyPartial
 
         $opus = Get-OpusPullbackTrigger $bars $ema20 $ema50 $atr $pNow $spy $spyNow $script:Cfg
-        $opus.Rs20Diff | Should -BeApproximately (Get-RelativeStrength $swingBars $swingSpy 20) -Tolerance 1e-9
+        Assert-Near ($opus.Rs20Diff) (Get-RelativeStrength $swingBars $swingSpy 20) 1e-9
         $opus.Touched | Should -BeTrue; $opus.Reclaimed | Should -BeTrue; $opus.Pullback | Should -BeTrue
         (Get-SwingPullbackSignal $null $swingBars 'BULL' $swingSpy).Valid | Should -BeTrue      # same setup, swing agrees
 
