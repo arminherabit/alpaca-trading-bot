@@ -68,7 +68,7 @@ function Add-OpusJsonl([string]$path, $object) {
 
 function Read-OpusJsonl([string]$path) {
     $full = Resolve-OpusPath $path
-    if (-not (Test-Path -LiteralPath $full)) { return ,@() }
+    if (-not (Test-Path -LiteralPath $full)) { return }
     $out = @()
     $cmd = Get-Command ConvertFrom-Json
     foreach ($line in [System.IO.File]::ReadAllLines($full)) {
@@ -78,12 +78,15 @@ function Read-OpusJsonl([string]$path) {
             $out += , $o
         } catch { }
     }
-    return ,$out
+    foreach ($o in $out) { $o }   # unrolled; callers collect with @(...)
 }
 
+# Returns elements unrolled; callers collect with @(...). (A ,@() return here
+# plus @() at the call site double-wraps: the caller then sees ONE element,
+# the whole array.)
 function ConvertTo-OpusArray($value) {
-    if ($null -eq $value) { return ,@() }
-    return ,@($value)
+    if ($null -eq $value) { return }
+    foreach ($v in @($value)) { $v }
 }
 
 # ── Journal paths (spec 7; 8.2 git-add list) ──────────────────────────────────
@@ -298,7 +301,7 @@ function Add-OpusOrderEvent($evt) { Add-OpusJsonl (Get-OpusJournalPath 'orders')
 
 function Add-OpusClosedTrade($trade) { Add-OpusJsonl (Get-OpusJournalPath 'trades') $trade }
 
-function Get-OpusClosedTrades { return (Read-OpusJsonl (Get-OpusJournalPath 'trades')) }
+function Get-OpusClosedTrades { return @(Read-OpusJsonl (Get-OpusJournalPath 'trades')) }
 
 # ── IV history (7.3) ──────────────────────────────────────────────────────────
 
