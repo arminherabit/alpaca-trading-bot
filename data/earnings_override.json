@@ -1,0 +1,4 @@
+{
+  "note": "Owner-maintained. Non-null fields win over the Nasdaq feed per symbol (spec 2.3). Dates yyyy-MM-dd.",
+  "symbols": {}
+}

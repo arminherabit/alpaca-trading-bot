@@ -60,6 +60,22 @@ jobs:
           ALPACA_API_SECRET: ${{ secrets.ALPACA_API_SECRET }}
         run: pwsh ./alpaca_bot.ps1 -Once
 
+      # Opus options sleeves (spec v1.2). Its own step and process so nothing it
+      # does can reach the swing scan: continue-on-error keeps a failure here
+      # from blocking the dashboards and the state commit, and the step timeout
+      # leaves the job's 8 minutes for them. DRY_RUN comes from the config file
+      # (true); repo variables OPUS_DRY_RUN / OPUS_OPTIONS_ENABLED override it.
+      - name: Run Opus options scan
+        shell: pwsh
+        continue-on-error: true
+        timeout-minutes: 4
+        env:
+          ALPACA_API_KEY:       ${{ secrets.ALPACA_API_KEY }}
+          ALPACA_API_SECRET:    ${{ secrets.ALPACA_API_SECRET }}
+          OPUS_DRY_RUN:         ${{ vars.OPUS_DRY_RUN }}
+          OPUS_OPTIONS_ENABLED: ${{ vars.OPUS_OPTIONS_ENABLED }}
+        run: pwsh ./opus_options.ps1
+
       - name: Generate dashboard
         shell: pwsh
         env:
@@ -85,10 +101,44 @@ jobs:
           retention-days: 7
           overwrite: true
 
+      # Commit state and push it -- loudly (spec v1.2, 8.2).
+      #
+      # Files are added one at a time, and only if they exist. A single
+      # `git add -f a b c` aborts entirely when ANY path is missing, and the
+      # old `|| true` hid that: the first time a not-yet-created file (e.g. the
+      # options trade journal before any trade closes) joined the list, every
+      # state file -- the swing bot's included -- would silently stop being
+      # committed.
+      #
+      # The push used to be `git push || true`, so a rejected push silently
+      # dropped that run's state (observed: 1 in 400 runs). Opus state is the
+      # source of truth for which option legs it owns, so a lost write can mean
+      # a duplicate entry. Now: push, on rejection rebase and retry up to 3
+      # times, and fail the job if it still cannot land.
       - name: Persist state to repo
         run: |
           git config user.name  "alpaca-bot[bot]"
           git config user.email "alpaca-bot@users.noreply.github.com"
-          git add -f alpaca_state.json alpaca_dashboard.html alpaca_ticker_memory.json earnings_calendar.json alpaca_journal.json alpaca_review.md alpaca_equity_history.json docs/index.html 2>/dev/null || true
-          git diff --staged --quiet || git commit -m "alpaca: state + memory + dashboard $(date -u +%Y-%m-%dT%H:%M:%SZ) [skip ci]"
-          git push || true
+          shopt -s nullglob
+          FILES=(alpaca_state.json alpaca_dashboard.html alpaca_ticker_memory.json earnings_calendar.json
+                 alpaca_journal.json alpaca_review.md alpaca_equity_history.json docs/index.html
+                 data/opus_options_state.json data/opus_iv_history.json data/journal_options.jsonl
+                 data/journal_options_orders.jsonl data/journal_options_skips.jsonl
+                 data/earnings.json data/earnings_override.json
+                 reports/opus_options_review_*.md)
+          for f in "${FILES[@]}"; do
+            if [ -e "$f" ]; then git add -f -- "$f"; fi
+          done
+          if git diff --staged --quiet; then echo "nothing to commit"; exit 0; fi
+          git commit -q -m "alpaca: state + memory + dashboard $(date -u +%Y-%m-%dT%H:%M:%SZ) [skip ci]"
+          for attempt in 1 2 3; do
+            if git push; then echo "state pushed (attempt $attempt)"; exit 0; fi
+            echo "push rejected (attempt $attempt) -- rebasing onto origin"
+            if ! git pull --rebase; then
+              git rebase --abort || true
+              echo "::error::STATE_PUSH_FAILED (rebase conflict)"
+              exit 1
+            fi
+          done
+          echo "::error::STATE_PUSH_FAILED (rejected 3 times)"
+          exit 1
