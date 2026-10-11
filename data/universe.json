@@ -1,0 +1,207 @@
+{
+  "refreshed_at": "2026-10-11T00:00:00Z",
+  "source": "manual",
+  "note": "OWNER MUST FILL roic, rev_growth (YoY decimals) and fcf_positive from filings, then update refreshed_at. 0.0 placeholders fail the filter by design (spec 2.3).",
+  "symbols": [
+    {
+      "symbol": "NVDA",
+      "roic": 0.0,
+      "rev_growth": 0.0,
+      "fcf_positive": false,
+      "refreshed_at": "2026-10-11T00:00:00Z",
+      "note": "PLACEHOLDER - OWNER MUST FILL"
+    },
+    {
+      "symbol": "MSFT",
+      "roic": 0.0,
+      "rev_growth": 0.0,
+      "fcf_positive": false,
+      "refreshed_at": "2026-10-11T00:00:00Z",
+      "note": "PLACEHOLDER - OWNER MUST FILL"
+    },
+    {
+      "symbol": "AMD",
+      "roic": 0.0,
+      "rev_growth": 0.0,
+      "fcf_positive": false,
+      "refreshed_at": "2026-10-11T00:00:00Z",
+      "note": "PLACEHOLDER - OWNER MUST FILL"
+    },
+    {
+      "symbol": "AAPL",
+      "roic": 0.0,
+      "rev_growth": 0.0,
+      "fcf_positive": false,
+      "refreshed_at": "2026-10-11T00:00:00Z",
+      "note": "PLACEHOLDER - OWNER MUST FILL"
+    },
+    {
+      "symbol": "AVGO",
+      "roic": 0.0,
+      "rev_growth": 0.0,
+      "fcf_positive": false,
+      "refreshed_at": "2026-10-11T00:00:00Z",
+      "note": "PLACEHOLDER - OWNER MUST FILL"
+    },
+    {
+      "symbol": "META",
+      "roic": 0.0,
+      "rev_growth": 0.0,
+      "fcf_positive": false,
+      "refreshed_at": "2026-10-11T00:00:00Z",
+      "note": "PLACEHOLDER - OWNER MUST FILL"
+    },
+    {
+      "symbol": "GOOGL",
+      "roic": 0.0,
+      "rev_growth": 0.0,
+      "fcf_positive": false,
+      "refreshed_at": "2026-10-11T00:00:00Z",
+      "note": "PLACEHOLDER - OWNER MUST FILL"
+    },
+    {
+      "symbol": "AMZN",
+      "roic": 0.0,
+      "rev_growth": 0.0,
+      "fcf_positive": false,
+      "refreshed_at": "2026-10-11T00:00:00Z",
+      "note": "PLACEHOLDER - OWNER MUST FILL"
+    },
+    {
+      "symbol": "V",
+      "roic": 0.0,
+      "rev_growth": 0.0,
+      "fcf_positive": false,
+      "refreshed_at": "2026-10-11T00:00:00Z",
+      "note": "PLACEHOLDER - OWNER MUST FILL"
+    },
+    {
+      "symbol": "MA",
+      "roic": 0.0,
+      "rev_growth": 0.0,
+      "fcf_positive": false,
+      "refreshed_at": "2026-10-11T00:00:00Z",
+      "note": "PLACEHOLDER - OWNER MUST FILL"
+    },
+    {
+      "symbol": "COST",
+      "roic": 0.0,
+      "rev_growth": 0.0,
+      "fcf_positive": false,
+      "refreshed_at": "2026-10-11T00:00:00Z",
+      "note": "PLACEHOLDER - OWNER MUST FILL"
+    },
+    {
+      "symbol": "LLY",
+      "roic": 0.0,
+      "rev_growth": 0.0,
+      "fcf_positive": false,
+      "refreshed_at": "2026-10-11T00:00:00Z",
+      "note": "PLACEHOLDER - OWNER MUST FILL"
+    },
+    {
+      "symbol": "NFLX",
+      "roic": 0.0,
+      "rev_growth": 0.0,
+      "fcf_positive": false,
+      "refreshed_at": "2026-10-11T00:00:00Z",
+      "note": "PLACEHOLDER - OWNER MUST FILL"
+    },
+    {
+      "symbol": "NOW",
+      "roic": 0.0,
+      "rev_growth": 0.0,
+      "fcf_positive": false,
+      "refreshed_at": "2026-10-11T00:00:00Z",
+      "note": "PLACEHOLDER - OWNER MUST FILL"
+    },
+    {
+      "symbol": "CRWD",
+      "roic": 0.0,
+      "rev_growth": 0.0,
+      "fcf_positive": false,
+      "refreshed_at": "2026-10-11T00:00:00Z",
+      "note": "PLACEHOLDER - OWNER MUST FILL"
+    },
+    {
+      "symbol": "ANET",
+      "roic": 0.0,
+      "rev_growth": 0.0,
+      "fcf_positive": false,
+      "refreshed_at": "2026-10-11T00:00:00Z",
+      "note": "PLACEHOLDER - OWNER MUST FILL"
+    },
+    {
+      "symbol": "KLAC",
+      "roic": 0.0,
+      "rev_growth": 0.0,
+      "fcf_positive": false,
+      "refreshed_at": "2026-10-11T00:00:00Z",
+      "note": "PLACEHOLDER - OWNER MUST FILL"
+    },
+    {
+      "symbol": "LRCX",
+      "roic": 0.0,
+      "rev_growth": 0.0,
+      "fcf_positive": false,
+      "refreshed_at": "2026-10-11T00:00:00Z",
+      "note": "PLACEHOLDER - OWNER MUST FILL"
+    },
+    {
+      "symbol": "ISRG",
+      "roic": 0.0,
+      "rev_growth": 0.0,
+      "fcf_positive": false,
+      "refreshed_at": "2026-10-11T00:00:00Z",
+      "note": "PLACEHOLDER - OWNER MUST FILL"
+    },
+    {
+      "symbol": "UBER",
+      "roic": 0.0,
+      "rev_growth": 0.0,
+      "fcf_positive": false,
+      "refreshed_at": "2026-10-11T00:00:00Z",
+      "note": "PLACEHOLDER - OWNER MUST FILL"
+    },
+    {
+      "symbol": "PANW",
+      "roic": 0.0,
+      "rev_growth": 0.0,
+      "fcf_positive": false,
+      "refreshed_at": "2026-10-11T00:00:00Z",
+      "note": "PLACEHOLDER - OWNER MUST FILL"
+    },
+    {
+      "symbol": "INTU",
+      "roic": 0.0,
+      "rev_growth": 0.0,
+      "fcf_positive": false,
+      "refreshed_at": "2026-10-11T00:00:00Z",
+      "note": "PLACEHOLDER - OWNER MUST FILL"
+    },
+    {
+      "symbol": "ADBE",
+      "roic": 0.0,
+      "rev_growth": 0.0,
+      "fcf_positive": false,
+      "refreshed_at": "2026-10-11T00:00:00Z",
+      "note": "PLACEHOLDER - OWNER MUST FILL"
+    },
+    {
+      "symbol": "ORCL",
+      "roic": 0.0,
+      "rev_growth": 0.0,
+      "fcf_positive": false,
+      "refreshed_at": "2026-10-11T00:00:00Z",
+      "note": "PLACEHOLDER - OWNER MUST FILL"
+    },
+    {
+      "symbol": "TSM",
+      "roic": 0.0,
+      "rev_growth": 0.0,
+      "fcf_positive": false,
+      "refreshed_at": "2026-10-11T00:00:00Z",
+      "note": "PLACEHOLDER - OWNER MUST FILL"
+    }
+  ]
+}

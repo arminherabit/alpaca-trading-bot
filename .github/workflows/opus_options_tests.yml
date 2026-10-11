@@ -1,0 +1,55 @@
+name: Opus options tests
+
+# Pester 5 suite for the options sleeves (spec v1.2, section 9). Runs on
+# PowerShell 7 -- the same runtime the bot uses in production. Local Windows
+# PowerShell 5.1 differs in JSON date and array handling, so a local pass is
+# not evidence; this workflow is.
+#
+# The bot's own state commits are pushed with GITHUB_TOKEN, which does not
+# trigger workflows, so this only runs on code pushes.
+
+on:
+  push:
+    paths:
+      - 'opus_options*.ps1'
+      - 'tests/**'
+      - 'config/**'
+      - 'tools/**'
+      - 'alpaca_indicators.ps1'
+      - 'alpaca_swing_signals.ps1'
+      - 'alpaca_client.ps1'
+      - 'alpaca_regime.ps1'
+      - '.github/workflows/opus_options_tests.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  pester:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Pester
+        shell: pwsh
+        run: |
+          $PSVersionTable.PSVersion.ToString()
+          Install-Module Pester -MinimumVersion 5.5.0 -Force -Scope CurrentUser -SkipPublisherCheck
+          Import-Module Pester -MinimumVersion 5.5.0
+          $c = New-PesterConfiguration
+          $c.Run.Path = './tests'
+          $c.Run.Exit = $true
+          $c.Output.Verbosity = 'Detailed'
+          $c.TestResult.Enabled = $true
+          $c.TestResult.OutputPath = 'testResults.xml'
+          Invoke-Pester -Configuration $c
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: opus-options-test-results
+          path: testResults.xml
+          retention-days: 7
