@@ -132,3 +132,21 @@ No closed trades this week.
 
 **By regime:** BULL 0/2 $-792.78 | NEUTRAL 1/1 $697.29
 
+
+## Week ending 2026-10-11
+
+| Metric | Value |
+|---|---|
+| Trades | 1 (0W / 1L, 0%) |
+| Net P&L | $-372.55 |
+| Profit factor | 0 |
+| Expectancy / trade | $-372.55 |
+| Avg R | -1 |
+| Avg hold | 7 days |
+| Best | ARM PULLBK $-372.55 (-1R) |
+| Worst | ARM PULLBK $-372.55 (-1R) |
+
+**By strategy:** PULLBK 0/1 $-372.55
+
+**By regime:** BULL 0/1 $-372.55
+
