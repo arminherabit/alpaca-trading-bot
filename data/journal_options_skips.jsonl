@@ -1,0 +1,37 @@
+{"date":"2026-10-12","symbol":"AMD","sleeve":"ALL","reason":"FUNDAMENTALS","detail":"roic 0.097 <= 0.2"}
+{"date":"2026-10-12","symbol":"AAPL","sleeve":"ALL","reason":"FUNDAMENTALS","detail":"rev_growth 0.1424 <= 0.15"}
+{"date":"2026-10-12","symbol":"AMZN","sleeve":"ALL","reason":"FUNDAMENTALS","detail":"roic 0.169 <= 0.2; fcf_positive false"}
+{"date":"2026-10-12","symbol":"V","sleeve":"ALL","reason":"FUNDAMENTALS","detail":"rev_growth 0.1437 <= 0.15"}
+{"date":"2026-10-12","symbol":"COST","sleeve":"ALL","reason":"FUNDAMENTALS","detail":"rev_growth 0.1014 <= 0.15"}
+{"date":"2026-10-12","symbol":"NOW","sleeve":"ALL","reason":"FUNDAMENTALS","detail":"roic 0.1185 <= 0.2"}
+{"date":"2026-10-12","symbol":"CRWD","sleeve":"ALL","reason":"FUNDAMENTALS","detail":"roic 0 <= 0.2; rev_growth 0 <= 0.15; fcf_positive false"}
+{"date":"2026-10-12","symbol":"KLAC","sleeve":"ALL","reason":"FUNDAMENTALS","detail":"rev_growth 0.1171 <= 0.15"}
+{"date":"2026-10-12","symbol":"UBER","sleeve":"ALL","reason":"FUNDAMENTALS","detail":"roic 0.1691 <= 0.2"}
+{"date":"2026-10-12","symbol":"PANW","sleeve":"ALL","reason":"FUNDAMENTALS","detail":"roic 0.0271 <= 0.2"}
+{"date":"2026-10-12","symbol":"INTU","sleeve":"ALL","reason":"FUNDAMENTALS","detail":"rev_growth 0.139 <= 0.15"}
+{"date":"2026-10-12","symbol":"ADBE","sleeve":"ALL","reason":"FUNDAMENTALS","detail":"rev_growth 0.1203 <= 0.15"}
+{"date":"2026-10-12","symbol":"ORCL","sleeve":"ALL","reason":"FUNDAMENTALS","detail":"roic 0 <= 0.2; rev_growth 0 <= 0.15; fcf_positive false"}
+{"date":"2026-10-12","symbol":"AVGO","sleeve":"A","reason":"TREND_GATE","detail":"C 361.54 EMA20 360.09 EMA50 366.75"}
+{"date":"2026-10-12","symbol":"AVGO","sleeve":"B","reason":"TREND_GATE","detail":"C 361.54 EMA20 360.09 EMA50 366.75"}
+{"date":"2026-10-12","symbol":"TSM","sleeve":"A","reason":"TREND_GATE","detail":"C 453.30 EMA20 453.70 EMA50 438.32"}
+{"date":"2026-10-12","symbol":"TSM","sleeve":"B","reason":"TREND_GATE","detail":"C 453.30 EMA20 453.70 EMA50 438.32"}
+{"date":"2026-10-12","symbol":"ISRG","sleeve":"A","reason":"RS_PERCENTILE","detail":"rank 10/12 (top 3)"}
+{"date":"2026-10-12","symbol":"ISRG","sleeve":"B","reason":"RS_PERCENTILE","detail":"rank 10/12 (top 3)"}
+{"date":"2026-10-12","symbol":"LRCX","sleeve":"A","reason":"TREND_GATE","detail":"C 318.81 EMA20 318.93 EMA50 314.10"}
+{"date":"2026-10-12","symbol":"LRCX","sleeve":"B","reason":"TREND_GATE","detail":"C 318.81 EMA20 318.93 EMA50 314.10"}
+{"date":"2026-10-12","symbol":"MSFT","sleeve":"A","reason":"NO_PULLBACK","detail":"no EMA20 touch"}
+{"date":"2026-10-12","symbol":"MSFT","sleeve":"B","reason":"NO_TRIGGER","detail":"C-EMA20 21.92, ATR 11.72, green True"}
+{"date":"2026-10-12","symbol":"LLY","sleeve":"A","reason":"RS_PERCENTILE","detail":"rank 6/12 (top 3)"}
+{"date":"2026-10-12","symbol":"LLY","sleeve":"B","reason":"RS_PERCENTILE","detail":"rank 6/12 (top 3)"}
+{"date":"2026-10-12","symbol":"NFLX","sleeve":"A","reason":"TREND_GATE","detail":"C 70.31 EMA20 71.50 EMA50 74.16"}
+{"date":"2026-10-12","symbol":"NFLX","sleeve":"B","reason":"TREND_GATE","detail":"C 70.31 EMA20 71.50 EMA50 74.16"}
+{"date":"2026-10-12","symbol":"MA","sleeve":"A","reason":"RS_PERCENTILE","detail":"rank 5/12 (top 3)"}
+{"date":"2026-10-12","symbol":"MA","sleeve":"B","reason":"RS_PERCENTILE","detail":"rank 5/12 (top 3)"}
+{"date":"2026-10-12","symbol":"META","sleeve":"A","reason":"RS_PERCENTILE","detail":"rank 7/12 (top 3)"}
+{"date":"2026-10-12","symbol":"META","sleeve":"B","reason":"RS_PERCENTILE","detail":"rank 7/12 (top 3)"}
+{"date":"2026-10-12","symbol":"GOOGL","sleeve":"A","reason":"TREND_GATE","detail":"C 351.63 EMA20 345.51 EMA50 345.88"}
+{"date":"2026-10-12","symbol":"GOOGL","sleeve":"B","reason":"TREND_GATE","detail":"C 351.63 EMA20 345.51 EMA50 345.88"}
+{"date":"2026-10-12","symbol":"NVDA","sleeve":"A","reason":"NO_PULLBACK","detail":"no reclaim"}
+{"date":"2026-10-12","symbol":"NVDA","sleeve":"B","reason":"NO_TRIGGER","detail":"C-EMA20 0.68, ATR 5.63, green False"}
+{"date":"2026-10-12","symbol":"ANET","sleeve":"A","reason":"NO_PULLBACK","detail":"no EMA20 touch"}
+{"date":"2026-10-12","symbol":"ANET","sleeve":"B","reason":"NO_TRIGGER","detail":"C-EMA20 10.90, ATR 6.66, green True"}
