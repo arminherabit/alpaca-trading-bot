@@ -805,11 +805,30 @@
       },
       "last_trade": "2026-10-09T13:50:23.7815488+00:00",
       "added_count": 0
+    },
+    "HUM": {
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "total_pnl": -611.82,
+      "avg_pnl": -611.82,
+      "win_rate": 0.0,
+      "score": 0.7,
+      "consecutive_losses": 1,
+      "best_strategy": "",
+      "strategy_wins": {
+        "BRKOUT": 0
+      },
+      "strategy_trades": {
+        "BRKOUT": 1
+      },
+      "last_trade": "2026-10-13T14:30:23.7774107+00:00",
+      "added_count": 0
     }
   },
-  "last_updated": "2026-10-13T14:00:37.6938386+00:00",
+  "last_updated": "2026-10-13T14:30:23.7921425+00:00",
   "last_screened": "2026-10-13T14:00:37.6879744+00:00",
-  "total_trades": 74,
+  "total_trades": 75,
   "strategy_stats": {
     "EMA": {
       "trades": 17,
@@ -839,15 +858,15 @@
       "profit_factor": 1.48
     },
     "BRKOUT": {
-      "trades": 17,
+      "trades": 18,
       "wins": 7,
-      "losses": 10,
-      "total_pnl": -380.72,
-      "win_rate": 0.412,
-      "avg_pnl": -22.4,
+      "losses": 11,
+      "total_pnl": -992.54,
+      "win_rate": 0.389,
+      "avg_pnl": -55.14,
       "gross_profit": 1800.0,
-      "gross_loss": 1860.0,
-      "profit_factor": 0.97
+      "gross_loss": 2472.0,
+      "profit_factor": 0.73
     },
     "PYRA": {
       "trades": 4,
@@ -898,14 +917,14 @@
       "profit_factor": 0.91
     },
     "10": {
-      "trades": 5,
+      "trades": 6,
       "wins": 1,
-      "losses": 4,
-      "total_pnl": -1033.1,
-      "win_rate": 0.2,
-      "avg_pnl": -206.62,
+      "losses": 5,
+      "total_pnl": -1644.92,
+      "win_rate": 0.167,
+      "avg_pnl": -274.15,
       "gross_profit": 0.0,
-      "gross_loss": 611.0,
+      "gross_loss": 1223.0,
       "profit_factor": 0.0
     },
     "12": {
@@ -952,15 +971,15 @@
       "profit_factor": 4.15
     },
     "BULL": {
-      "trades": 9,
+      "trades": 10,
       "wins": 3,
-      "losses": 6,
-      "total_pnl": -927.67,
-      "win_rate": 0.333,
-      "avg_pnl": -103.07,
+      "losses": 7,
+      "total_pnl": -1539.49,
+      "win_rate": 0.3,
+      "avg_pnl": -153.95,
       "gross_profit": 1990.0,
-      "gross_loss": 2916.0,
-      "profit_factor": 0.68
+      "gross_loss": 3528.0,
+      "profit_factor": 0.56
     }
   },
   "strategy_regime_stats": {
@@ -998,15 +1017,15 @@
       "profit_factor": 1.19
     },
     "BRKOUT|BULL": {
-      "trades": 3,
+      "trades": 4,
       "wins": 1,
-      "losses": 2,
-      "total_pnl": -1224.72,
-      "win_rate": 0.333,
-      "avg_pnl": -408.24,
+      "losses": 3,
+      "total_pnl": -1836.54,
+      "win_rate": 0.25,
+      "avg_pnl": -459.14,
       "gross_profit": 82.0,
-      "gross_loss": 1306.0,
-      "profit_factor": 0.06
+      "gross_loss": 1918.0,
+      "profit_factor": 0.04
     },
     "PULLBK|NEUTRAL": {
       "trades": 2,
