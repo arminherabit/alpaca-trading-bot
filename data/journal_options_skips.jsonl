@@ -72,3 +72,40 @@
 {"date":"2026-10-13","symbol":"NFLX","sleeve":"A","reason":"TREND_GATE","detail":"C 70.62 EMA20 71.41 EMA50 74.02"}
 {"date":"2026-10-13","symbol":"NFLX","sleeve":"B","reason":"TREND_GATE","detail":"C 70.62 EMA20 71.41 EMA50 74.02"}
 {"date":"2026-10-13","symbol":"META","sleeve":"A","reason":"SINGLE_CONTRACT_TOO_LARGE","detail":"cost_1 4374 > cap 400 (2026-12-18 730/830)"}
+{"date":"2026-10-14","symbol":"AMD","sleeve":"ALL","reason":"FUNDAMENTALS","detail":"roic 0.097 <= 0.2"}
+{"date":"2026-10-14","symbol":"AAPL","sleeve":"ALL","reason":"FUNDAMENTALS","detail":"rev_growth 0.1424 <= 0.15"}
+{"date":"2026-10-14","symbol":"AMZN","sleeve":"ALL","reason":"FUNDAMENTALS","detail":"roic 0.169 <= 0.2; fcf_positive false"}
+{"date":"2026-10-14","symbol":"V","sleeve":"ALL","reason":"FUNDAMENTALS","detail":"rev_growth 0.1437 <= 0.15"}
+{"date":"2026-10-14","symbol":"COST","sleeve":"ALL","reason":"FUNDAMENTALS","detail":"rev_growth 0.1014 <= 0.15"}
+{"date":"2026-10-14","symbol":"NOW","sleeve":"ALL","reason":"FUNDAMENTALS","detail":"roic 0.1185 <= 0.2"}
+{"date":"2026-10-14","symbol":"CRWD","sleeve":"ALL","reason":"FUNDAMENTALS","detail":"roic 0 <= 0.2; rev_growth 0 <= 0.15; fcf_positive false"}
+{"date":"2026-10-14","symbol":"KLAC","sleeve":"ALL","reason":"FUNDAMENTALS","detail":"rev_growth 0.1171 <= 0.15"}
+{"date":"2026-10-14","symbol":"UBER","sleeve":"ALL","reason":"FUNDAMENTALS","detail":"roic 0.1691 <= 0.2"}
+{"date":"2026-10-14","symbol":"PANW","sleeve":"ALL","reason":"FUNDAMENTALS","detail":"roic 0.0271 <= 0.2"}
+{"date":"2026-10-14","symbol":"INTU","sleeve":"ALL","reason":"FUNDAMENTALS","detail":"rev_growth 0.139 <= 0.15"}
+{"date":"2026-10-14","symbol":"ADBE","sleeve":"ALL","reason":"FUNDAMENTALS","detail":"rev_growth 0.1203 <= 0.15"}
+{"date":"2026-10-14","symbol":"ORCL","sleeve":"ALL","reason":"FUNDAMENTALS","detail":"roic 0 <= 0.2; rev_growth 0 <= 0.15; fcf_positive false"}
+{"date":"2026-10-14","symbol":"NFLX","sleeve":"A","reason":"TREND_GATE","detail":"C 70.48 EMA20 71.33 EMA50 73.88"}
+{"date":"2026-10-14","symbol":"NFLX","sleeve":"B","reason":"TREND_GATE","detail":"C 70.48 EMA20 71.33 EMA50 73.88"}
+{"date":"2026-10-14","symbol":"ANET","sleeve":"A","reason":"TREND_GATE","detail":"C 204.50 EMA20 206.14 EMA50 197.53"}
+{"date":"2026-10-14","symbol":"ANET","sleeve":"B","reason":"TREND_GATE","detail":"C 204.50 EMA20 206.14 EMA50 197.53"}
+{"date":"2026-10-14","symbol":"TSM","sleeve":"A","reason":"TREND_GATE","detail":"C 444.92 EMA20 452.07 EMA50 438.81"}
+{"date":"2026-10-14","symbol":"TSM","sleeve":"B","reason":"TREND_GATE","detail":"C 444.92 EMA20 452.07 EMA50 438.81"}
+{"date":"2026-10-14","symbol":"MSFT","sleeve":"A","reason":"NO_PULLBACK","detail":"no EMA20 touch"}
+{"date":"2026-10-14","symbol":"MSFT","sleeve":"B","reason":"NO_TRIGGER","detail":"C-EMA20 24.96, ATR 11.31, green False"}
+{"date":"2026-10-14","symbol":"NVDA","sleeve":"A","reason":"RS_PERCENTILE","detail":"rank 6/12 (top 3)"}
+{"date":"2026-10-14","symbol":"NVDA","sleeve":"B","reason":"RS_PERCENTILE","detail":"rank 6/12 (top 3)"}
+{"date":"2026-10-14","symbol":"MA","sleeve":"B","reason":"NO_TRIGGER","detail":"C-EMA20 31.36, ATR 9.75, green True"}
+{"date":"2026-10-14","symbol":"AVGO","sleeve":"A","reason":"TREND_GATE","detail":"C 357.37 EMA20 359.38 EMA50 365.93"}
+{"date":"2026-10-14","symbol":"AVGO","sleeve":"B","reason":"TREND_GATE","detail":"C 357.37 EMA20 359.38 EMA50 365.93"}
+{"date":"2026-10-14","symbol":"META","sleeve":"A","reason":"RS_PERCENTILE","detail":"rank 4/12 (top 3)"}
+{"date":"2026-10-14","symbol":"META","sleeve":"B","reason":"RS_PERCENTILE","detail":"rank 4/12 (top 3)"}
+{"date":"2026-10-14","symbol":"LLY","sleeve":"A","reason":"RS_PERCENTILE","detail":"rank 5/12 (top 3)"}
+{"date":"2026-10-14","symbol":"LLY","sleeve":"B","reason":"RS_PERCENTILE","detail":"rank 5/12 (top 3)"}
+{"date":"2026-10-14","symbol":"GOOGL","sleeve":"A","reason":"RS_PERCENTILE","detail":"rank 8/12 (top 3)"}
+{"date":"2026-10-14","symbol":"GOOGL","sleeve":"B","reason":"RS_PERCENTILE","detail":"rank 8/12 (top 3)"}
+{"date":"2026-10-14","symbol":"LRCX","sleeve":"A","reason":"TREND_GATE","detail":"C 301.41 EMA20 316.44 EMA50 313.43"}
+{"date":"2026-10-14","symbol":"LRCX","sleeve":"B","reason":"TREND_GATE","detail":"C 301.41 EMA20 316.44 EMA50 313.43"}
+{"date":"2026-10-14","symbol":"ISRG","sleeve":"A","reason":"RS_PERCENTILE","detail":"rank 10/12 (top 3)"}
+{"date":"2026-10-14","symbol":"ISRG","sleeve":"B","reason":"RS_PERCENTILE","detail":"rank 10/12 (top 3)"}
+{"date":"2026-10-14","symbol":"MA","sleeve":"A","reason":"ILLIQUID_LEG","detail":"expiries tried: 2026-12-18"}
