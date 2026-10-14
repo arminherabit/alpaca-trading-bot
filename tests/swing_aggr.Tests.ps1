@@ -204,7 +204,7 @@ Describe 'Dry-run guard' {
         $n.skip_reason | Should -Be 'DRYRUN_ENTERED'; $n.instrument | Should -Be 'call'
         $n.payload.limit_price | Should -Be '4.10'; $n.payload.qty | Should -Be '2'; $n.quote_caveat | Should -Match 'FREE indicative'
         ($l | Where-Object sym -eq 'AMD').skip_reason | Should -Be 'ONE_PER_SCAN'
-        @($st.aggr_dry_entered).Count | Should -Be 1
+        @($st.aggr_shadow_open).Count | Should -Be 1; $st.aggr_shadow_open[0].stop | Should -Be 95; $st.aggr_shadow_open[0].qty | Should -Be 2
         Should -Invoke Invoke-AlpacaApi -ParameterFilter { $method -ne 'GET' } -Times 0 -Exactly
     }
 }

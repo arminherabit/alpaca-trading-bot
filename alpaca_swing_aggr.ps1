@@ -240,6 +240,7 @@ function Initialize-AggrState($state) {
         aggr_halted = $false; aggr_day = ""; aggr_trades_today = 0; aggr_dry_entered = @()
         aggr_watchlist = @(); aggr_migrate_logged = @(); aggr_partial_done = @(); aggr_migrated = @(); aggr_calls = @()
         aggr_partial_failed = @(); aggr_protect_restore = @()
+        aggr_shadow_open = @(); aggr_shadow_closed = @(); aggr_shadow_realized = 0.0
     }
     foreach ($k in $defaults.Keys) {
         if (-not (Get-Member -InputObject $state -Name $k -MemberType NoteProperty -ErrorAction SilentlyContinue)) {
@@ -684,7 +685,7 @@ function Invoke-AggrManage($cfg, $state, $myPositions, $allPositions) {
 function Invoke-AggrEntries($cfg, $state, $regime, $spyDaily, [double]$equity, [double]$bp, $myPositions, $allPositions, $workingOrderSyms) {
     $a = Get-AggrCfg $cfg; $dry = Test-AggrDryRun $cfg
     $etToday = (Get-EasternTime).ToString("yyyy-MM-dd")
-    if ($state.aggr_day -ne $etToday) { $state.aggr_day = $etToday; $state.aggr_trades_today = 0; $state.aggr_dry_entered = @() }
+    if ($state.aggr_day -ne $etToday) { $state.aggr_day = $etToday; $state.aggr_trades_today = 0 }
 
     $dd = Get-AggrDdState $equity $a ([bool]$state.aggr_halted)
     if ($dd.Halted -and -not $state.aggr_halted) { $state.aggr_halted = $true; Write-Host "  [AGGR][HALT] equity <= floor -- no new aggressive entries until manual reset" -ForegroundColor Red }
@@ -698,7 +699,8 @@ function Invoke-AggrEntries($cfg, $state, $regime, $spyDaily, [double]$equity, [
         $legs = Get-LiveExitLegs $cfg $p
         $heatItems += @{ Kind = 'stock'; Side = $p.side; Qty = [double]$p.qty; Entry = [double]$p.avg_entry_price; Stop = [double]$legs.stop }
     }
-    foreach ($s in @($state.aggr_dry_entered)) { if ($s) { if ($s.kind -eq 'call') { $callCount++ } else { $stockCount++ }; $heatItems += @{ Kind = 'call'; MarketValue = [double]$s.risk_usd } } }
+    # Open SHADOW positions (dry run) count toward slots and heat until a hypothetical exit closes them.
+    foreach ($s in @($state.aggr_shadow_open)) { if ($s) { if ($s.kind -eq 'call') { $callCount++ } else { $stockCount++ }; $heatItems += @{ Kind = 'call'; MarketValue = [double]$s.risk_usd } } }
     $heat = Get-AggrHeat $heatItems
 
     $opusSyms = Get-AggrOpusUnderlyings $allPositions
@@ -706,7 +708,7 @@ function Invoke-AggrEntries($cfg, $state, $regime, $spyDaily, [double]$equity, [
     $confFloor = if ($regime.Regime -eq "BULL") { [int]$a.conf_floor_bull } else { [int]$a.conf_floor_neutral }
     $entered = $false
     $allSyms = @{}; foreach ($p in @($allPositions)) { if ($p) { $allSyms[$p.symbol] = $true } }
-    $dryEnteredSyms = @(@($state.aggr_dry_entered) | ForEach-Object { $_.sym })
+    $dryEnteredSyms = @(@($state.aggr_shadow_open) | ForEach-Object { $_.sym })
 
     foreach ($sym in $watch) {
         $rec = @{ sym = $sym; regime = $regime.Regime; dd_pct = $dd.DdPct; dd_tier = $dd.Tier; heat_before = $heat; dry_run = $dry }
@@ -782,7 +784,8 @@ function Invoke-AggrEntries($cfg, $state, $regime, $spyDaily, [double]$equity, [
         $rec.risk_usd = $risk; $rec.heat_after = [Math]::Round($heat + $risk, 2); $rec.payload = $payload
         if ($dry) {
             $rec.skip_reason = "DRYRUN_ENTERED"
-            $state.aggr_dry_entered = @($state.aggr_dry_entered) + [pscustomobject]@{ sym = $sym; kind = $instrument; risk_usd = $risk }
+            $tpSh = if ($payload.take_profit) { [double]$payload.take_profit.limit_price } else { $null }
+            $state.aggr_shadow_open = @($state.aggr_shadow_open) + (New-AggrShadow $sym $instrument $sig.Side ([double]$sig.Entry) ([double]$sig.Stop) $tpSh ([int]$payload.qty) $risk ((Get-Date).ToUniversalTime().ToString("o")))
         } else {
             $res = Invoke-AggrApi $cfg "POST" "/v2/orders" ([hashtable]$payload)
             $rec.skip_reason = if ($res) { "ENTERED" } else { "ORDER_FAILED" }
@@ -804,12 +807,139 @@ function Invoke-AggrEntries($cfg, $state, $regime, $spyDaily, [double]$equity, [
     }
 }
 
+# ── Shadow book (dry run): hypothetical positions + exits ────────────────────
+# ROOT-CAUSE FIX (2026-10-14, AEHL): shadow entries used to live in
+# state.aggr_dry_entered = {sym,kind,risk_usd} with no entry/stop/target and
+# NO exit logic -- the only "exit" was the wipe at the next ET day roll. So a
+# shadow name stayed "held" (slot + heat + HELD_OR_WORKING) all day after the
+# market had already taken out its stop, and multi-day holds vanished at the
+# day roll. Now every scan reconciles each open shadow against bars and live
+# Alpaca closed orders (GET only) and books a hypothetical exit.
+
+function New-AggrShadow([string]$sym, [string]$kind, [string]$side, [double]$entry, [double]$stop, $tp, [int]$qty, [double]$risk, [string]$openedAt) {
+    return [pscustomobject]@{ sym = $sym; kind = $kind; side = $side; entry = $entry; stop = $stop
+                              tp = $(if ($null -ne $tp) { [double]$tp } else { $null }); qty = $qty; risk_usd = $risk; opened_at = $openedAt }
+}
+
+# Pure: first bar strictly after opened_at that hits stop or target. Gap-aware:
+# a bar opening through the stop fills at the open. Stop and target in the same
+# bar => stop (conservative).
+function Get-AggrShadowBarExit($sh, $bars) {
+    $t0 = [datetime]::Parse([string]$sh.opened_at).ToUniversalTime()
+    $long = ($sh.side -ne "sell")
+    $stop = [double]$sh.stop; $tp = $sh.tp
+    foreach ($b in @($bars | Where-Object { $_ -and ([datetime]$_.Time).ToUniversalTime() -gt $t0 } | Sort-Object Time)) {
+        if ($long) {
+            if ([double]$b.Low -le $stop) { return [pscustomobject]@{ Reason = "STOP"; Price = [Math]::Min($stop, [double]$b.Open); Time = $b.Time } }
+            if ($null -ne $tp -and [double]$b.High -ge [double]$tp) { return [pscustomobject]@{ Reason = "TARGET"; Price = [Math]::Max([double]$tp, [double]$b.Open); Time = $b.Time } }
+        } else {
+            if ([double]$b.High -ge $stop) { return [pscustomobject]@{ Reason = "STOP"; Price = [Math]::Max($stop, [double]$b.Open); Time = $b.Time } }
+            if ($null -ne $tp -and [double]$b.Low -le [double]$tp) { return [pscustomobject]@{ Reason = "TARGET"; Price = [Math]::Min([double]$tp, [double]$b.Open); Time = $b.Time } }
+        }
+    }
+    return $null
+}
+
+# Pure: a filled closing order on the live account for the same symbol after the
+# shadow opened, at a price at/through the shadow stop, is market evidence the
+# stop traded (with real slippage). Returns @{Price;Time;OrderId} or $null.
+function Get-AggrShadowLiveExit($sh, $closedOrders) {
+    $t0 = [datetime]::Parse([string]$sh.opened_at).ToUniversalTime()
+    $closeSide = if ($sh.side -eq "sell") { "buy" } else { "sell" }
+    $fills = @($closedOrders | Where-Object { $_ -and $_.symbol -eq $sh.sym -and $_.status -eq "filled" -and $_.side -eq $closeSide -and $_.filled_at -and
+                                               ([datetime]::Parse([string]$_.filled_at).ToUniversalTime() -gt $t0) } |
+               Sort-Object { [datetime]::Parse([string]$_.filled_at).ToUniversalTime() })
+    foreach ($f in $fills) {
+        $px = [double]$f.filled_avg_price
+        $through = if ($closeSide -eq "sell") { $px -le [double]$sh.stop } else { $px -ge [double]$sh.stop }
+        if ($through) { return [pscustomobject]@{ Price = $px; Time = $f.filled_at; OrderId = $f.id } }
+    }
+    return $null
+}
+
+# Pure: decide the exit for one shadow. Live fill (real slippage) wins over the
+# bar-model price when both show the stop traded; time stop after hold_days_max.
+function Resolve-AggrShadowExit($sh, $bars, $closedOrders, [int]$weekdaysHeld, $a) {
+    $bar  = Get-AggrShadowBarExit $sh $bars
+    $live = Get-AggrShadowLiveExit $sh $closedOrders
+    if ($null -ne $live -and ($null -eq $bar -or $bar.Reason -eq "STOP")) {
+        return [pscustomobject]@{ Reason = "STOP"; Price = $live.Price; Source = "LIVE_FILL"; Time = $live.Time; BarPrice = $(if ($bar) { $bar.Price } else { $null }) }
+    }
+    if ($null -ne $bar) { return [pscustomobject]@{ Reason = $bar.Reason; Price = $bar.Price; Source = "BARS"; Time = $bar.Time; BarPrice = $bar.Price } }
+    if ($weekdaysHeld -ge [int]$a.hold_days_max) {
+        $last = @($bars | Sort-Object Time) | Select-Object -Last 1
+        if ($last) { return [pscustomobject]@{ Reason = "TIME"; Price = [double]$last.Close; Source = "BARS"; Time = $last.Time; BarPrice = [double]$last.Close } }
+    }
+    return $null
+}
+
+function Get-AggrShadowPnl($sh, [double]$exitPx) {
+    $dir = if ($sh.side -eq "sell") { -1.0 } else { 1.0 }
+    $pnl = $dir * ($exitPx - [double]$sh.entry) * [double]$sh.qty
+    $r = [Math]::Abs([double]$sh.entry - [double]$sh.stop)
+    $rm = if ($r -gt 0) { $dir * ($exitPx - [double]$sh.entry) / $r } else { 0 }
+    return [pscustomobject]@{ Pnl = [Math]::Round($pnl, 2); R = [Math]::Round($rm, 2) }
+}
+
+# Rebuild full shadow records for legacy {sym,kind,risk_usd} entries from the
+# DRYRUN_ENTERED payloads in the skip journal.
+function Convert-AggrLegacyDryEntered($state) {
+    $old = @($state.aggr_dry_entered | Where-Object { $_ })
+    if ($old.Count -eq 0) { return }
+    $lines = @()
+    if (Test-Path $script:AggrSkipJournal) {
+        $lines = @(Get-Content $script:AggrSkipJournal | Where-Object { $_ -match 'DRYRUN_ENTERED' } | ForEach-Object { try { $_ | ConvertFrom-Json } catch { $null } } | Where-Object { $_ })
+    }
+    foreach ($o in $old) {
+        if (@($state.aggr_shadow_open | Where-Object { $_.sym -eq $o.sym }).Count -gt 0) { continue }
+        $l = $lines | Where-Object { $_.sym -eq $o.sym -and $_.skip_reason -eq 'DRYRUN_ENTERED' } | Select-Object -Last 1
+        if ($null -eq $l -or $null -eq $l.payload) { continue }
+        $p = $l.payload
+        if ($o.kind -eq 'call' -or $null -eq $p.stop_loss) { continue }   # call shadows had no stock geometry recorded
+        $tp = if ($p.take_profit) { [double]$p.take_profit.limit_price } else { $null }
+        $state.aggr_shadow_open = @($state.aggr_shadow_open) + (New-AggrShadow $o.sym 'stock' ([string]$p.side) ([double]$p.limit_price) ([double]$p.stop_loss.stop_price) $tp ([int]$p.qty) ([double]$o.risk_usd) ([string]$l.ts))
+    }
+    $state.aggr_dry_entered = @()
+}
+
+function Update-AggrShadowBook($cfg, $state, $allPositions) {
+    $a = Get-AggrCfg $cfg
+    Initialize-AggrState $state
+    Convert-AggrLegacyDryEntered $state
+    $still = @()
+    foreach ($sh in @($state.aggr_shadow_open)) {
+        if ($null -eq $sh) { continue }
+        $bars = @(Get-Bars $cfg $sh.sym "5Min" 1000)
+        # nested=true: a bracket's stop leg is only visible under its parent; flatten.
+        # No 'after' filter: legs carry the PARENT's submit time; filled_at is checked instead.
+        $raw = Invoke-AggrApi $cfg "GET" ("/v2/orders?status=closed&nested=true&symbols={0}&direction=desc&limit=100" -f $sh.sym)
+        $co = @(); foreach ($o in @($raw)) { if ($o) { $co += $o; foreach ($l in @($o.legs)) { if ($l) { $co += $l } } } }
+        $held = Get-WeekdayCount ([datetime]::Parse([string]$sh.opened_at).ToUniversalTime()) ([datetime]::UtcNow)
+        $x = Resolve-AggrShadowExit $sh $bars $co $held $a
+        if ($null -eq $x) { $still += $sh; continue }
+        $pp = Get-AggrShadowPnl $sh ([double]$x.Price)
+        $liveHeld = @($allPositions | Where-Object { $_ -and $_.symbol -eq $sh.sym }).Count -gt 0
+        Write-AggrSkip @{ sym = $sh.sym; event = "SHADOW_EXIT"; skip_reason = "DRYRUN_EXIT"; dry_run = $true; exit_reason = $x.Reason
+                          source = $x.Source; entry = $sh.entry; stop = $sh.stop; tp = $sh.tp; qty = $sh.qty; exit_price = $x.Price
+                          bar_model_price = $x.BarPrice; exit_time = [string]$x.Time; pnl = $pp.Pnl; r_multiple = $pp.R
+                          kind = $sh.kind; opened_at = $sh.opened_at; live_position_still_open = $liveHeld
+                          note = $(if ($sh.kind -eq 'call') { "call shadow: P&L is the stock-equivalent, not option premium" } else { $null }) }
+        $closed = $sh | Select-Object *; $closed | Add-Member -NotePropertyName exit -NotePropertyValue ([double]$x.Price) -Force
+        $closed | Add-Member -NotePropertyName exit_reason -NotePropertyValue $x.Reason -Force
+        $closed | Add-Member -NotePropertyName pnl -NotePropertyValue $pp.Pnl -Force
+        $state.aggr_shadow_closed = @(@($state.aggr_shadow_closed) + $closed | Select-Object -Last 100)
+        $state.aggr_shadow_realized = [Math]::Round([double]$state.aggr_shadow_realized + $pp.Pnl, 2)
+    }
+    $state.aggr_shadow_open = @($still)
+}
+
 # Single entry point called from Run-Scan.
 function Invoke-AggrCycle($cfg, $state, $regime, $spyDaily, [double]$equity, [double]$bp, $myPositions, $allPositions, $workingOrderSyms, [bool]$inEntryWindow) {
     if (-not (Test-AggrEnabled $cfg)) { return }
     Initialize-AggrState $state
     $mode = if (Test-AggrDryRun $cfg) { "DRY-RUN (read-only)" } else { "LIVE (paper)" }
     Write-Host ("  [AGGR] Swing aggressive v1.1 -- {0}" -f $mode) -ForegroundColor Magenta
+    if (Test-AggrDryRun $cfg) { Update-AggrShadowBook $cfg $state $allPositions }
     Invoke-AggrManage $cfg $state $myPositions $allPositions
     if ($inEntryWindow) {
         Invoke-AggrEntries $cfg $state $regime $spyDaily $equity $bp $myPositions $allPositions $workingOrderSyms
