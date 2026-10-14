@@ -1,0 +1,5 @@
+# Store and check out PowerShell and JSON with LF everywhere, so commits made
+# on Windows (core.autocrlf=true) and on the Linux CI runner never differ only
+# in line endings.
+*.ps1  text eol=lf
+*.json text eol=lf
