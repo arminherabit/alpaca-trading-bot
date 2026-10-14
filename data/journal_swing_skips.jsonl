@@ -1,0 +1,1 @@
+{"ts":"2026-10-14T13:30:39.2761465Z","event":"MIGRATE","current_tp":15.16,"new_tp":21.08,"r_per_share":0.91,"skip_reason":"DRYRUN_MIGRATE","note":"dry run: no order modified; legacy ladder keeps managing live","current_stop":11.07,"qty":682,"sym":"AI"}
