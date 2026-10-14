@@ -47,7 +47,7 @@ $LEVERAGED_BLOCKLIST = @(
 # trades is the strategy prefix we stamp into every entry's client_order_id.
 # Positions/orders without one of these prefixes belong to the other bot and
 # must never be managed, counted, or learned from.
-$MY_ENTRY_PREFIXES = @("BRKOUT","PULLBK","BRKDN","RALLYF","ORB","VWAP","EMA","PYRA")
+$MY_ENTRY_PREFIXES = @("BRKOUT","PULLBK","BRKDN","RALLYF","ORB","VWAP","EMA","PYRA","SWCALL")
 
 # ── Correlated ticker groups ──────────────────────────────────────────────────
 # Tickers in the same group are the same underlying exposure.
