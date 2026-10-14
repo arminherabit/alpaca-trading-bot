@@ -147,7 +147,16 @@ Describe 'Dry-run guard' {
     It 'missing dry_run flag defaults to dry' { Test-AggrDryRun ([pscustomobject]@{ aggr = [pscustomobject]@{ enabled = $true } }) | Should -BeTrue }
     It 'manage in dry run (AI migration + partial) writes journal and sends no order' {
         $script:AggrSkipJournal = Join-Path $TestDrive 'skips.jsonl'
-        Mock Invoke-AlpacaApi { param($cfg,$method,$path,$body) if ($method -ne 'GET') { throw "LIVE CALL $method" }; return @() }
+        Mock Invoke-AlpacaApi {
+            param($cfg,$method,$path,$body)
+            if ($method -ne 'GET') { throw "LIVE CALL $method" }
+            if ($path -like '/v2/orders?status=all&nested=true*') {
+                return @([pscustomobject]@{ id = 'p1'; symbol = 'AI'; side = 'buy'; status = 'filled'; type = 'limit'; legs = @(
+                    [pscustomobject]@{ id = 'tp1'; symbol = 'AI'; side = 'sell'; status = 'new';  type = 'limit'; limit_price = '15.17'; qty = '682' },
+                    [pscustomobject]@{ id = 'sl1'; symbol = 'AI'; side = 'sell'; status = 'held'; type = 'stop';  stop_price  = '11.07'; qty = '682' }) })
+            }
+            return @()
+        }
         Mock Get-LiveExitLegs { @{ stop = 11.07; target = 15.17 } }
         Mock Get-AggrJournalOpen { [pscustomobject]@{ symbol = 'AI'; stop = 11.07 } }
         Mock Get-EasternTime { [datetime]'2026-10-14T10:00:00' }
@@ -158,8 +167,16 @@ Describe 'Dry-run guard' {
         $lines = @(Get-Content $script:AggrSkipJournal | ForEach-Object { $_ | ConvertFrom-Json })
         @($lines | Where-Object skip_reason -eq 'DRYRUN_MIGRATE').Count | Should -Be 1
         ($lines | Where-Object skip_reason -eq 'DRYRUN_MIGRATE').new_tp | Should -Be 21.08
-        @($lines | Where-Object skip_reason -eq 'DRYRUN_PARTIAL').Count | Should -Be 2
-        ($lines | Where-Object skip_reason -eq 'DRYRUN_PARTIAL' | Select-Object -First 1).payload.qty | Should -Be '227'
+        $plan = @($lines | Where-Object skip_reason -eq 'DRYRUN_PARTIAL')
+        $plan.Count | Should -Be 8   # CANCEL_EXITS, PROTECT, SELL, VERIFY on each of the two scans
+        (@($plan | Select-Object -First 4) | ForEach-Object step) -join ',' | Should -Be 'CANCEL_EXITS,PROTECT,SELL,VERIFY'
+        (@($plan | Where-Object step -eq 'CANCEL_EXITS')[0].orders | ForEach-Object id) -join ',' | Should -Be 'tp1,sl1'
+        $pr = @($plan | Where-Object step -eq 'PROTECT')[0]
+        $pr.payload.order_class | Should -Be 'oco'; $pr.payload.qty | Should -Be '455'
+        $pr.payload.stop_loss.stop_price | Should -Be '11.07'; $pr.payload.take_profit.limit_price | Should -Be '15.17'
+        $pr.fallback_payload.type | Should -Be 'stop'; $pr.fallback_payload.qty | Should -Be '455'
+        $sell = @($plan | Where-Object step -eq 'SELL')[0]
+        $sell.payload.qty | Should -Be '227'; $sell.payload.type | Should -Be 'market'; $sell.payload.client_order_id | Should -Be 'PARTIAL_AI_20261014'
         @($st.aggr_migrated).Count | Should -Be 0
         @($st.aggr_partial_done).Count | Should -Be 0
         Should -Invoke Invoke-AlpacaApi -ParameterFilter { $method -ne 'GET' } -Times 0 -Exactly
@@ -189,5 +206,204 @@ Describe 'Dry-run guard' {
         ($l | Where-Object sym -eq 'AMD').skip_reason | Should -Be 'ONE_PER_SCAN'
         @($st.aggr_dry_entered).Count | Should -Be 1
         Should -Invoke Invoke-AlpacaApi -ParameterFilter { $method -ne 'GET' } -Times 0 -Exactly
+    }
+}
+
+Describe 'Stock partial with an open bracket (live path, mocked broker)' {
+    BeforeAll {
+        $script:AggrPollDelayMs = 0
+        $script:CfgLive = $Cfg | ConvertTo-Json -Depth 8 | ConvertFrom-Json
+        $script:CfgLive.aggr.dry_run = $false
+        function O($id, $type, $grp, $extra = @{}) {
+            $h = [ordered]@{ id = $id; symbol = 'AI'; side = 'sell'; status = 'new'; type = $type; qty = '682'; group = $grp }
+            foreach ($k in $extra.Keys) { $h[$k] = $extra[$k] }; [pscustomobject]$h
+        }
+        function Live { @($script:B.Orders | Where-Object { @('canceled','filled','expired','rejected') -notcontains $_.status }) }
+        function LiveStops { @(Live | Where-Object { @('stop','trailing_stop') -contains $_.type }) }
+        function Posts { @($script:B.Calls | Where-Object { $_ -like 'POST*' }) }
+        function Journal { @(Get-Content $script:AggrSkipJournal | ForEach-Object { $_ | ConvertFrom-Json }) }
+    }
+    BeforeEach {
+        $script:AggrSkipJournal = Join-Path $TestDrive ("p_{0}.jsonl" -f [guid]::NewGuid().ToString('N'))
+        # A filled 682-share AI long with its live bracket: TP 15.17, stop 11.07 (one OCO group).
+        $script:B = @{
+            Orders = [System.Collections.ArrayList]@(
+                (O 'tp1' 'limit' 'g0' @{ limit_price = '15.17' }),
+                (O 'sl1' 'stop'  'g0' @{ stop_price = '11.07'; status = 'held' }))
+            Calls = [System.Collections.ArrayList]@(); Bodies = [System.Collections.ArrayList]@()
+            Fail = @{ Cancel = $false; CancelStuck = $false; Sell = $false; SellPartial = 0; Oco = 0; Stop = 0 }
+            Sold = 0; Seq = 0; SellOrder = $null; PosQty = 682; Open = $true
+        }
+        Mock Get-EasternTime { [datetime]'2026-10-14T11:00:00' }
+        Mock Invoke-AlpacaApi {
+            param($cfg, $method, $path, $body)
+            $B = $script:B; [void]$B.Calls.Add(("{0} {1}" -f $method, $path))
+            if ($method -eq 'GET') {
+                if ($path -eq '/v2/clock') { return [pscustomobject]@{ is_open = $B.Open } }
+                if ($path -like '/v2/orders?status=all&nested=true*') { return @($B.Orders | ForEach-Object { $_ }) }
+                if ($path -like '/v2/orders:by_client_order_id*') { return $null }
+                if ($path -like '/v2/positions/*') { return [pscustomobject]@{ qty = [string]($B.PosQty - $B.Sold) } }
+                if ($path -like '/v2/orders/*') { return $B.SellOrder }
+                return @()
+            }
+            if ($method -eq 'DELETE') {
+                $id = $path.Split('/')[-1]
+                if ($B.SellOrder -and $id -eq $B.SellOrder.id) { $B.SellOrder.status = 'canceled'; return $null }
+                if ($B.Fail.Cancel) { throw '422 order is not cancelable' }
+                $o = @($B.Orders | Where-Object { $_.id -eq $id })[0]
+                if ($null -eq $o) { throw '404 order not found' }
+                foreach ($x in $B.Orders) {   # cancelling one leg cancels its whole group
+                    if ($x.group -eq $o.group -and @('canceled','filled') -notcontains $x.status) {
+                        $x.status = if ($B.Fail.CancelStuck) { 'pending_cancel' } else { 'canceled' }
+                    }
+                }
+                return $null
+            }
+            if ($method -eq 'POST') {
+                [void]$B.Bodies.Add($body); $B.Seq++
+                if ($body.type -eq 'market') {
+                    if ($B.Fail.Sell) { throw '403 insufficient qty available for order' }
+                    $f = if ($B.Fail.SellPartial -gt 0) { $B.Fail.SellPartial } else { [int]$body.qty }
+                    $B.Sold = $f
+                    $B.SellOrder = [pscustomobject]@{ id = 'sell1'; status = $(if ($B.Fail.SellPartial -gt 0) { 'partially_filled' } else { 'filled' })
+                                                       filled_qty = [string]$f; qty = $body.qty; client_order_id = $body.client_order_id }
+                    return $B.SellOrder
+                }
+                $g = "g$($B.Seq)"
+                if ($body.order_class -eq 'oco') {
+                    if ($B.Fail.Oco -gt 0) { $B.Fail.Oco = $B.Fail.Oco - 1; throw '422 oco rejected' }
+                    $tp = O "tpN$($B.Seq)" 'limit' $g @{ limit_price = $body.take_profit.limit_price; qty = $body.qty }
+                    [void]$B.Orders.Add($tp)
+                    [void]$B.Orders.Add((O "slN$($B.Seq)" 'stop' $g @{ stop_price = $body.stop_loss.stop_price; qty = $body.qty; status = 'held' }))
+                    return $tp
+                }
+                if ($body.type -eq 'stop') {
+                    if ($B.Fail.Stop -gt 0) { $B.Fail.Stop = $B.Fail.Stop - 1; throw '422 stop rejected' }
+                    $s = O "stN$($B.Seq)" 'stop' $g @{ stop_price = $body.stop_price; qty = $body.qty }
+                    [void]$B.Orders.Add($s); return $s
+                }
+                if ($body.type -eq 'trailing_stop') {
+                    $s = O "trN$($B.Seq)" 'trailing_stop' $g @{ trail_percent = $body.trail_percent; qty = $body.qty }
+                    [void]$B.Orders.Add($s); return $s
+                }
+            }
+            return $null
+        }
+        $script:Pos = [pscustomobject]@{ symbol = 'AI'; asset_class = 'us_equity'; qty = '682'; side = 'long'; avg_entry_price = '11.98'; current_price = '13.90' }
+        $script:St = [pscustomobject]@{}; Initialize-AggrState $script:St
+    }
+
+    It 'success: cancel bracket, OCO on 455 BEFORE selling 227, one protection left' {
+        $r = Invoke-AggrStockPartial $CfgLive $St $Pos 227 2.11
+        $r.Outcome | Should -Be 'DONE'; $r.Sold | Should -Be 227; $r.Protect.Kind | Should -Be 'oco'
+        @(Posts).Count | Should -Be 2
+        $B.Bodies[0].order_class | Should -Be 'oco'; $B.Bodies[0].qty | Should -Be '455'
+        $B.Bodies[0].stop_loss.stop_price | Should -Be '11.07'; $B.Bodies[0].take_profit.limit_price | Should -Be '15.17'
+        $B.Bodies[1].type | Should -Be 'market'; $B.Bodies[1].qty | Should -Be '227'; $B.Bodies[1].client_order_id | Should -Be 'PARTIAL_AI_20261014'
+        # Unprotected window: only "are the legs gone?" polls between the last cancel and the protection POST.
+        $calls = @($B.Calls)
+        $iPost = @(0..($calls.Count - 1) | Where-Object { $calls[$_] -like 'POST*' })[0]
+        $iDel  = @(0..($iPost - 1) | Where-Object { $calls[$_] -like 'DELETE*' })[-1]
+        @(($iDel + 1)..($iPost - 1) | Where-Object { $calls[$_] -notlike 'GET /v2/orders?status=all*' }).Count | Should -Be 0
+        @(LiveStops).Count | Should -Be 1; (LiveStops)[0].qty | Should -Be '455'
+        @($St.aggr_partial_done) | Should -Contain 'AI'
+        @($St.aggr_protect_restore).Count | Should -Be 0
+        @(Journal | Where-Object skip_reason -eq 'PARTIAL_DONE').Count | Should -Be 1
+    }
+
+    It 'never sells twice: a second manage pass the same day sends no sell' {
+        Mock Get-AggrJournalOpen { [pscustomobject]@{ symbol = 'AI'; stop = 11.07 } }
+        Mock Get-LiveExitLegs { @{ stop = 11.07; target = 15.17 } }
+        Invoke-AggrManage $CfgLive $St @($Pos) @($Pos)
+        $pos2 = [pscustomobject]@{ symbol = 'AI'; asset_class = 'us_equity'; qty = '455'; side = 'long'; avg_entry_price = '11.98'; current_price = '14.10' }
+        Invoke-AggrManage $CfgLive $St @($pos2) @($pos2)
+        @($B.Bodies | Where-Object { $_.type -eq 'market' }).Count | Should -Be 1
+    }
+
+    It 'cancel failure: bracket stays, nothing is sold or placed, no retry today' {
+        $B.Fail.Cancel = $true
+        (Invoke-AggrStockPartial $CfgLive $St $Pos 227 2.11).Outcome | Should -Be 'ABORTED_CANCEL'
+        @(Posts).Count | Should -Be 0
+        (@(Live) | ForEach-Object id) -join ',' | Should -Be 'tp1,sl1'
+        @($St.aggr_partial_failed) | Should -Contain '20261014:AI'
+        @($St.aggr_protect_restore).Count | Should -Be 0     # still fully protected by the bracket
+        $n = $B.Calls.Count
+        (Invoke-AggrStockPartial $CfgLive $St $Pos 227 2.11).Outcome | Should -Be 'SKIPPED_FAILED_TODAY'
+        $B.Calls.Count | Should -Be $n
+    }
+
+    It 'cancel stuck in pending_cancel: aborts, queues a restore, next pass re-covers the full position' {
+        $B.Fail.CancelStuck = $true
+        (Invoke-AggrStockPartial $CfgLive $St $Pos 227 2.11).Outcome | Should -Be 'ABORTED_CANCEL'
+        @(Posts).Count | Should -Be 0
+        @($St.aggr_protect_restore | ForEach-Object sym) | Should -Contain 'AI'
+        foreach ($x in $B.Orders) { if ($x.status -eq 'pending_cancel') { $x.status = 'canceled' } }   # broker finishes the cancel
+        $B.Fail.CancelStuck = $false
+        Invoke-AggrProtectRestore $CfgLive $St @($Pos)
+        @(LiveStops).Count | Should -Be 1; (LiveStops)[0].qty | Should -Be '682'; (LiveStops)[0].stop_price | Should -Be '11.07'
+        @($St.aggr_protect_restore).Count | Should -Be 0
+    }
+
+    It 'sell rejected: no double sell, protection resized back to the full 682' {
+        $B.Fail.Sell = $true
+        $r = Invoke-AggrStockPartial $CfgLive $St $Pos 227 2.11
+        $r.Outcome | Should -Be 'SELL_REJECTED'; $r.Error | Should -Match 'insufficient qty'
+        @($B.Bodies | Where-Object { $_.type -eq 'market' }).Count | Should -Be 1
+        @(LiveStops).Count | Should -Be 1; (LiveStops)[0].qty | Should -Be '682'
+        @($St.aggr_partial_done).Count | Should -Be 0
+        @($St.aggr_partial_failed) | Should -Contain '20261014:AI'
+        @(Journal | Where-Object skip_reason -eq 'PARTIAL_SELL_REJECTED').Count | Should -Be 1
+    }
+
+    It 'partial fill: 100 of 227 sold, rest of the sell cancelled, protection resized to 582' {
+        $B.Fail.SellPartial = 100
+        $r = Invoke-AggrStockPartial $CfgLive $St $Pos 227 2.11
+        $r.Outcome | Should -Be 'PARTIAL_FILL'; $r.Sold | Should -Be 100
+        $B.Calls | Should -Contain 'DELETE /v2/orders/sell1'
+        @(LiveStops).Count | Should -Be 1; (LiveStops)[0].qty | Should -Be '582'
+        @($St.aggr_partial_done) | Should -Contain 'AI'     # never re-sold
+        @($B.Bodies | Where-Object { $_.type -eq 'market' }).Count | Should -Be 1
+    }
+
+    It 're-place failure: OCO rejected twice -> plain stop fallback on 455, then sells' {
+        $B.Fail.Oco = 2
+        $r = Invoke-AggrStockPartial $CfgLive $St $Pos 227 2.11
+        $r.Outcome | Should -Be 'DONE'; $r.Protect.Kind | Should -Be 'stop'; $r.Protect.Fallback | Should -BeTrue; $r.Protect.Attempts | Should -Be 3
+        @(Live).Count | Should -Be 1; (Live)[0].type | Should -Be 'stop'; (Live)[0].qty | Should -Be '455'; (Live)[0].stop_price | Should -Be '11.07'
+        @(Journal | Where-Object skip_reason -eq 'PARTIAL_PROTECT_FALLBACK').Count | Should -Be 1
+    }
+
+    It 're-place failure on 455: does not sell, re-covers all 682' {
+        $B.Fail.Oco = 99; $B.Fail.Stop = 2
+        (Invoke-AggrStockPartial $CfgLive $St $Pos 227 2.11).Outcome | Should -Be 'ABORTED_PROTECT'
+        @($B.Bodies | Where-Object { $_.type -eq 'market' }).Count | Should -Be 0
+        @(LiveStops).Count | Should -Be 1; (LiveStops)[0].qty | Should -Be '682'
+    }
+
+    It 'total re-place failure: no sell, loud alert, restore queued' {
+        $B.Fail.Oco = 99; $B.Fail.Stop = 99
+        (Invoke-AggrStockPartial $CfgLive $St $Pos 227 2.11).Outcome | Should -Be 'UNPROTECTED'
+        @($B.Bodies | Where-Object { $_.type -eq 'market' }).Count | Should -Be 0
+        @($St.aggr_protect_restore | ForEach-Object sym) | Should -Contain 'AI'
+        @(Journal | Where-Object skip_reason -eq 'PARTIAL_UNPROTECTED').Count | Should -Be 1
+    }
+
+    It 'trailing stop (legacy +2R conversion) is re-placed as a trailing stop on the kept shares' {
+        $B.Orders.Clear(); [void]$B.Orders.Add((O 'tr0' 'trailing_stop' 'gT' @{ trail_percent = '3.5'; stop_price = '13.41' }))
+        $r = Invoke-AggrStockPartial $CfgLive $St $Pos 227 2.11
+        $r.Outcome | Should -Be 'DONE'; $r.Protect.Kind | Should -Be 'trail'
+        @(Live).Count | Should -Be 1; (Live)[0].type | Should -Be 'trailing_stop'; (Live)[0].qty | Should -Be '455'; (Live)[0].trail_percent | Should -Be '3.5'
+    }
+
+    It 'market closed: deferred, nothing cancelled' {
+        $B.Open = $false
+        (Invoke-AggrStockPartial $CfgLive $St $Pos 227 2.11).Outcome | Should -Be 'DEFERRED'
+        @($B.Calls | Where-Object { $_ -ne 'GET /v2/clock' }).Count | Should -Be 0
+    }
+
+    It 'no live stop: aborts without touching orders' {
+        $B.Orders.Clear(); [void]$B.Orders.Add((O 'tp9' 'limit' 'g9' @{ limit_price = '15.17' }))
+        (Invoke-AggrStockPartial $CfgLive $St $Pos 227 2.11).Outcome | Should -Be 'ABORTED_NO_STOP'
+        @($B.Calls | Where-Object { $_ -like 'DELETE*' -or $_ -like 'POST*' }).Count | Should -Be 0
     }
 }

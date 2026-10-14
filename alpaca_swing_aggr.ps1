@@ -239,6 +239,7 @@ function Initialize-AggrState($state) {
     $defaults = [ordered]@{
         aggr_halted = $false; aggr_day = ""; aggr_trades_today = 0; aggr_dry_entered = @()
         aggr_watchlist = @(); aggr_migrate_logged = @(); aggr_partial_done = @(); aggr_migrated = @(); aggr_calls = @()
+        aggr_partial_failed = @(); aggr_protect_restore = @()
     }
     foreach ($k in $defaults.Keys) {
         if (-not (Get-Member -InputObject $state -Name $k -MemberType NoteProperty -ErrorAction SilentlyContinue)) {
@@ -293,6 +294,302 @@ function Test-AggrEarningsBefore([string]$sym, [datetime]$until) {
     return ((Get-Date).Date.AddDays($d) -le $until.Date)
 }
 
+# ── Stock partial at +2R with an open bracket (spec 8) ───────────────────────
+# A bracket's stop and take-profit legs reserve ALL the position's shares, so a
+# plain market sell of 1/3 is rejected ("insufficient qty available"). Alpaca
+# can only replace a leg's price, never its qty, and cancelling one leg cancels
+# the whole group. So the sequence is:
+#   1. cancel every live exit order on the symbol and wait until they are gone
+#   2. place protection for the REMAINING 2/3 (same kind as before: OCO stop+TP,
+#      trailing stop, or plain stop; one retry, then a plain-stop fallback)
+#   3. market-sell 1/3 (deterministic client_order_id => no double sell)
+#   4. poll the sell; if it is rejected or only partly fills, resize the
+#      protection to the actual position qty
+# Protection for the kept shares goes in BEFORE the sell, so the only window
+# with no stop is between the cancel confirming and step 2 (one round-trip).
+# Only one protection order is ever left live: Repair-DuplicateStops keeps a
+# single stop per position and would cancel a second one.
+
+$script:AggrPollTries   = 6
+$script:AggrPollDelayMs = 500
+$script:AggrDeadStatus  = @("filled","canceled","cancelled","expired","rejected","done_for_day","replaced")
+$script:AggrStopTypes   = @("stop","stop_limit","stop_loss","trailing_stop")
+
+function Get-AggrOrderType($o) { if ($o.order_type) { return [string]$o.order_type } return [string]$o.type }
+
+# Live exit-side orders for a symbol: standalone orders plus live legs of any
+# parent (a filled bracket parent is a BUY with status filled; its legs are the
+# live sells). Same nested query the legacy stop lookup uses.
+function Get-AggrExitOrders($cfg, [string]$sym, [string]$exitSide) {
+    $raw = Invoke-AggrApi $cfg "GET" "/v2/orders?status=all&nested=true&symbols=$sym&limit=200"
+    $out = @(); $seen = @{}
+    foreach ($o in @($raw)) {
+        if ($null -eq $o) { continue }
+        foreach ($x in @($o) + @($o.legs)) {
+            if ($null -eq $x -or $x.symbol -ne $sym -or $x.side -ne $exitSide) { continue }
+            if ($script:AggrDeadStatus -contains [string]$x.status) { continue }
+            if ($seen.ContainsKey([string]$x.id)) { continue }
+            $seen[[string]$x.id] = $true; $out += $x
+        }
+    }
+    return $out
+}
+
+# What protects the position now, so the same kind can be re-placed.
+function Get-AggrProtectionSnapshot([array]$orders, [string]$posSide, [double]$price) {
+    $isLong = ($posSide -eq "long")
+    $snap = [pscustomobject]@{ Kind = "none"; Stop = 0.0; Target = 0.0; TrailPercent = $null; TrailPrice = $null }
+    $trail = @($orders | Where-Object { $_ -and (Get-AggrOrderType $_) -eq "trailing_stop" }) | Select-Object -First 1
+    if ($trail) {
+        $snap.Kind = "trail"; $snap.TrailPercent = $trail.trail_percent; $snap.TrailPrice = $trail.trail_price
+        if ($trail.stop_price) { $snap.Stop = [double]$trail.stop_price }
+        return $snap
+    }
+    $stops = @($orders | Where-Object { $_ -and (@("stop","stop_limit","stop_loss") -contains (Get-AggrOrderType $_)) -and [double]$_.stop_price -gt 0 })
+    $tps   = @($orders | Where-Object { $_ -and (Get-AggrOrderType $_) -eq "limit" -and [double]$_.limit_price -gt 0 })
+    if ($stops.Count -gt 0) {
+        # Alpaca returns prices as strings: compare as numbers, never lexically.
+        $sp = @($stops | ForEach-Object { [double]$_.stop_price })
+        $snap.Stop = if ($isLong) { ($sp | Measure-Object -Maximum).Maximum } else { ($sp | Measure-Object -Minimum).Minimum }
+        $snap.Kind = "stop"
+    }
+    if ($tps.Count -gt 0 -and $snap.Stop -gt 0) {
+        $lp = @($tps | ForEach-Object { [double]$_.limit_price })
+        $tp = if ($isLong) { ($lp | Measure-Object -Minimum).Minimum } else { ($lp | Measure-Object -Maximum).Maximum }
+        # An OCO whose take-profit is already through the market is rejected; keep the stop only.
+        $tpOk = if ($isLong) { $tp -gt $price } else { $tp -lt $price }
+        if ($tpOk) { $snap.Target = [double]$tp; $snap.Kind = "oco" }
+    }
+    return $snap
+}
+
+function New-AggrProtectionPayload([string]$sym, [string]$exitSide, [int]$qty, $snap, [string]$kind, [string]$stamp) {
+    $coid = "PROTECT_AGGR_{0}_{1}" -f $sym, $stamp
+    $p = [ordered]@{ symbol = $sym; qty = $qty.ToString(); side = $exitSide; time_in_force = "gtc" }
+    switch ($kind) {
+        "oco" {
+            $p.type = "limit"; $p.order_class = "oco"
+            $p.take_profit = @{ limit_price = ([double]$snap.Target).ToString("F2") }
+            $p.stop_loss   = @{ stop_price  = ([double]$snap.Stop).ToString("F2") }
+        }
+        "trail" {
+            $p.type = "trailing_stop"
+            if ($null -ne $snap.TrailPercent -and "$($snap.TrailPercent)" -ne "") { $p.trail_percent = [string]$snap.TrailPercent }
+            else { $p.trail_price = [string]$snap.TrailPrice }
+        }
+        default { $p.type = "stop"; $p.stop_price = ([double]$snap.Stop).ToString("F2") }
+    }
+    $p.client_order_id = $coid
+    return $p
+}
+
+# Primary kind twice, then a plain stop twice. Returns @{ Ok; Kind; Fallback; Order; Payload; Attempts; Error }.
+function Set-AggrProtection($cfg, [string]$sym, [string]$exitSide, [int]$qty, $snap, [string]$stamp) {
+    $plan = @()
+    if ($snap.Kind -eq "oco" -or $snap.Kind -eq "trail") { $plan += $snap.Kind, $snap.Kind }
+    if ([double]$snap.Stop -gt 0) { $plan += "stop", "stop" }
+    $n = 0; $err = $null
+    foreach ($k in $plan) {
+        $n++
+        $p = New-AggrProtectionPayload $sym $exitSide $qty $snap $k ("{0}{1}" -f $stamp, $n)
+        $res = $null
+        try { $res = Invoke-AggrApi $cfg "POST" "/v2/orders" ([hashtable]$p) } catch { $err = $_.Exception.Message }
+        if ($res) { return [pscustomobject]@{ Ok = $true; Kind = $k; Fallback = ($k -ne $snap.Kind); Order = $res; Payload = $p; Attempts = $n; Error = $err } }
+    }
+    return [pscustomobject]@{ Ok = $false; Kind = $null; Fallback = $false; Order = $null; Payload = $null; Attempts = $n; Error = $err }
+}
+
+function Wait-AggrExitOrdersGone($cfg, [string]$sym, [string]$exitSide) {
+    $left = @()
+    for ($i = 0; $i -lt $script:AggrPollTries; $i++) {
+        $left = @(Get-AggrExitOrders $cfg $sym $exitSide)
+        if ($left.Count -eq 0) { return [pscustomobject]@{ Gone = $true; Left = @() } }
+        if ($script:AggrPollDelayMs -gt 0) { Start-Sleep -Milliseconds $script:AggrPollDelayMs }
+    }
+    return [pscustomobject]@{ Gone = $false; Left = $left }
+}
+
+function Remove-AggrOrders($cfg, [array]$orders) {
+    $errs = @()
+    foreach ($o in @($orders)) {
+        if ($null -eq $o) { continue }
+        # Cancelling one leg cancels its group, so a later DELETE in the same group may 422 -- tolerated.
+        try { Invoke-AggrApi $cfg "DELETE" ("/v2/orders/" + $o.id) | Out-Null } catch { $errs += ("{0}: {1}" -f $o.id, $_.Exception.Message) }
+    }
+    return $errs
+}
+
+# Poll an order to a final status; if it is still working after the polls,
+# cancel the rest and read the final filled_qty.
+function Wait-AggrOrderFinal($cfg, [string]$id) {
+    $final = @("filled","canceled","cancelled","expired","rejected","done_for_day")
+    $o = $null
+    for ($i = 0; $i -lt $script:AggrPollTries; $i++) {
+        try { $o = Invoke-AggrApi $cfg "GET" ("/v2/orders/" + $id) } catch { $o = $null }
+        if ($o -and $final -contains [string]$o.status) { return $o }
+        if ($script:AggrPollDelayMs -gt 0) { Start-Sleep -Milliseconds $script:AggrPollDelayMs }
+    }
+    try { Invoke-AggrApi $cfg "DELETE" ("/v2/orders/" + $id) | Out-Null } catch {}
+    for ($i = 0; $i -lt $script:AggrPollTries; $i++) {
+        try { $o = Invoke-AggrApi $cfg "GET" ("/v2/orders/" + $id) } catch {}
+        if ($o -and $final -contains [string]$o.status) { return $o }
+        if ($script:AggrPollDelayMs -gt 0) { Start-Sleep -Milliseconds $script:AggrPollDelayMs }
+    }
+    return $o
+}
+
+# Cancel whatever protects the position and re-place it on $qty shares.
+function Invoke-AggrResizeProtection($cfg, [string]$sym, [string]$exitSide, [int]$qty, $snap, [string]$stamp) {
+    $errs = Remove-AggrOrders $cfg @(Get-AggrExitOrders $cfg $sym $exitSide)
+    $w = Wait-AggrExitOrdersGone $cfg $sym $exitSide
+    if (-not $w.Gone) { return [pscustomobject]@{ Ok = $false; Stage = "CANCEL"; Errors = $errs; Protect = $null } }
+    $pr = Set-AggrProtection $cfg $sym $exitSide $qty $snap $stamp
+    return [pscustomobject]@{ Ok = [bool]$pr.Ok; Stage = $(if ($pr.Ok) { "DONE" } else { "PROTECT" }); Errors = $errs; Protect = $pr }
+}
+
+function Add-AggrProtectRestore($state, [string]$sym, $snap) {
+    $state.aggr_protect_restore = @(@($state.aggr_protect_restore) | Where-Object { $_ -and $_.sym -ne $sym }) +
+        [pscustomobject]@{ sym = $sym; kind = $snap.Kind; stop = $snap.Stop; target = $snap.Target
+                           trail_percent = $snap.TrailPercent; trail_price = $snap.TrailPrice; at = (Get-Date).ToUniversalTime().ToString("o") }
+}
+
+# Start of every live manage pass: any symbol a partial left short of full
+# stop coverage (cancel stuck in pending_cancel, failed re-place) is re-covered
+# on its whole position before anything else happens.
+function Invoke-AggrProtectRestore($cfg, $state, $myPositions) {
+    if ((Test-AggrDryRun $cfg) -or @($state.aggr_protect_restore).Count -eq 0) { return }
+    $keep = @()
+    foreach ($e in @($state.aggr_protect_restore)) {
+        if ($null -eq $e) { continue }
+        $pos = @($myPositions) | Where-Object { $_ -and $_.symbol -eq $e.sym } | Select-Object -First 1
+        if ($null -eq $pos) { continue }   # position closed: nothing to protect
+        $qty = [int][Math]::Abs([double]$pos.qty)
+        $exitSide = if ($pos.side -eq "long") { "sell" } else { "buy" }
+        $live = @(Get-AggrExitOrders $cfg $e.sym $exitSide)
+        $covered = 0
+        foreach ($o in $live) { if ($o.status -ne "pending_cancel" -and $script:AggrStopTypes -contains (Get-AggrOrderType $o)) { $covered += [int][Math]::Abs([double]$o.qty) } }
+        if ($covered -ge $qty) { Write-AggrSkip @{ sym = $e.sym; event = "PROTECT_RESTORE"; skip_reason = "PROTECT_RESTORE_COVERED"; qty = $qty }; continue }
+        $snap = [pscustomobject]@{ Kind = [string]$e.kind; Stop = [double]$e.stop; Target = [double]$e.target; TrailPercent = $e.trail_percent; TrailPrice = $e.trail_price }
+        $rz = Invoke-AggrResizeProtection $cfg $e.sym $exitSide $qty $snap ("R" + (Get-Date).ToUniversalTime().ToString("HHmmss"))
+        if ($rz.Ok) { Write-AggrSkip @{ sym = $e.sym; event = "PROTECT_RESTORE"; skip_reason = "PROTECT_RESTORED"; qty = $qty; kind = $rz.Protect.Kind; payload = $rz.Protect.Payload } }
+        else {
+            $keep += $e
+            Write-Host ("  [AGGR][ALERT] {0} still NOT fully protected ({1} of {2} shares covered) -- restore failed at {3}" -f $e.sym, $covered, $qty, $rz.Stage) -ForegroundColor Red
+            Write-AggrSkip @{ sym = $e.sym; event = "PROTECT_RESTORE"; skip_reason = "PROTECT_RESTORE_FAILED"; qty = $qty; covered = $covered; stage = $rz.Stage }
+        }
+    }
+    $state.aggr_protect_restore = $keep
+}
+
+function Invoke-AggrStockPartial($cfg, $state, $pos, [int]$pq, [double]$rMult) {
+    $dry = Test-AggrDryRun $cfg
+    $sym = [string]$pos.symbol; $qty = [int][Math]::Abs([double]$pos.qty); $keep = $qty - $pq
+    $exitSide = if ($pos.side -eq "long") { "sell" } else { "buy" }
+    $day = (Get-EasternTime).ToString("yyyyMMdd"); $dayKey = "{0}:{1}" -f $day, $sym
+    $stamp = (Get-Date).ToUniversalTime().ToString("HHmmss")
+    $base = @{ sym = $sym; event = "PARTIAL"; r_mult = [Math]::Round($rMult, 2); qty = $qty; sell_qty = $pq; keep_qty = $keep }
+    $log = {
+        param([string]$reason, [hashtable]$extra = @{})
+        $r = @{}; foreach ($k in $base.Keys) { $r[$k] = $base[$k] }; foreach ($k in $extra.Keys) { $r[$k] = $extra[$k] }
+        $r.skip_reason = $reason; Write-AggrSkip $r
+    }
+    $result = { param([string]$o, $extra = @{}) $r = [ordered]@{ Outcome = $o; Sym = $sym }; foreach ($k in $extra.Keys) { $r[$k] = $extra[$k] }; [pscustomobject]$r }
+
+    if (@($state.aggr_partial_failed) -contains $dayKey) { return (& $result "SKIPPED_FAILED_TODAY") }
+    if ($pq -lt 1 -or $keep -lt 1) { return (& $result "SKIPPED_QTY") }
+    if (-not $dry -and -not (Test-MarketOpen $cfg)) { & $log "PARTIAL_DEFERRED" @{ note = "market closed: a queued market sell would leave shares unprotected overnight" }; return (& $result "DEFERRED") }
+
+    $orders = @(Get-AggrExitOrders $cfg $sym $exitSide)
+    $snap = Get-AggrProtectionSnapshot $orders ([string]$pos.side) ([double]$pos.current_price)
+    $px = [double]$pos.current_price
+    $stopBad = if ($snap.Kind -eq "trail") { $false } elseif ($pos.side -eq "long") { $snap.Stop -le 0 -or $snap.Stop -ge $px } else { $snap.Stop -le 0 -or $snap.Stop -le $px }
+    $sellCoid = "PARTIAL_{0}_{1}" -f $sym, $day
+    $sellPayload = [ordered]@{ symbol = $sym; qty = $pq.ToString(); side = $exitSide; type = "market"; time_in_force = "day"; client_order_id = $sellCoid }
+    if ($orders.Count -eq 0 -or $snap.Kind -eq "none" -or $stopBad) {
+        $why = if ($orders.Count -eq 0) { "no live exit orders (position already unprotected; legacy protective fallback owns it)" } else { "no usable stop on the live exit orders" }
+        & $log $(if ($dry) { "DRYRUN_PARTIAL" } else { "PARTIAL_ABORTED_NO_STOP" }) @{ step = "ABORT"; note = $why; stop = $snap.Stop; price = $px }
+        return (& $result "ABORTED_NO_STOP")
+    }
+
+    $protectPayload  = New-AggrProtectionPayload $sym $exitSide $keep $snap $snap.Kind ($stamp + "1")
+    $fallbackPayload = if ($snap.Stop -gt 0) { New-AggrProtectionPayload $sym $exitSide $keep $snap "stop" ($stamp + "3") } else { $null }
+
+    if ($dry) {
+        $ids = @($orders | ForEach-Object { [ordered]@{ id = $_.id; type = (Get-AggrOrderType $_); stop_price = $_.stop_price; limit_price = $_.limit_price; qty = $_.qty } })
+        & $log "DRYRUN_PARTIAL" @{ step = "CANCEL_EXITS"; seq = 1; orders = $ids; note = "DELETE each, then poll until none live" }
+        & $log "DRYRUN_PARTIAL" @{ step = "PROTECT"; seq = 2; payload = $protectPayload; fallback_payload = $fallbackPayload; note = "protection for the kept shares BEFORE the sell; 1 retry, then plain-stop fallback" }
+        & $log "DRYRUN_PARTIAL" @{ step = "SELL"; seq = 3; payload = $sellPayload }
+        & $log "DRYRUN_PARTIAL" @{ step = "VERIFY"; seq = 4; note = "poll the sell; if rejected or partly filled, cancel protection and re-place it on the actual position qty; market hours only" }
+        return (& $result "DRYRUN" @{ Protect = $protectPayload; Sell = $sellPayload })
+    }
+
+    # 1. Free the shares.
+    $cancelErrs = Remove-AggrOrders $cfg $orders
+    $w = Wait-AggrExitOrdersGone $cfg $sym $exitSide
+    if (-not $w.Gone) {
+        $pending = @($w.Left | Where-Object { $_.status -eq "pending_cancel" })
+        if ($pending.Count -gt 0) { Add-AggrProtectRestore $state $sym $snap }   # will finish cancelling: re-cover next scan
+        $state.aggr_partial_failed = @($state.aggr_partial_failed) + $dayKey
+        Write-Host ("  [AGGR][ALERT] {0} partial aborted: exit orders did not cancel ({1})" -f $sym, (($w.Left | ForEach-Object { "$($_.id)=$($_.status)" }) -join ", ")) -ForegroundColor Red
+        & $log "PARTIAL_ABORTED_CANCEL" @{ left = @($w.Left | ForEach-Object { "$($_.id)=$($_.status)" }); errors = $cancelErrs; restore_queued = ($pending.Count -gt 0) }
+        return (& $result "ABORTED_CANCEL" @{ Errors = $cancelErrs })
+    }
+
+    # 2. Protect the shares we keep, before selling anything.
+    $prot = Set-AggrProtection $cfg $sym $exitSide $keep $snap $stamp
+    if (-not $prot.Ok) {
+        $state.aggr_partial_failed = @($state.aggr_partial_failed) + $dayKey
+        $full = Set-AggrProtection $cfg $sym $exitSide $qty $snap ($stamp + "F")
+        if (-not $full.Ok) {
+            Add-AggrProtectRestore $state $sym $snap
+            Write-Host ("  [AGGR][ALERT] {0} UNPROTECTED: {1} shares have no stop -- protection re-place failed ({2})" -f $sym, $qty, $prot.Error) -ForegroundColor Red
+            & $log "PARTIAL_UNPROTECTED" @{ error = $prot.Error; restore_queued = $true }
+            return (& $result "UNPROTECTED")
+        }
+        & $log "PARTIAL_ABORTED_PROTECT" @{ error = $prot.Error; restored_kind = $full.Kind; restored_qty = $qty }
+        return (& $result "ABORTED_PROTECT")
+    }
+    if ($prot.Fallback) {
+        Write-Host ("  [AGGR][ALERT] {0} {1} re-place failed -- FELL BACK to a plain stop @ {2:F2} on {3} shares" -f $sym, $snap.Kind, $snap.Stop, $keep) -ForegroundColor Red
+        & $log "PARTIAL_PROTECT_FALLBACK" @{ wanted = $snap.Kind; payload = $prot.Payload; error = $prot.Error }
+    }
+
+    # 3. Sell 1/3. The client_order_id is fixed per symbol per day, so a retry can never double-sell.
+    $sell = $null; $sellErr = $null
+    try { $sell = Invoke-AggrApi $cfg "POST" "/v2/orders" ([hashtable]$sellPayload) } catch { $sellErr = $_.Exception.Message }
+    if ($null -eq $sell -or -not $sell.id) {
+        try { $sell = Invoke-AggrApi $cfg "GET" ("/v2/orders:by_client_order_id?client_order_id=" + $sellCoid) } catch { $sell = $null }
+    }
+    $filled = 0; $final = $null
+    if ($sell -and $sell.id) {
+        $state.aggr_partial_done = @($state.aggr_partial_done) + $sym
+        $final = Wait-AggrOrderFinal $cfg ([string]$sell.id)
+        if ($final -and $final.filled_qty) { $filled = [int][Math]::Floor([double]$final.filled_qty) }
+    } else {
+        $state.aggr_partial_failed = @($state.aggr_partial_failed) + $dayKey
+    }
+
+    # 4. Anything not sold is not covered yet: resize protection to the real position.
+    $leftover = $pq - $filled
+    $resize = $null
+    if ($leftover -gt 0) {
+        $posNow = $null
+        try { $posNow = Invoke-AggrApi $cfg "GET" ("/v2/positions/" + $sym) } catch {}
+        $posQty = if ($posNow -and $posNow.qty) { [int][Math]::Abs([double]$posNow.qty) } else { $keep + $leftover }
+        $resize = Invoke-AggrResizeProtection $cfg $sym $exitSide $posQty $snap ($stamp + "Z")
+        if (-not $resize.Ok) {
+            Add-AggrProtectRestore $state $sym $snap
+            Write-Host ("  [AGGR][ALERT] {0} {1} unsold shares may be UNPROTECTED -- resize failed at {2}; restore queued" -f $sym, $leftover, $resize.Stage) -ForegroundColor Red
+        }
+        & $log $(if ($resize.Ok) { "PARTIAL_PROTECT_RESIZED" } else { "PARTIAL_RESIZE_FAILED" }) @{ position_qty = $posQty; sold = $filled; stage = $resize.Stage }
+    }
+
+    $outcome = if (-not ($sell -and $sell.id)) { "SELL_REJECTED" } elseif ($leftover -gt 0) { "PARTIAL_FILL" } else { "DONE" }
+    & $log $(if ($outcome -eq "SELL_REJECTED") { "PARTIAL_SELL_REJECTED" } else { "PARTIAL_DONE" }) @{
+        sold = $filled; protect_kind = $prot.Kind; protect_fallback = $prot.Fallback; sell_status = $(if ($final) { $final.status } else { $null }); error = $sellErr; payload = $sellPayload }
+    return (& $result $outcome @{ Sold = $filled; Protect = $prot; Resize = $resize; Error = $sellErr })
+}
+
 # ── Position management: AI migration + partials + call exits ────────────────
 
 function Get-AggrJournalOpen([string]$sym) {
@@ -302,6 +599,7 @@ function Get-AggrJournalOpen([string]$sym) {
 
 function Invoke-AggrManage($cfg, $state, $myPositions, $allPositions) {
     $a = Get-AggrCfg $cfg; $dry = Test-AggrDryRun $cfg
+    Invoke-AggrProtectRestore $cfg $state $myPositions
     foreach ($pos in @($myPositions)) {
         if ($null -eq $pos -or $pos.asset_class -eq "us_option") { continue }
         $sym = $pos.symbol; $qty = [int][Math]::Abs([double]$pos.qty)
@@ -335,20 +633,10 @@ function Invoke-AggrManage($cfg, $state, $myPositions, $allPositions) {
             }
         }
 
-        # (2) One-time 1/3 partial at +2R (stocks).
+        # (2) One-time 1/3 partial at +2R (stocks): cancel exits -> protect the
+        # remaining 2/3 -> sell 1/3. See Invoke-AggrStockPartial.
         $pq = Get-AggrStockPartialQty $rMult $qty (@($state.aggr_partial_done) -contains $sym) $a
-        if ($pq -gt 0) {
-            $side = if ($pos.side -eq "long") { "sell" } else { "buy" }
-            $payload = [ordered]@{ symbol = $sym; qty = $pq.ToString(); side = $side; type = "market"; time_in_force = "day"
-                                   client_order_id = ("PARTIAL_{0}_{1}" -f $sym, (Get-Date -Format "HHmmss")) }
-            if ($dry) { Write-AggrSkip @{ sym = $sym; event = "PARTIAL"; skip_reason = "DRYRUN_PARTIAL"; r_mult = [Math]::Round($rMult, 2); payload = $payload; note = "then resize stop to remaining qty" } }
-            else {
-                $res = Invoke-AggrApi $cfg "POST" "/v2/orders" $payload
-                if ($res) { $state.aggr_partial_done = @($state.aggr_partial_done) + $sym }
-                # Remaining-qty stop resize is handled by Repair-DuplicateStops/protective fallback on next scan.
-                Write-AggrSkip @{ sym = $sym; event = "PARTIAL"; skip_reason = $(if ($res) { "PARTIAL_SENT" } else { "PARTIAL_FAILED" }); payload = $payload }
-            }
-        }
+        if ($pq -gt 0) { $null = Invoke-AggrStockPartial $cfg $state $pos $pq $rMult }
     }
     # clean partial/migrated flags for symbols no longer held
     $held = @($myPositions | ForEach-Object { $_.symbol })
