@@ -23,6 +23,7 @@ param(
 . (Join-Path $PSScriptRoot "alpaca_regime.ps1")
 . (Join-Path $PSScriptRoot "alpaca_news.ps1")
 . (Join-Path $PSScriptRoot "alpaca_earnings.ps1")
+. (Join-Path $PSScriptRoot "alpaca_swing_aggr.ps1")
 
 $StatePath   = Join-Path $PSScriptRoot "alpaca_state.json"
 $PendingPath = Join-Path $PSScriptRoot "pending_approval.json"
@@ -954,6 +955,10 @@ function Run-Scan($cfg, $state) {
         $maxW = if ($cfg.max_watchlist) { [int]$cfg.max_watchlist } else { 12 }
         $dynamicList = Get-DynamicWatchlist $cfg $maxW
         $state.active_watchlist = $dynamicList
+        if (Test-AggrEnabled $cfg) {
+            Initialize-AggrState $state
+            $state.aggr_watchlist = @(Get-AggrWatchlist $dynamicList (Get-LastScreenerCandidates) (Get-AggrCfg $cfg))
+        }
         $state.watchlist_date   = $etToday
         Write-ScreenerReport (Get-LastScreenerCandidates) $dynamicList
         Save-State $state
@@ -987,7 +992,9 @@ function Run-Scan($cfg, $state) {
 
     $allPositions = @(Get-Positions $cfg)
     $allPosSyms   = @{}; foreach ($p in $allPositions) { if ($p) { $allPosSyms[$p.symbol] = $true } }
-    $positions    = @($allPositions | Where-Object { $mySymbols.ContainsKey($_.symbol) })
+    $myAllPositions = @($allPositions | Where-Object { $mySymbols.ContainsKey($_.symbol) })
+    # Legacy logic manages stock only; aggressive-mode calls (SWCALL) are managed by alpaca_swing_aggr.ps1.
+    $positions    = @($myAllPositions | Where-Object { $_.asset_class -ne "us_option" })
     $foreignCount = $allPositions.Count - $positions.Count
     $posCount     = $positions.Count
 
@@ -1038,6 +1045,25 @@ function Run-Scan($cfg, $state) {
     # Swing mode: kill unfilled GTC entry brackets from prior days.
     # Held symbols are excluded -- their brackets are live protection.
     if ($swingMode) { Cancel-StaleEntries $cfg $allPosSyms }
+
+    # ── Swing Aggressive Mode (spec v1.1) ─────────────────────────────────
+    # dry_run=true: shadow evaluation only (read-only API, journal + payloads).
+    # dry_run=false: aggressive engine takes over entries; legacy entry loop is skipped.
+    if ($swingMode -and (Test-AggrEnabled $cfg)) {
+        try {
+            $aggrWorking = @{}
+            $aggrOO = Invoke-AlpacaApi $cfg "GET" "/v2/orders?status=open&limit=200"
+            foreach ($o in @($aggrOO)) { if ($o -and $o.symbol) { $aggrWorking[$o.symbol] = $true } }
+            Invoke-AggrCycle $cfg $state $regime $spyDaily $equity $bp $myAllPositions $allPositions $aggrWorking (Test-SwingEntryWindow)
+            Save-State $state
+        } catch {
+            Write-Host ("  [AGGR] cycle error: {0}" -f $_.Exception.Message) -ForegroundColor Red
+        }
+        if (-not (Test-AggrDryRun $cfg)) {
+            $state.last_scan = (Get-Date).ToString("o"); Save-State $state
+            return
+        }
+    }
 
     # Skip new entries if at max positions or outside window
     if ($posCount -ge [int]$cfg.max_positions) {

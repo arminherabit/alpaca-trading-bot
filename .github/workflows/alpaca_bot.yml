@@ -129,7 +129,7 @@ jobs:
           FILES=(alpaca_state.json alpaca_dashboard.html alpaca_ticker_memory.json earnings_calendar.json
                  alpaca_journal.json alpaca_review.md alpaca_equity_history.json docs/index.html
                  data/opus_options_state.json data/opus_iv_history.json data/journal_options.jsonl
-                 data/journal_options_orders.jsonl data/journal_options_skips.jsonl
+                 data/journal_options_orders.jsonl data/journal_options_skips.jsonl data/journal_swing_skips.jsonl
                  data/earnings.json data/earnings_override.json
                  reports/opus_options_review_*.md)
           for f in "${FILES[@]}"; do

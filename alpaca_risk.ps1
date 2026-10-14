@@ -15,7 +15,8 @@ function Get-PositionSize {
         [double]$buyingPower    = 0, # cap position value to BP / max_positions
         [int]$maxPositions      = 3,
         [double]$edgeMultiplier = 1.0,  # from Get-StrategyEdge -- proven setups get bigger size
-        [double]$regimeMultiplier = 1.0 # from Get-MarketRegime -- volatile tape gets smaller size
+        [double]$regimeMultiplier = 1.0, # from Get-MarketRegime -- volatile tape gets smaller size
+        [double]$maxRiskCap = 1.5        # cfg.max_risk_pct_cap (was hard-coded 1.5)
     )
 
     if ($entry -le 0 -or $stop -le 0) { return $null }
@@ -26,7 +27,7 @@ function Get-PositionSize {
     # The cap matters: a "proven" strategy on a quiet day could compound multipliers
     # to >2%, which violates the discipline rule. Never risk more than 1.5% on one trade.
     $effectiveRiskPct = $maxRiskPct * $edgeMultiplier * $regimeMultiplier
-    if ($effectiveRiskPct -gt 1.5) { $effectiveRiskPct = 1.5 }
+    if ($effectiveRiskPct -gt $maxRiskCap) { $effectiveRiskPct = $maxRiskCap }
     if ($effectiveRiskPct -lt 0.1) { $effectiveRiskPct = 0.0 }  # full-stop signal from regime
 
     if ($effectiveRiskPct -le 0) {
@@ -129,7 +130,8 @@ function Validate-Trade {
     $sizing  = Get-PositionSize -equity $equity -entry $signal.Entry `
                                 -stop $signal.Stop -maxRiskPct $cfg.max_risk_pct `
                                 -buyingPower $bp -maxPositions ([int]$cfg.max_positions) `
-                                -edgeMultiplier $edgeMult -regimeMultiplier $regimeMult
+                                -edgeMultiplier $edgeMult -regimeMultiplier $regimeMult `
+                                -maxRiskCap $(if ($null -ne $cfg.max_risk_pct_cap) { [double]$cfg.max_risk_pct_cap } else { 1.5 })
     $rrCheck = Test-RiskReward  -entry $signal.Entry -stop $signal.Stop `
                                 -target $signal.T1   -side $signal.Side `
                                 -minRR $cfg.min_rr_ratio
