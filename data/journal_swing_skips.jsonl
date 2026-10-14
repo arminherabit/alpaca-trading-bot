@@ -31,3 +31,24 @@
 {"ts":"2026-10-14T14:01:16.7654701Z","dd_pct":0.49,"dry_run":true,"regime":"BULL","dd_tier":"NORMAL","sym":"LRCX","heat_before":1450.9,"skip_reason":"ONE_PER_SCAN"}
 {"ts":"2026-10-14T14:01:16.7659854Z","dd_pct":0.49,"dry_run":true,"regime":"BULL","dd_tier":"NORMAL","sym":"JPM","heat_before":1450.9,"skip_reason":"ONE_PER_SCAN"}
 {"ts":"2026-10-14T14:01:16.7664698Z","dd_pct":0.49,"dry_run":true,"regime":"BULL","dd_tier":"NORMAL","sym":"INTC","heat_before":1450.9,"skip_reason":"ONE_PER_SCAN"}
+{"ts":"2026-10-14T14:10:28.1849486Z","current_stop":28.18,"skip_reason":"DRYRUN_MIGRATE","sym":"PFE","new_tp":39.4,"qty":605,"event":"MIGRATE","r_per_share":1.0197,"note":"dry run: no order modified; legacy ladder keeps managing live","current_tp":32.77}
+{"ts":"2026-10-14T14:10:28.6494804Z","regime":"BULL","heat_before":2067.84,"sym":"SPY","skip_reason":"INDEX_ANCHOR","dry_run":true,"dd_tier":"NORMAL","dd_pct":0.595}
+{"ts":"2026-10-14T14:10:28.6518209Z","regime":"BULL","heat_before":2067.84,"sym":"QQQ","skip_reason":"INDEX_ANCHOR","dry_run":true,"dd_tier":"NORMAL","dd_pct":0.595}
+{"ts":"2026-10-14T14:10:29.0890563Z","regime":"BULL","heat_before":2067.84,"sym":"CRWV","skip_reason":"NO_SETUP","dry_run":true,"dd_tier":"NORMAL","dd_pct":0.595}
+{"ts":"2026-10-14T14:10:29.0904716Z","regime":"BULL","heat_before":2067.84,"sym":"PFE","skip_reason":"HELD_OR_WORKING","dry_run":true,"dd_tier":"NORMAL","dd_pct":0.595}
+{"ts":"2026-10-14T14:10:29.3328787Z","regime":"BULL","heat_before":2067.84,"sym":"MRNA","skip_reason":"NO_SETUP","dry_run":true,"dd_tier":"NORMAL","dd_pct":0.595}
+{"ts":"2026-10-14T14:10:29.5485879Z","regime":"BULL","heat_before":2067.84,"sym":"UNH","skip_reason":"NO_SETUP","dry_run":true,"dd_tier":"NORMAL","dd_pct":0.595}
+{"ts":"2026-10-14T14:10:29.9572962Z","regime":"BULL","heat_before":2067.84,"sym":"TGT","skip_reason":"NO_SETUP","dry_run":true,"dd_tier":"NORMAL","dd_pct":0.595}
+{"ts":"2026-10-14T14:10:30.2748987Z","call_skip":"CONF","dd_pct":0.595,"dry_run":true,"regime":"BULL","riskPct":0.975,"risk_usd":924.42,"skip_reason":"DRYRUN_ENTERED","sym":"AEHL","setup":"BRKOUT","heat_before":2067.84,"rs":213.72,"payload":{"symbol":"AEHL","qty":"426","side":"buy","type":"limit","time_in_force":"gtc","limit_price":"29.00","order_class":"bracket","take_profit":{"limit_price":"50.70"},"stop_loss":{"stop_price":"26.83"},"client_order_id":"BRKOUT_AEHL_141030"},"dd_tier":"NORMAL","heat_after":2992.26,"conf":80,"instrument":"stock"}
+{"ts":"2026-10-14T14:10:30.2773279Z","regime":"BULL","heat_before":2992.26,"sym":"SNXX","skip_reason":"ONE_PER_SCAN","dry_run":true,"dd_tier":"NORMAL","dd_pct":0.595}
+{"ts":"2026-10-14T14:10:30.2783170Z","regime":"BULL","heat_before":2992.26,"sym":"IREN","skip_reason":"ONE_PER_SCAN","dry_run":true,"dd_tier":"NORMAL","dd_pct":0.595}
+{"ts":"2026-10-14T14:10:30.2792807Z","regime":"BULL","heat_before":2992.26,"sym":"CRWD","skip_reason":"ONE_PER_SCAN","dry_run":true,"dd_tier":"NORMAL","dd_pct":0.595}
+{"ts":"2026-10-14T14:10:30.2802760Z","regime":"BULL","heat_before":2992.26,"sym":"SOFI","skip_reason":"ONE_PER_SCAN","dry_run":true,"dd_tier":"NORMAL","dd_pct":0.595}
+{"ts":"2026-10-14T14:10:30.2812422Z","regime":"BULL","heat_before":2992.26,"sym":"KORU","skip_reason":"ONE_PER_SCAN","dry_run":true,"dd_tier":"NORMAL","dd_pct":0.595}
+{"ts":"2026-10-14T14:10:30.2821923Z","regime":"BULL","heat_before":2992.26,"sym":"SMCI","skip_reason":"ONE_PER_SCAN","dry_run":true,"dd_tier":"NORMAL","dd_pct":0.595}
+{"ts":"2026-10-14T14:10:30.2831877Z","regime":"BULL","heat_before":2992.26,"sym":"PANW","skip_reason":"ONE_PER_SCAN","dry_run":true,"dd_tier":"NORMAL","dd_pct":0.595}
+{"ts":"2026-10-14T14:10:30.2841046Z","regime":"BULL","heat_before":2992.26,"sym":"TSLA","skip_reason":"ONE_PER_SCAN","dry_run":true,"dd_tier":"NORMAL","dd_pct":0.595}
+{"ts":"2026-10-14T14:10:30.2851705Z","regime":"BULL","heat_before":2992.26,"sym":"CIFR","skip_reason":"ONE_PER_SCAN","dry_run":true,"dd_tier":"NORMAL","dd_pct":0.595}
+{"ts":"2026-10-14T14:10:30.2865219Z","regime":"BULL","heat_before":2992.26,"sym":"LRCX","skip_reason":"ONE_PER_SCAN","dry_run":true,"dd_tier":"NORMAL","dd_pct":0.595}
+{"ts":"2026-10-14T14:10:30.2878620Z","regime":"BULL","heat_before":2992.26,"sym":"JPM","skip_reason":"ONE_PER_SCAN","dry_run":true,"dd_tier":"NORMAL","dd_pct":0.595}
+{"ts":"2026-10-14T14:10:30.2892492Z","regime":"BULL","heat_before":2992.26,"sym":"INTC","skip_reason":"ONE_PER_SCAN","dry_run":true,"dd_tier":"NORMAL","dd_pct":0.595}
