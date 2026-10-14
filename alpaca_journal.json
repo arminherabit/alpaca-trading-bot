@@ -12,6 +12,19 @@
       "confidence": 95,
       "regime": "BULL",
       "reason": "20d-high break (ext 0.51 ATR, volPace 4.5x, RS +5.0%)"
+    },
+    {
+      "opened_at": "2026-10-14T14:01:17.4418801Z",
+      "symbol": "PFE",
+      "strategy": "BRKOUT",
+      "side": "buy",
+      "entry": 29.2,
+      "stop": 28.18,
+      "qty": 605,
+      "risk_usd": 617.1,
+      "confidence": 95,
+      "regime": "BULL",
+      "reason": "20d-high break (ext 0.51 ATR, volPace 2.7x, RS +3.7%)"
     }
   ],
   "closed": [
