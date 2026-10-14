@@ -34,6 +34,12 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          # Check out the branch tip, not the triggering SHA. When two triggers
+          # land together, the concurrency group queues the second run, and by
+          # the time it starts the first run has already pushed fresh state.
+          # Checking out the stale SHA made the second run's state commit
+          # conflict on rebase (STATE_PUSH_FAILED, run 38457992009).
+          ref: ${{ github.ref_name }}
 
       # PowerShell ships preinstalled on ubuntu-latest, so this is a no-op on a
       # healthy runner. It used to run `apt-get update` unconditionally under
