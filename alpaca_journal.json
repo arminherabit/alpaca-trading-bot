@@ -25,19 +25,6 @@
       "confidence": 95,
       "regime": "BULL",
       "reason": "20d-high break (ext 0.51 ATR, volPace 2.7x, RS +3.7%)"
-    },
-    {
-      "opened_at": "2026-10-14T14:10:32.8868066Z",
-      "symbol": "AEHL",
-      "strategy": "BRKOUT",
-      "side": "buy",
-      "entry": 29.0,
-      "stop": 26.83,
-      "qty": 284,
-      "risk_usd": 616.28,
-      "confidence": 80,
-      "regime": "BULL",
-      "reason": "20d-high break (ext 11.87 ATR, volPace 13.1x, RS +213.7%)"
     }
   ],
   "closed": [
@@ -400,6 +387,25 @@
       "pnl": -611.82,
       "r_multiple": -1.01,
       "hold_days": 2,
+      "outcome": "LOSS"
+    },
+    {
+      "opened_at": "2026-10-14T14:10:32.8868066Z",
+      "symbol": "AEHL",
+      "strategy": "BRKOUT",
+      "side": "buy",
+      "entry": 29.0,
+      "stop": 26.83,
+      "qty": 284,
+      "risk_usd": 616.28,
+      "confidence": 80,
+      "regime": "BULL",
+      "reason": "20d-high break (ext 11.87 ATR, volPace 13.1x, RS +213.7%)",
+      "closed_at": "2026-10-14T14:20:22.4501476Z",
+      "exit": 25.64,
+      "pnl": -340.63,
+      "r_multiple": -0.55,
+      "hold_days": 0,
       "outcome": "LOSS"
     }
   ],
