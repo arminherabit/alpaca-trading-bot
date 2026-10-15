@@ -25,6 +25,19 @@
       "confidence": 95,
       "regime": "BULL",
       "reason": "20d-high break (ext 0.51 ATR, volPace 2.7x, RS +3.7%)"
+    },
+    {
+      "opened_at": "2026-10-15T13:50:26.0879597Z",
+      "symbol": "UNH",
+      "strategy": "BRKOUT",
+      "side": "buy",
+      "entry": 405.12,
+      "stop": 383.37,
+      "qty": 21,
+      "risk_usd": 456.75,
+      "confidence": 85,
+      "regime": "NEUTRAL",
+      "reason": "20d-high break (ext 0.51 ATR, volPace 2.2x, RS +7.5%)"
     }
   ],
   "closed": [

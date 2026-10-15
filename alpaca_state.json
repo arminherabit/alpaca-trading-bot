@@ -1,9 +1,9 @@
 {
-  "trades_today": 0,
+  "trades_today": 1,
   "wins": 0,
   "losses": 0,
   "pnl_today": 0.0,
-  "last_scan": "2026-10-15T13:40:21.3855023+00:00",
+  "last_scan": "2026-10-15T13:50:26.0916626+00:00",
   "session_start": "2026-05-14T04:50:22.4733863+00:00",
   "watchlist_date": "2026-10-14",
   "active_watchlist": [
@@ -103,8 +103,8 @@
   "last_review_week": "2026-W42",
   "pyramided_syms": [],
   "aggr_halted": false,
-  "aggr_day": "2026-10-14",
-  "aggr_trades_today": 2,
+  "aggr_day": "2026-10-15",
+  "aggr_trades_today": 1,
   "aggr_dry_entered": [],
   "aggr_watchlist": [
     "SPY",
@@ -156,6 +156,20 @@
       "filled": true,
       "filled_at": "2026-10-14T14:01:26.526933Z",
       "fill_source": "LIVE_FILL"
+    },
+    {
+      "sym": "UNH",
+      "kind": "stock",
+      "side": "buy",
+      "entry": 405.12,
+      "stop": 383.37,
+      "tp": 622.62,
+      "qty": 31,
+      "risk_usd": 674.25,
+      "opened_at": "2026-10-15T13:50:24.0107283Z",
+      "limit": 405.12,
+      "filled": false,
+      "filled_at": null
     }
   ],
   "aggr_shadow_closed": [
