@@ -1255,3 +1255,23 @@
 {"ts":"2026-10-15T18:20:28.9519110Z","dd_pct":0.478,"dry_run":true,"skip_reason":"NO_SETUP","heat_before":2742.09,"sym":"TGT","regime":"NEUTRAL","dd_tier":"NORMAL"}
 {"ts":"2026-10-15T18:20:29.1175215Z","regime":"NEUTRAL","stale_reason":"live quote unusable: spread 5.45% (max 2%)","extension_atr":0.11,"conf":95,"drift_pct":null,"live_check":"STALE_SIGNAL","dd_tier":"NORMAL","pct_above_20d_high":0.23,"setup":"BRKOUT","quote_age_sec":26.9,"dd_pct":0.478,"dry_run":true,"quote_spread_pct":5.45,"rs":7.37,"skip_reason":"STALE_SIGNAL","sym":"ABBV","live_mid":278.335,"heat_before":2742.09}
 {"ts":"2026-10-15T18:20:29.1867519Z","dd_pct":0.478,"dry_run":true,"skip_reason":"NO_SETUP","heat_before":2742.09,"sym":"ISRG","regime":"NEUTRAL","dd_tier":"NORMAL"}
+{"ts":"2026-10-15T18:30:28.9519335Z","dd_tier":"NORMAL","dd_pct":0.519,"regime":"NEUTRAL","skip_reason":"INDEX_ANCHOR","dry_run":true,"heat_before":2742.09,"sym":"SPY"}
+{"ts":"2026-10-15T18:30:28.9761577Z","dd_tier":"NORMAL","dd_pct":0.519,"regime":"NEUTRAL","skip_reason":"INDEX_ANCHOR","dry_run":true,"heat_before":2742.09,"sym":"QQQ"}
+{"ts":"2026-10-15T18:30:29.3115629Z","dd_tier":"NORMAL","dd_pct":0.519,"regime":"NEUTRAL","skip_reason":"NO_SETUP","dry_run":true,"heat_before":2742.09,"sym":"IREN"}
+{"ts":"2026-10-15T18:30:29.6173448Z","dd_tier":"NORMAL","dd_pct":0.519,"regime":"NEUTRAL","skip_reason":"NO_SETUP","dry_run":true,"heat_before":2742.09,"sym":"CRWV"}
+{"ts":"2026-10-15T18:30:29.9220766Z","dd_tier":"NORMAL","dd_pct":0.519,"regime":"NEUTRAL","skip_reason":"NO_SETUP","dry_run":true,"heat_before":2742.09,"sym":"INTC"}
+{"ts":"2026-10-15T18:30:30.3074110Z","dd_tier":"NORMAL","dd_pct":0.519,"regime":"NEUTRAL","skip_reason":"NO_SETUP","dry_run":true,"heat_before":2742.09,"sym":"DRAM"}
+{"ts":"2026-10-15T18:30:31.4417066Z","dd_tier":"NORMAL","dd_pct":0.519,"regime":"NEUTRAL","skip_reason":"NO_SETUP","dry_run":true,"heat_before":2742.09,"sym":"SMCI"}
+{"ts":"2026-10-15T18:30:32.5533052Z","dd_tier":"NORMAL","dd_pct":0.519,"regime":"NEUTRAL","skip_reason":"NO_SETUP","dry_run":true,"heat_before":2742.09,"sym":"SPCX"}
+{"ts":"2026-10-15T18:30:32.9307843Z","dd_tier":"NORMAL","dd_pct":0.519,"regime":"NEUTRAL","skip_reason":"NO_SETUP","dry_run":true,"heat_before":2742.09,"sym":"NKE"}
+{"ts":"2026-10-15T18:30:32.9350580Z","dd_tier":"NORMAL","dd_pct":0.519,"regime":"NEUTRAL","skip_reason":"COOLDOWN","dry_run":true,"heat_before":2742.09,"sym":"NVDA"}
+{"ts":"2026-10-15T18:30:33.2168347Z","dd_tier":"NORMAL","dd_pct":0.519,"regime":"NEUTRAL","skip_reason":"NO_SETUP","dry_run":true,"heat_before":2742.09,"sym":"GOOGL"}
+{"ts":"2026-10-15T18:30:33.4680470Z","dd_tier":"NORMAL","dd_pct":0.519,"regime":"NEUTRAL","skip_reason":"NO_SETUP","dry_run":true,"heat_before":2742.09,"sym":"GOOG"}
+{"ts":"2026-10-15T18:30:33.8318902Z","dd_tier":"NORMAL","dd_pct":0.519,"regime":"NEUTRAL","skip_reason":"NO_SETUP","dry_run":true,"heat_before":2742.09,"sym":"TSLA"}
+{"ts":"2026-10-15T18:30:34.8770595Z","dd_tier":"NORMAL","dd_pct":0.519,"regime":"NEUTRAL","skip_reason":"NO_SETUP","dry_run":true,"heat_before":2742.09,"sym":"HD"}
+{"ts":"2026-10-15T18:30:35.9611222Z","dd_tier":"NORMAL","dd_pct":0.519,"regime":"NEUTRAL","skip_reason":"NO_SETUP","dry_run":true,"heat_before":2742.09,"sym":"AMZN"}
+{"ts":"2026-10-15T18:30:36.2272294Z","dd_tier":"NORMAL","dd_pct":0.519,"regime":"NEUTRAL","skip_reason":"NO_SETUP","dry_run":true,"heat_before":2742.09,"sym":"MRNA"}
+{"ts":"2026-10-15T18:30:36.4520850Z","dd_tier":"NORMAL","dd_pct":0.519,"regime":"NEUTRAL","skip_reason":"NO_SETUP","dry_run":true,"heat_before":2742.09,"sym":"SBUX"}
+{"ts":"2026-10-15T18:30:36.7875526Z","dd_tier":"NORMAL","dd_pct":0.519,"regime":"NEUTRAL","skip_reason":"NO_SETUP","dry_run":true,"heat_before":2742.09,"sym":"TGT"}
+{"ts":"2026-10-15T18:30:37.4709483Z","dd_tier":"NORMAL","dd_pct":0.519,"regime":"NEUTRAL","skip_reason":"NO_SETUP","dry_run":true,"heat_before":2742.09,"sym":"ABBV"}
+{"ts":"2026-10-15T18:30:37.7822689Z","dd_tier":"NORMAL","dd_pct":0.519,"regime":"NEUTRAL","skip_reason":"NO_SETUP","dry_run":true,"heat_before":2742.09,"sym":"ISRG"}
