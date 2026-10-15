@@ -3,7 +3,7 @@
   "wins": 0,
   "losses": 0,
   "pnl_today": 0.0,
-  "last_scan": "2026-10-15T13:20:20.4646385+00:00",
+  "last_scan": "2026-10-15T13:30:41.5380742+00:00",
   "session_start": "2026-05-14T04:50:22.4733863+00:00",
   "watchlist_date": "2026-10-14",
   "active_watchlist": [
@@ -98,25 +98,14 @@
     "a208b4f9-9685-4fc3-acf6-922cde3cb9d4",
     "d6f84dc8-7818-4ef0-9a73-ea4451853515"
   ],
-  "equity_at_open": 95092.55,
-  "equity_at_open_date": "2026-10-14",
+  "equity_at_open": 94803.28,
+  "equity_at_open_date": "2026-10-15",
   "last_review_week": "2026-W42",
   "pyramided_syms": [],
   "aggr_halted": false,
   "aggr_day": "2026-10-14",
   "aggr_trades_today": 2,
-  "aggr_dry_entered": [
-    {
-      "sym": "PFE",
-      "kind": "stock",
-      "risk_usd": 830.28
-    },
-    {
-      "sym": "AEHL",
-      "kind": "stock",
-      "risk_usd": 924.42
-    }
-  ],
+  "aggr_dry_entered": [],
   "aggr_watchlist": [
     "SPY",
     "QQQ",
@@ -140,12 +129,54 @@
     "INTC"
   ],
   "aggr_migrate_logged": [
-    "2026-10-14:AI",
-    "2026-10-14:PFE"
+    "2026-10-15:AI",
+    "2026-10-15:PFE"
   ],
   "aggr_partial_done": [],
   "aggr_migrated": [],
   "aggr_calls": [],
   "aggr_partial_failed": [],
-  "aggr_protect_restore": []
+  "aggr_protect_restore": [],
+  "fill_checked": [
+    "586f5049-403f-431d-83ab-769aa6944621",
+    "93ac7b67-85c1-428f-ba7c-924ca13a8053"
+  ],
+  "aggr_shadow_open": [
+    {
+      "sym": "PFE",
+      "kind": "stock",
+      "side": "buy",
+      "stop": 28.18,
+      "tp": 39.4,
+      "qty": 814,
+      "risk_usd": 830.28,
+      "opened_at": "10/14/2026 14:01:16",
+      "limit": 29.2,
+      "entry": 29.199736,
+      "filled": true,
+      "filled_at": "2026-10-14T14:01:26.5269330Z",
+      "fill_source": "LIVE_FILL"
+    }
+  ],
+  "aggr_shadow_closed": [
+    {
+      "sym": "AEHL",
+      "kind": "stock",
+      "side": "buy",
+      "stop": 26.83,
+      "tp": 50.7,
+      "qty": 426,
+      "risk_usd": 924.42,
+      "opened_at": "10/14/2026 14:10:30",
+      "limit": 29.0,
+      "entry": 26.84,
+      "filled": true,
+      "filled_at": "2026-10-14T14:10:44.8389390Z",
+      "fill_source": "LIVE_FILL",
+      "exit": 25.640599,
+      "exit_reason": "STOP",
+      "pnl": -510.94
+    }
+  ],
+  "aggr_shadow_realized": -510.94
 }
