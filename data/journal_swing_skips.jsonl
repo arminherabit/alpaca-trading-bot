@@ -695,3 +695,23 @@
 {"ts":"2026-10-15T13:50:24.0313233Z","dd_pct":0.532,"regime":"NEUTRAL","skip_reason":"ONE_PER_SCAN","heat_before":2742.09,"sym":"LRCX","dd_tier":"NORMAL","dry_run":true}
 {"ts":"2026-10-15T13:50:24.0320512Z","dd_pct":0.532,"regime":"NEUTRAL","skip_reason":"ONE_PER_SCAN","heat_before":2742.09,"sym":"JPM","dd_tier":"NORMAL","dry_run":true}
 {"ts":"2026-10-15T13:50:24.0328166Z","dd_pct":0.532,"regime":"NEUTRAL","skip_reason":"ONE_PER_SCAN","heat_before":2742.09,"sym":"INTC","dd_tier":"NORMAL","dry_run":true}
+{"ts":"2026-10-15T14:00:44.5441626Z","sym":"SPY","dd_pct":0.458,"dry_run":true,"dd_tier":"NORMAL","heat_before":2742.09,"skip_reason":"INDEX_ANCHOR","regime":"RANGING"}
+{"ts":"2026-10-15T14:00:44.5524911Z","sym":"QQQ","dd_pct":0.458,"dry_run":true,"dd_tier":"NORMAL","heat_before":2742.09,"skip_reason":"INDEX_ANCHOR","regime":"RANGING"}
+{"ts":"2026-10-15T14:00:44.8019006Z","sym":"IREN","dd_pct":0.458,"dry_run":true,"dd_tier":"NORMAL","heat_before":2742.09,"skip_reason":"NO_SETUP","regime":"RANGING"}
+{"ts":"2026-10-15T14:00:44.8857094Z","sym":"CRWV","dd_pct":0.458,"dry_run":true,"dd_tier":"NORMAL","heat_before":2742.09,"skip_reason":"NO_SETUP","regime":"RANGING"}
+{"ts":"2026-10-15T14:00:44.9618413Z","sym":"INTC","dd_pct":0.458,"dry_run":true,"dd_tier":"NORMAL","heat_before":2742.09,"skip_reason":"NO_SETUP","regime":"RANGING"}
+{"ts":"2026-10-15T14:00:45.1551480Z","sym":"DRAM","dd_pct":0.458,"dry_run":true,"dd_tier":"NORMAL","heat_before":2742.09,"skip_reason":"NO_SETUP","regime":"RANGING"}
+{"ts":"2026-10-15T14:00:45.3817297Z","sym":"SMCI","dd_pct":0.458,"dry_run":true,"dd_tier":"NORMAL","heat_before":2742.09,"skip_reason":"NO_SETUP","regime":"RANGING"}
+{"ts":"2026-10-15T14:00:45.8256413Z","sym":"SPCX","dd_pct":0.458,"dry_run":true,"dd_tier":"NORMAL","heat_before":2742.09,"skip_reason":"NO_SETUP","regime":"RANGING"}
+{"ts":"2026-10-15T14:00:45.9792807Z","sym":"NKE","dd_pct":0.458,"dry_run":true,"dd_tier":"NORMAL","heat_before":2742.09,"skip_reason":"NO_SETUP","regime":"RANGING"}
+{"ts":"2026-10-15T14:00:45.9816637Z","sym":"NVDA","dd_pct":0.458,"dry_run":true,"dd_tier":"NORMAL","heat_before":2742.09,"skip_reason":"COOLDOWN","regime":"RANGING"}
+{"ts":"2026-10-15T14:00:46.1123835Z","sym":"GOOGL","dd_pct":0.458,"dry_run":true,"dd_tier":"NORMAL","heat_before":2742.09,"skip_reason":"NO_SETUP","regime":"RANGING"}
+{"ts":"2026-10-15T14:00:46.5973848Z","sym":"GOOG","dd_pct":0.458,"dry_run":true,"dd_tier":"NORMAL","heat_before":2742.09,"skip_reason":"NO_SETUP","regime":"RANGING"}
+{"ts":"2026-10-15T14:00:46.7862348Z","sym":"TSLA","dd_pct":0.458,"dry_run":true,"dd_tier":"NORMAL","heat_before":2742.09,"skip_reason":"NO_SETUP","regime":"RANGING"}
+{"ts":"2026-10-15T14:00:47.0651764Z","sym":"HD","dd_pct":0.458,"dry_run":true,"dd_tier":"NORMAL","heat_before":2742.09,"skip_reason":"NO_SETUP","regime":"RANGING"}
+{"ts":"2026-10-15T14:00:47.2294438Z","sym":"AMZN","dd_pct":0.458,"dry_run":true,"dd_tier":"NORMAL","heat_before":2742.09,"skip_reason":"NO_SETUP","regime":"RANGING"}
+{"ts":"2026-10-15T14:00:47.3595996Z","sym":"MRNA","dd_pct":0.458,"dry_run":true,"dd_tier":"NORMAL","heat_before":2742.09,"skip_reason":"NO_SETUP","regime":"RANGING"}
+{"ts":"2026-10-15T14:00:47.4350489Z","sym":"SBUX","dd_pct":0.458,"dry_run":true,"dd_tier":"NORMAL","heat_before":2742.09,"skip_reason":"NO_SETUP","regime":"RANGING"}
+{"ts":"2026-10-15T14:00:47.6413626Z","sym":"TGT","dd_pct":0.458,"dry_run":true,"dd_tier":"NORMAL","heat_before":2742.09,"skip_reason":"NO_SETUP","regime":"RANGING"}
+{"ts":"2026-10-15T14:00:47.8502994Z","live_mid":282.0,"stale_reason":"live quote unusable: spread 7.98% (max 2%)","sym":"ABBV","live_check":"STALE_SIGNAL","pct_above_20d_high":1.72,"rs":9.54,"quote_spread_pct":7.98,"dd_tier":"NORMAL","dry_run":true,"regime":"RANGING","conf":95,"drift_pct":null,"setup":"BRKOUT","quote_age_sec":3.9,"heat_before":2742.09,"skip_reason":"STALE_SIGNAL","extension_atr":0.79,"dd_pct":0.458}
+{"ts":"2026-10-15T14:00:48.0415218Z","sym":"ISRG","dd_pct":0.458,"dry_run":true,"dd_tier":"NORMAL","heat_before":2742.09,"skip_reason":"NO_SETUP","regime":"RANGING"}
