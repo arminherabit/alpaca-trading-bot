@@ -78,12 +78,14 @@
       "confidence": 0,
       "regime": "",
       "reason": "half-size add at +1R, stop at BE",
-      "closed_at": "2026-08-19T13:34:57.9747452Z",
       "exit": 321.04,
-      "pnl": 189.84,
-      "r_multiple": 0.94,
-      "hold_days": 12,
-      "outcome": "WIN"
+      "r_multiple": 0.31,
+      "outcome": "WIN",
+      "closed_at": "2026-08-19T13:33:26Z",
+      "correction_note": "corrected 2026-10-15: one 21-share exit split FIFO across base+PYRA (journal bug)",
+      "fill_price": 312.0,
+      "pnl": 63.28,
+      "hold_days": 12
     },
     {
       "opened_at": "2026-08-04T14:10:41.2455175Z",
@@ -97,12 +99,14 @@
       "confidence": 0,
       "regime": "",
       "reason": "half-size add at +1R, stop at BE",
-      "closed_at": "2026-08-20T13:40:41.5567355Z",
       "exit": 481.78,
-      "pnl": -258.93,
-      "r_multiple": -1.07,
-      "hold_days": 12,
-      "outcome": "LOSS"
+      "r_multiple": -0.36,
+      "outcome": "LOSS",
+      "closed_at": "2026-08-20T13:36:13Z",
+      "correction_note": "corrected 2026-10-15: one 21-share exit split FIFO across base+PYRA (journal bug)",
+      "fill_price": 494.11,
+      "pnl": -86.31,
+      "hold_days": 12
     },
     {
       "opened_at": "2026-08-20T13:50:42.868608Z",
@@ -407,9 +411,7 @@
       "r_multiple": -0.55,
       "hold_days": 0,
       "outcome": "LOSS"
-    }
-  ],
-  "orphaned": [
+    },
     {
       "opened_at": "2026-07-29T14:01:49.2205343Z",
       "symbol": "SNOW",
@@ -422,8 +424,14 @@
       "confidence": 100,
       "regime": "RANGING",
       "reason": "20d-high break (ext 0.33 ATR, volPace 2.6x, RS +12.8%)",
-      "orphaned_at": "2026-09-09T13:30:47.2607009Z",
-      "orphan_reason": "position not held; exit never journaled"
+      "exit": 321.04,
+      "r_multiple": 1.46,
+      "outcome": "WIN",
+      "closed_at": "2026-08-19T13:33:26Z",
+      "correction_note": "corrected 2026-10-15: one 21-share exit split FIFO across base+PYRA (journal bug)",
+      "fill_price": 283.26,
+      "pnl": 528.92,
+      "hold_days": 15
     },
     {
       "opened_at": "2026-07-31T13:50:30.0549937Z",
@@ -437,9 +445,17 @@
       "confidence": 95,
       "regime": "NEUTRAL",
       "reason": "20d-high break (ext 0.09 ATR, volPace 1.8x, RS +18.4%)",
-      "orphaned_at": "2026-09-09T13:30:47.3888651Z",
-      "orphan_reason": "position not held; exit never journaled"
-    },
+      "exit": 481.78,
+      "r_multiple": 0.69,
+      "outcome": "WIN",
+      "closed_at": "2026-08-20T13:36:13Z",
+      "correction_note": "corrected 2026-10-15: one 21-share exit split FIFO across base+PYRA (journal bug)",
+      "fill_price": 459.99,
+      "pnl": 305.06,
+      "hold_days": 14
+    }
+  ],
+  "orphaned": [
     {
       "opened_at": "2026-08-19T14:01:48.6390152Z",
       "symbol": "MRNA",
