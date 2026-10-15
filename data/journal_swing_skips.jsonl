@@ -1075,3 +1075,23 @@
 {"ts":"2026-10-15T17:00:40.0465971Z","regime":"NEUTRAL","skip_reason":"NO_SETUP","dry_run":true,"heat_before":2742.09,"dd_tier":"NORMAL","sym":"TGT","dd_pct":0.47}
 {"ts":"2026-10-15T17:00:40.7016500Z","setup":"BRKOUT","conf":100,"dd_tier":"NORMAL","dd_pct":0.47,"pct_above_20d_high":0.8,"extension_atr":0.37,"skip_reason":"STALE_SIGNAL","stale_reason":"live quote unusable: quote 252.7s old (max 60s)","heat_before":2742.09,"live_mid":287.785,"rs":8.0,"sym":"ABBV","regime":"NEUTRAL","live_check":"STALE_SIGNAL","drift_pct":null,"dry_run":true,"quote_spread_pct":0.19,"quote_age_sec":252.7}
 {"ts":"2026-10-15T17:00:40.8522650Z","regime":"NEUTRAL","skip_reason":"NO_SETUP","dry_run":true,"heat_before":2742.09,"dd_tier":"NORMAL","sym":"ISRG","dd_pct":0.47}
+{"ts":"2026-10-15T17:10:27.7688232Z","dd_tier":"NORMAL","regime":"NEUTRAL","skip_reason":"INDEX_ANCHOR","heat_before":2742.09,"dry_run":true,"dd_pct":0.47,"sym":"SPY"}
+{"ts":"2026-10-15T17:10:27.8082361Z","dd_tier":"NORMAL","regime":"NEUTRAL","skip_reason":"INDEX_ANCHOR","heat_before":2742.09,"dry_run":true,"dd_pct":0.47,"sym":"QQQ"}
+{"ts":"2026-10-15T17:10:28.1031461Z","dd_tier":"NORMAL","regime":"NEUTRAL","skip_reason":"NO_SETUP","heat_before":2742.09,"dry_run":true,"dd_pct":0.47,"sym":"IREN"}
+{"ts":"2026-10-15T17:10:28.3798516Z","dd_tier":"NORMAL","regime":"NEUTRAL","skip_reason":"NO_SETUP","heat_before":2742.09,"dry_run":true,"dd_pct":0.47,"sym":"CRWV"}
+{"ts":"2026-10-15T17:10:28.6538073Z","dd_tier":"NORMAL","regime":"NEUTRAL","skip_reason":"NO_SETUP","heat_before":2742.09,"dry_run":true,"dd_pct":0.47,"sym":"INTC"}
+{"ts":"2026-10-15T17:10:28.8891626Z","dd_tier":"NORMAL","regime":"NEUTRAL","skip_reason":"NO_SETUP","heat_before":2742.09,"dry_run":true,"dd_pct":0.47,"sym":"DRAM"}
+{"ts":"2026-10-15T17:10:29.6294500Z","dd_tier":"NORMAL","regime":"NEUTRAL","skip_reason":"NO_SETUP","heat_before":2742.09,"dry_run":true,"dd_pct":0.47,"sym":"SMCI"}
+{"ts":"2026-10-15T17:10:30.4147399Z","dd_tier":"NORMAL","regime":"NEUTRAL","skip_reason":"NO_SETUP","heat_before":2742.09,"dry_run":true,"dd_pct":0.47,"sym":"SPCX"}
+{"ts":"2026-10-15T17:10:30.6960818Z","dry_run":true,"rs":1.5,"sym":"NKE","skip_reason":"CONF_FLOOR","extension_atr":0.23,"dd_pct":0.47,"heat_before":2742.09,"pct_above_20d_high":0.63,"conf":70,"dd_tier":"NORMAL","regime":"NEUTRAL","setup":"BRKOUT"}
+{"ts":"2026-10-15T17:10:30.7048071Z","dd_tier":"NORMAL","regime":"NEUTRAL","skip_reason":"COOLDOWN","heat_before":2742.09,"dry_run":true,"dd_pct":0.47,"sym":"NVDA"}
+{"ts":"2026-10-15T17:10:30.9270994Z","dd_tier":"NORMAL","regime":"NEUTRAL","skip_reason":"NO_SETUP","heat_before":2742.09,"dry_run":true,"dd_pct":0.47,"sym":"GOOGL"}
+{"ts":"2026-10-15T17:10:31.1522760Z","dd_tier":"NORMAL","regime":"NEUTRAL","skip_reason":"NO_SETUP","heat_before":2742.09,"dry_run":true,"dd_pct":0.47,"sym":"GOOG"}
+{"ts":"2026-10-15T17:10:31.3619944Z","dd_tier":"NORMAL","regime":"NEUTRAL","skip_reason":"NO_SETUP","heat_before":2742.09,"dry_run":true,"dd_pct":0.47,"sym":"TSLA"}
+{"ts":"2026-10-15T17:10:32.1505078Z","dd_tier":"NORMAL","regime":"NEUTRAL","skip_reason":"NO_SETUP","heat_before":2742.09,"dry_run":true,"dd_pct":0.47,"sym":"HD"}
+{"ts":"2026-10-15T17:10:32.8994808Z","dd_tier":"NORMAL","regime":"NEUTRAL","skip_reason":"NO_SETUP","heat_before":2742.09,"dry_run":true,"dd_pct":0.47,"sym":"AMZN"}
+{"ts":"2026-10-15T17:10:33.1244577Z","dd_tier":"NORMAL","regime":"NEUTRAL","skip_reason":"NO_SETUP","heat_before":2742.09,"dry_run":true,"dd_pct":0.47,"sym":"MRNA"}
+{"ts":"2026-10-15T17:10:33.3362400Z","dd_tier":"NORMAL","regime":"NEUTRAL","skip_reason":"NO_SETUP","heat_before":2742.09,"dry_run":true,"dd_pct":0.47,"sym":"SBUX"}
+{"ts":"2026-10-15T17:10:33.5381894Z","dd_tier":"NORMAL","regime":"NEUTRAL","skip_reason":"NO_SETUP","heat_before":2742.09,"dry_run":true,"dd_pct":0.47,"sym":"TGT"}
+{"ts":"2026-10-15T17:10:33.9733814Z","quote_age_sec":846.0,"skip_reason":"STALE_SIGNAL","quote_spread_pct":0.19,"pct_above_20d_high":0.8,"stale_reason":"live quote unusable: quote 846s old (max 60s)","dry_run":true,"live_check":"STALE_SIGNAL","sym":"ABBV","heat_before":2742.09,"rs":8.0,"drift_pct":null,"conf":100,"dd_pct":0.47,"setup":"BRKOUT","dd_tier":"NORMAL","extension_atr":0.37,"regime":"NEUTRAL","live_mid":287.785}
+{"ts":"2026-10-15T17:10:34.2292648Z","dd_tier":"NORMAL","regime":"NEUTRAL","skip_reason":"NO_SETUP","heat_before":2742.09,"dry_run":true,"dd_pct":0.47,"sym":"ISRG"}
