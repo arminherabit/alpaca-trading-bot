@@ -58,20 +58,22 @@ Describe 'Update-AggrShadowBook (dry run, read-only)' {
     BeforeEach {
         $script:AggrSkipJournal = Join-Path $TestDrive ("j{0}.jsonl" -f [guid]::NewGuid().ToString('N'))
         Mock Invoke-AlpacaApi { param($cfg,$method,$path,$body) if ($method -ne 'GET') { throw "LIVE CALL $method" }
-            if ($path -like '*symbols=AEHL*') { return @([pscustomobject]@{ id='p'; symbol='AEHL'; status='filled'; side='buy'; filled_at='2026-10-14T14:10:40Z'; filled_avg_price='29.00'
+            if ($path -like '*symbols=AEHL*') { return @([pscustomobject]@{ id='p'; symbol='AEHL'; status='filled'; side='buy'; filled_at='2026-10-14T14:10:44Z'; filled_avg_price='26.84'
                 legs = @([pscustomobject]@{ id='sl'; symbol='AEHL'; status='filled'; side='sell'; filled_at='2026-10-14T14:20:22Z'; filled_avg_price='25.64' }) }) }
             return @() }
         Mock Get-Bars { param($cfg,$symbol) if ($symbol -eq 'PFE') { @((Bar '2026-10-14T15:00:00Z' 29.3 29.6 29.1 29.5)) } else { @() } }
         Mock Get-WeekdayCount { 0 }
     }
-    It 'AEHL day-1 replay: closes AEHL via the live stop leg, keeps PFE open, no orders' {
+    It 'AEHL day-1 replay: shadow fills where the market did (26.84, not the 29.00 limit), exits via the live stop leg' {
         $st = [pscustomobject]@{}; Initialize-AggrState $st
         $st.aggr_shadow_open = @((AEHL), (New-AggrShadow 'PFE' 'stock' 'buy' 29.20 28.18 39.40 814 830.28 '2026-10-14T14:01:16Z'))
         Update-AggrShadowBook $Cfg $st @()
         @($st.aggr_shadow_open).Count | Should -Be 1; $st.aggr_shadow_open[0].sym | Should -Be 'PFE'
-        $st.aggr_shadow_realized | Should -Be -1431.36
+        $st.aggr_shadow_open[0].filled | Should -BeTrue; $st.aggr_shadow_open[0].entry | Should -Be 29.20   # PFE 15:00 bar low 29.10 <= limit, open 29.30 -> fills at the limit
+        $st.aggr_shadow_realized | Should -Be (-511.20)                                                      # was -1,431.36 when filled at the limit
         $j = Get-Content $script:AggrSkipJournal | ConvertFrom-Json
-        $j.skip_reason | Should -Be 'DRYRUN_EXIT'; $j.source | Should -Be 'LIVE_FILL'; $j.r_multiple | Should -Be -1.55
+        $j.skip_reason | Should -Be 'DRYRUN_EXIT'; $j.source | Should -Be 'LIVE_FILL'; $j.fill_source | Should -Be 'LIVE_FILL'
+        $j.limit | Should -Be 29.0; $j.entry | Should -Be 26.84; $j.r_multiple | Should -Be (-120)  # the 26.83 stop sat $0.01 under the real fill
         Should -Invoke Invoke-AlpacaApi -ParameterFilter { $method -ne 'GET' } -Times 0 -Exactly
     }
     It 'migrates old {sym,kind,risk_usd} entries from the journal payload' {
@@ -91,5 +93,38 @@ Describe 'Update-AggrShadowBook (dry run, read-only)' {
         Mock Get-AggrOpusUnderlyings { @{} }
         Invoke-AggrEntries $Cfg $st ([pscustomobject]@{ Regime='BULL'; SizeMult=1.0 }) @() 95000 190000 @() @() @{}
         @($st.aggr_shadow_open).Count | Should -Be 1; $st.aggr_trades_today | Should -Be 0
+    }
+}
+
+Describe 'Shadow entry fill realism' {
+    It 'long limit fills at min(limit, bar open) on the first bar after the order that trades through it' {
+        Get-AggrShadowFill (AEHL) @((Bar '2026-10-14T14:10:00Z' 29 29.7 20 25)) | Should -BeNullOrEmpty           # bar started before the order
+        Get-AggrShadowFill (AEHL) @((Bar '2026-10-14T14:15:00Z' 29.5 30 29.2 29.8)) | Should -BeNullOrEmpty      # never reached the limit
+        (Get-AggrShadowFill (AEHL) @((Bar '2026-10-14T14:15:00Z' 24.02 24.02 24.02 24.02))).Price | Should -Be 24.02   # opened through the limit
+        (Get-AggrShadowFill (AEHL) @((Bar '2026-10-14T14:15:00Z' 29.5 30 28.9 29.6))).Price | Should -Be 29.0          # traded down into the limit
+    }
+    It 'short limit fills at max(limit, bar open)' {
+        $s = New-AggrShadow 'X' 'stock' 'sell' 100 105 50 10 50 '2026-10-14T14:00:00Z'
+        (Get-AggrShadowFill $s @((Bar '2026-10-14T14:05:00Z' 101.5 102 101 101.2))).Price | Should -Be 101.5
+        Get-AggrShadowFill $s @((Bar '2026-10-14T14:05:00Z' 99 99.5 98 99)) | Should -BeNullOrEmpty
+    }
+    It 'live entry fill at/through the limit is preferred; a live fill above a long limit is not a fill' {
+        $co = @([pscustomobject]@{ symbol = 'AEHL'; status = 'filled'; side = 'buy'; filled_at = '2026-10-14T14:10:44Z'; filled_avg_price = '26.84' })
+        (Get-AggrShadowLiveFill (AEHL) $co).Price | Should -Be 26.84
+        Get-AggrShadowLiveFill (AEHL) @([pscustomobject]@{ symbol = 'AEHL'; status = 'filled'; side = 'buy'; filled_at = '2026-10-14T14:10:44Z'; filled_avg_price = '29.40' }) | Should -BeNullOrEmpty
+    }
+    It 'unfilled shadow: still working the same ET day, expired as UNFILLED (P&L 0) the next day' {
+        $script:AggrSkipJournal = Join-Path $TestDrive 'unf.jsonl'
+        Mock Invoke-AlpacaApi { param($cfg,$method,$path,$body) if ($method -ne 'GET') { throw "LIVE CALL $method" }; @() }
+        Mock Get-Bars { @((Bar '2026-10-14T14:15:00Z' 29.5 30 29.2 29.8)) }
+        Mock Get-WeekdayCount { 0 }
+        $st = [pscustomobject]@{}; Initialize-AggrState $st; $st.aggr_shadow_open = @((AEHL))
+        Mock Get-EasternTime { [datetime]'2026-10-14T15:00:00' }
+        Update-AggrShadowBook $Cfg $st @()
+        @($st.aggr_shadow_open).Count | Should -Be 1; $st.aggr_shadow_open[0].filled | Should -BeFalse
+        Mock Get-EasternTime { [datetime]'2026-10-15T09:35:00' }
+        Update-AggrShadowBook $Cfg $st @()
+        @($st.aggr_shadow_open).Count | Should -Be 0; [double]$st.aggr_shadow_realized | Should -Be 0
+        (Get-Content $script:AggrSkipJournal | ConvertFrom-Json).exit_reason | Should -Be 'UNFILLED'
     }
 }

@@ -26,6 +26,13 @@
   "max_risk_pct":    1.0,
   "//max_risk_pct_cap": "Hard per-trade risk cap for the LEGACY sizer (was hard-coded 1.5 in Get-PositionSize).",
   "max_risk_pct_cap": 1.5,
+  "//entry_max_slippage_pct": "Stale-signal guard (legacy + aggr): if the live quote is more than this % from the signal price, rebuild the signal from the live price and re-run the gates; also the post-fill tolerance before the stop is re-placed from the actual fill.",
+  "entry_max_slippage_pct": 1.0,
+  "//entry_quote_max_age_sec": "A quote older than this, or wider than entry_quote_max_spread_pct, is not a usable live price -> STALE_SIGNAL (AEHL 2026-10-14: IEX quote 5 min old, 12.9% wide).",
+  "entry_quote_max_age_sec": 60,
+  "entry_quote_max_spread_pct": 2.0,
+  "//entry_min_stop_atr": "Never place a stop closer than this many ATRs to the actual entry.",
+  "entry_min_stop_atr": 0.5,
   "min_rr_ratio":    3.0,
   "max_positions":   3,
 

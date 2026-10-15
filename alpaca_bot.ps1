@@ -1019,6 +1019,8 @@ function Run-Scan($cfg, $state) {
 
         # Clean up any stacked duplicate stops before managing
         Repair-DuplicateStops $cfg $positions
+        # Stop re-placed from the ACTUAL fill when it slipped off the plan
+        if ($swingMode) { Repair-EntryFillStops $cfg $state $positions }
 
         # Pyramid guard cleanup: once a symbol leaves the book, clear its
         # pyramided flag so a future NEW position there can pyramid again.
@@ -1246,8 +1248,30 @@ function Run-Scan($cfg, $state) {
             continue
         }
 
+        # Stale-signal guard: re-price from the live quote before any order.
+        $live = $null
+        if ($swingMode) {
+            $live = Update-SignalForLivePrice $cfg $symbol $dailyBars $regime.Regime $spyDaily $signal
+            if ($live.Action -eq "STALE_SIGNAL") {
+                Write-Host ("  {0,-6} SKIP  STALE_SIGNAL -- {1}" -f $symbol, $live.Reason) -ForegroundColor Yellow
+                continue
+            }
+            if ($live.Action -eq "REPRICED") {
+                Write-Host ("  {0,-6} REPRICED  signal `${1:F2} -> live `${2:F2} ({3}% drift): entry `${4:F2} stop `${5:F2} conf {6}" -f `
+                    $symbol, $signal.Entry, $live.Mid, $live.DriftPct, $live.Signal.Entry, $live.Signal.Stop, $live.Signal.Confidence) -ForegroundColor Yellow
+                $signal = $live.Signal
+                if ($signal.Confidence -lt $confFloor) {
+                    Write-Host ("  {0,-6} SKIP  STALE_SIGNAL -- repriced conf {1} < {2}" -f $symbol, $signal.Confidence, $confFloor) -ForegroundColor Yellow
+                    continue
+                }
+            }
+        }
+
         $validation = Validate-Trade $cfg $signal $regime
         Write-TradeCard $signal $validation
+        if ($swingMode -and -not $validation.Valid -and $live -and $live.Action -eq "REPRICED") {
+            Write-Host ("  {0,-6} SKIP  STALE_SIGNAL -- repriced trade fails validation: {1}" -f $symbol, ($validation.Errors -join "; ")) -ForegroundColor Yellow
+        }
 
         # Surface the adaptive-sizing reasoning so it's auditable in the logs
         if ($validation.EdgeInfo) {

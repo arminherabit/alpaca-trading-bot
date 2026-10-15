@@ -682,6 +682,37 @@ function Invoke-AggrManage($cfg, $state, $myPositions, $allPositions) {
 
 # ── Entry evaluation (shadow in dry run) ─────────────────────────────────────
 
+# Breakout extension, logged only (no gate): same basis as Get-SwingBreakoutSignal
+# -- 20-day high and ATR(14) from COMPLETED prior days, price = current bar close.
+# Returns nulls instead of throwing, so it can never change an entry decision.
+function Get-AggrExtension($bars) {
+    $out = [ordered]@{ extension_atr = $null; pct_above_20d_high = $null }
+    try {
+        if ($null -eq $bars -or @($bars).Count -lt 21) { return $out }
+        $split = Split-DailyBars $bars
+        $hist  = @($split.History)
+        if ($hist.Count -lt 20) { return $out }
+        $high20 = (@($hist | Select-Object -Last 20) | Measure-Object -Property High -Maximum).Maximum
+        $atr    = Get-ATR $hist 14
+        $price  = [double]$split.Current.Close
+        if ($atr -gt 0)    { $out.extension_atr      = [Math]::Round(($price - $high20) / $atr, 2) }
+        if ($high20 -gt 0) { $out.pct_above_20d_high = [Math]::Round(($price - $high20) / $high20 * 100.0, 2) }
+    } catch {}
+    return $out
+}
+function Add-AggrExtension([hashtable]$rec, $bars) {
+    if ($rec.ContainsKey('extension_atr')) { return }
+    $x = Get-AggrExtension $bars
+    $rec.extension_atr = $x.extension_atr; $rec.pct_above_20d_high = $x.pct_above_20d_high
+}
+
+# A gate that fails AFTER the signal was re-priced from the live quote is
+# reported as STALE_SIGNAL (the original gate kept in rec.gate).
+function Get-AggrGateSkip($live, [string]$gate, [hashtable]$rec) {
+    if ($null -ne $live -and $live.Action -eq "REPRICED") { $rec.gate = $gate; return "STALE_SIGNAL" }
+    return $gate
+}
+
 function Invoke-AggrEntries($cfg, $state, $regime, $spyDaily, [double]$equity, [double]$bp, $myPositions, $allPositions, $workingOrderSyms) {
     $a = Get-AggrCfg $cfg; $dry = Test-AggrDryRun $cfg
     $etToday = (Get-EasternTime).ToString("yyyy-MM-dd")
@@ -739,11 +770,26 @@ function Invoke-AggrEntries($cfg, $state, $regime, $spyDaily, [double]$equity, [
                 else {
                     $rs = Get-RelativeStrength $bars $spyDaily 20
                     $rec.setup = $sig.Strategy; $rec.conf = $sig.Confidence; $rec.rs = [Math]::Round([double]$rs, 2)
+                    if ($sig.Strategy -eq "BRKOUT") { Add-AggrExtension $rec $bars }   # every BRKOUT line from here on
                     if ([int]$sig.Confidence -lt $confFloor) { $skip = "CONF_FLOOR" }
                 }
             }
         }
         if ($null -ne $skip) { $rec.skip_reason = $skip; Write-AggrSkip $rec; continue }
+
+        # Stale-signal guard (same as legacy): re-price from the live quote (GET only).
+        $live = Update-SignalForLivePrice $cfg $sym $bars $regime.Regime $spyDaily $sig
+        $rec.live_check = $live.Action; $rec.live_mid = $live.Mid; $rec.drift_pct = $live.DriftPct
+        $rec.quote_spread_pct = $live.SpreadPct; $rec.quote_age_sec = $live.AgeSec
+        if ($live.Action -eq "STALE_SIGNAL") { $rec.skip_reason = "STALE_SIGNAL"; $rec.stale_reason = $live.Reason; Write-AggrSkip $rec; continue }
+        if ($live.Action -eq "REPRICED") {
+            $rec.signal_entry = $sig.Entry; $sig = $live.Signal
+            $rec.conf = $sig.Confidence
+            if ([int]$sig.Confidence -lt $confFloor) {
+                $rec.skip_reason = "STALE_SIGNAL"; $rec.stale_reason = "repriced conf {0} < floor {1}" -f $sig.Confidence, $confFloor
+                Write-AggrSkip $rec; continue
+            }
+        }
 
         # Instrument
         $edge = 1.0
@@ -768,22 +814,23 @@ function Invoke-AggrEntries($cfg, $state, $regime, $spyDaily, [double]$equity, [
 
         if ($instrument -eq "call") {
             $risk = $callSize.PremiumUsd
-            if (-not (Test-AggrHeatOk $heat $risk $equity $a)) { $rec.skip_reason = "HEAT"; Write-AggrSkip $rec; continue }
+            if (-not (Test-AggrHeatOk $heat $risk $equity $a)) { $rec.skip_reason = (Get-AggrGateSkip $live "HEAT" $rec); Write-AggrSkip $rec; continue }
             $payload = New-AggrCallOrderPayload $pick.Occ $callSize.Contracts $limit $sym ([string]$a.call_entry_prefix)
             $rec.call_contract = @{ occ = $pick.Occ; dte = $pick.Dte; delta = $pick.Delta; bid = $pick.Bid; ask = $pick.Ask; oi = $pick.Oi; volume = $pick.Volume }
             $rec.quote_caveat = $script:AggrQuoteCaveat; $rec.feed = $a.options_feed
         } else {
             if ($stockCount -ge [int]$a.max_stock_positions) { $rec.skip_reason = "STOCK_SLOTS_FULL"; Write-AggrSkip $rec; continue }
             $sz = Get-AggrStockSize -equity $equity -buyingPower $bp -entry $sig.Entry -stop $sig.Stop -a $a -edgeMult $edge -regimeMult ([double]$regime.SizeMult) -ddMult $dd.Mult
-            if ($sz.Shares -lt 1) { $rec.skip_reason = "SIZE_ZERO"; Write-AggrSkip $rec; continue }
+            if ($sz.Shares -lt 1) { $rec.skip_reason = (Get-AggrGateSkip $live "SIZE_ZERO" $rec); Write-AggrSkip $rec; continue }
             $risk = $sz.RiskUsd
-            if (-not (Test-AggrHeatOk $heat $risk $equity $a)) { $rec.skip_reason = "HEAT"; $rec.risk_usd = $risk; Write-AggrSkip $rec; continue }
+            if (-not (Test-AggrHeatOk $heat $risk $equity $a)) { $rec.skip_reason = (Get-AggrGateSkip $live "HEAT" $rec); $rec.risk_usd = $risk; Write-AggrSkip $rec; continue }
             $payload = New-AggrStockOrderPayload $sym $sig.Side $sz.Shares $sig.Entry $sig.Stop ([double]$a.dummy_tp_r) $sig.Strategy
             $rec.riskPct = $sz.RiskPct
         }
         $rec.risk_usd = $risk; $rec.heat_after = [Math]::Round($heat + $risk, 2); $rec.payload = $payload
         if ($dry) {
             $rec.skip_reason = "DRYRUN_ENTERED"
+            Add-AggrExtension $rec $bars   # every dry-run entry, whatever the setup
             $tpSh = if ($payload.take_profit) { [double]$payload.take_profit.limit_price } else { $null }
             $state.aggr_shadow_open = @($state.aggr_shadow_open) + (New-AggrShadow $sym $instrument $sig.Side ([double]$sig.Entry) ([double]$sig.Stop) $tpSh ([int]$payload.qty) $risk ((Get-Date).ToUniversalTime().ToString("o")))
         } else {
@@ -817,18 +864,56 @@ function Invoke-AggrEntries($cfg, $state, $regime, $spyDaily, [double]$equity, [
 # Alpaca closed orders (GET only) and books a hypothetical exit.
 
 function New-AggrShadow([string]$sym, [string]$kind, [string]$side, [double]$entry, [double]$stop, $tp, [int]$qty, [double]$risk, [string]$openedAt) {
+    # entry = the LIMIT until a bar trades through it; then entry = the simulated fill.
     return [pscustomobject]@{ sym = $sym; kind = $kind; side = $side; entry = $entry; stop = $stop
-                              tp = $(if ($null -ne $tp) { [double]$tp } else { $null }); qty = $qty; risk_usd = $risk; opened_at = $openedAt }
+                              tp = $(if ($null -ne $tp) { [double]$tp } else { $null }); qty = $qty; risk_usd = $risk; opened_at = $openedAt
+                              limit = $entry; filled = $false; filled_at = $null }
+}
+
+# Pure: when does a shadow LIMIT entry fill, and at what price. A resting limit
+# only fills on a bar that trades through it; a marketable one fills at the
+# market, not at the limit (AEHL: limit 29.00, real fill 26.84). So: the first
+# bar strictly after opened_at whose range reaches the limit fills at
+# min(limit, bar open) for a long, max(limit, bar open) for a short.
+# Returns @{ Price; Time } or $null (still working).
+function Get-AggrShadowFill($sh, $bars) {
+    $t0 = ConvertTo-UtcTime $sh.opened_at   # zone-safe: unzoned => UTC
+    $lim = if ($null -ne $sh.limit) { [double]$sh.limit } else { [double]$sh.entry }
+    $long = ($sh.side -ne "sell")
+    foreach ($b in @($bars | Where-Object { $_ -and (ConvertTo-UtcTime $_.Time) -gt $t0 } | Sort-Object Time)) {
+        if ($long -and [double]$b.Low -le $lim)       { return [pscustomobject]@{ Price = [Math]::Min($lim, [double]$b.Open); Time = $b.Time } }
+        if (-not $long -and [double]$b.High -ge $lim) { return [pscustomobject]@{ Price = [Math]::Max($lim, [double]$b.Open); Time = $b.Time } }
+    }
+    return $null
+}
+
+# Pure: live evidence of the entry fill -- a filled ENTRY-side order on the same
+# symbol after the shadow opened, at or through the limit (AEHL: the live
+# bracket limit 29.00 filled at 26.84). Preferred over the bar model, which can
+# miss thin names (IEX bars skip odd-lot prints). Returns @{ Price; Time } or $null.
+function Get-AggrShadowLiveFill($sh, $closedOrders) {
+    $t0 = ConvertTo-UtcTime $sh.opened_at   # zone-safe: unzoned => UTC
+    $lim = if ($null -ne $sh.limit) { [double]$sh.limit } else { [double]$sh.entry }
+    $entrySide = if ($sh.side -eq "sell") { "sell" } else { "buy" }
+    $fills = @($closedOrders | Where-Object { $_ -and $_.symbol -eq $sh.sym -and $_.status -eq "filled" -and $_.side -eq $entrySide -and $_.filled_at -and
+                                               $_.filled_avg_price -and ((ConvertTo-UtcTime $_.filled_at) -gt $t0) } |
+               Sort-Object { ConvertTo-UtcTime $_.filled_at })
+    foreach ($f in $fills) {
+        $px = [double]$f.filled_avg_price
+        if ($entrySide -eq "buy" -and $px -le $lim)  { return [pscustomobject]@{ Price = $px; Time = $f.filled_at } }
+        if ($entrySide -eq "sell" -and $px -ge $lim) { return [pscustomobject]@{ Price = $px; Time = $f.filled_at } }
+    }
+    return $null
 }
 
 # Pure: first bar strictly after opened_at that hits stop or target. Gap-aware:
 # a bar opening through the stop fills at the open. Stop and target in the same
 # bar => stop (conservative).
 function Get-AggrShadowBarExit($sh, $bars) {
-    $t0 = [datetime]::Parse([string]$sh.opened_at).ToUniversalTime()
+    $t0 = (ConvertTo-UtcTime $sh.opened_at)
     $long = ($sh.side -ne "sell")
     $stop = [double]$sh.stop; $tp = $sh.tp
-    foreach ($b in @($bars | Where-Object { $_ -and ([datetime]$_.Time).ToUniversalTime() -gt $t0 } | Sort-Object Time)) {
+    foreach ($b in @($bars | Where-Object { $_ -and (ConvertTo-UtcTime $_.Time) -gt $t0 } | Sort-Object Time)) {
         if ($long) {
             if ([double]$b.Low -le $stop) { return [pscustomobject]@{ Reason = "STOP"; Price = [Math]::Min($stop, [double]$b.Open); Time = $b.Time } }
             if ($null -ne $tp -and [double]$b.High -ge [double]$tp) { return [pscustomobject]@{ Reason = "TARGET"; Price = [Math]::Max([double]$tp, [double]$b.Open); Time = $b.Time } }
@@ -844,11 +929,11 @@ function Get-AggrShadowBarExit($sh, $bars) {
 # shadow opened, at a price at/through the shadow stop, is market evidence the
 # stop traded (with real slippage). Returns @{Price;Time;OrderId} or $null.
 function Get-AggrShadowLiveExit($sh, $closedOrders) {
-    $t0 = [datetime]::Parse([string]$sh.opened_at).ToUniversalTime()
+    $t0 = (ConvertTo-UtcTime $sh.opened_at)
     $closeSide = if ($sh.side -eq "sell") { "buy" } else { "sell" }
     $fills = @($closedOrders | Where-Object { $_ -and $_.symbol -eq $sh.sym -and $_.status -eq "filled" -and $_.side -eq $closeSide -and $_.filled_at -and
-                                               ([datetime]::Parse([string]$_.filled_at).ToUniversalTime() -gt $t0) } |
-               Sort-Object { [datetime]::Parse([string]$_.filled_at).ToUniversalTime() })
+                                               ((ConvertTo-UtcTime $_.filled_at) -gt $t0) } |
+               Sort-Object { (ConvertTo-UtcTime $_.filled_at) })
     foreach ($f in $fills) {
         $px = [double]$f.filled_avg_price
         $through = if ($closeSide -eq "sell") { $px -le [double]$sh.stop } else { $px -ge [double]$sh.stop }
@@ -902,6 +987,14 @@ function Convert-AggrLegacyDryEntered($state) {
     $state.aggr_dry_entered = @()
 }
 
+# Shadows created before fill tracking carry no 'filled' flag: they were booked
+# at the limit, so they are re-evaluated as working orders (limit = entry).
+function Test-AggrShadowFilled($sh) { return ($null -ne $sh.PSObject.Properties['filled'] -and [bool]$sh.filled) }
+function Get-AggrEtZone {
+    try { return [System.TimeZoneInfo]::FindSystemTimeZoneById("Eastern Standard Time") }
+    catch { return [System.TimeZoneInfo]::FindSystemTimeZoneById("America/New_York") }
+}
+
 function Update-AggrShadowBook($cfg, $state, $allPositions) {
     $a = Get-AggrCfg $cfg
     Initialize-AggrState $state
@@ -914,13 +1007,37 @@ function Update-AggrShadowBook($cfg, $state, $allPositions) {
         # No 'after' filter: legs carry the PARENT's submit time; filled_at is checked instead.
         $raw = Invoke-AggrApi $cfg "GET" ("/v2/orders?status=closed&nested=true&symbols={0}&direction=desc&limit=100" -f $sh.sym)
         $co = @(); foreach ($o in @($raw)) { if ($o) { $co += $o; foreach ($l in @($o.legs)) { if ($l) { $co += $l } } } }
-        $held = Get-WeekdayCount ([datetime]::Parse([string]$sh.opened_at).ToUniversalTime()) ([datetime]::UtcNow)
-        $x = Resolve-AggrShadowExit $sh $bars $co $held $a
+        # Entry first: a shadow limit is a working order until the market trades through it.
+        if (-not (Test-AggrShadowFilled $sh)) {
+            if ($null -eq $sh.PSObject.Properties['limit'] -or $null -eq $sh.limit) { $sh | Add-Member -NotePropertyName limit -NotePropertyValue ([double]$sh.entry) -Force }
+            $f = Get-AggrShadowLiveFill $sh $co
+            $fillSrc = "LIVE_FILL"
+            if ($null -eq $f) { $f = Get-AggrShadowFill $sh $bars; $fillSrc = "BARS" }
+            if ($null -eq $f) {
+                # Legacy cancels an unfilled entry the next ET day (Cancel-StaleEntries); so does the shadow.
+                $openedEt = [System.TimeZoneInfo]::ConvertTimeFromUtc((ConvertTo-UtcTime $sh.opened_at), (Get-AggrEtZone)).ToString("yyyy-MM-dd")
+                if ($openedEt -lt (Get-EasternTime).ToString("yyyy-MM-dd")) {
+                    Write-AggrSkip @{ sym = $sh.sym; event = "SHADOW_EXIT"; skip_reason = "DRYRUN_EXIT"; dry_run = $true; exit_reason = "UNFILLED"
+                                      limit = $sh.limit; qty = $sh.qty; pnl = 0.0; opened_at = $sh.opened_at; kind = $sh.kind }
+                    continue
+                }
+                $still += $sh; continue
+            }
+            $sh | Add-Member -NotePropertyName entry -NotePropertyValue ([double]$f.Price) -Force
+            $sh | Add-Member -NotePropertyName filled -NotePropertyValue $true -Force
+            $sh | Add-Member -NotePropertyName filled_at -NotePropertyValue ((ConvertTo-UtcTime $f.Time).ToString("o")) -Force
+            $sh | Add-Member -NotePropertyName fill_source -NotePropertyValue $fillSrc -Force
+        }
+        $held = Get-WeekdayCount ((ConvertTo-UtcTime $sh.opened_at)) ([datetime]::UtcNow)
+        # Exits are only possible from the fill bar on.
+        $shx = $sh | Select-Object *
+        if ($sh.filled_at) { $shx.opened_at = (ConvertTo-UtcTime $sh.filled_at).AddSeconds(-1).ToString("o") }
+        $x = Resolve-AggrShadowExit $shx $bars $co $held $a
         if ($null -eq $x) { $still += $sh; continue }
         $pp = Get-AggrShadowPnl $sh ([double]$x.Price)
         $liveHeld = @($allPositions | Where-Object { $_ -and $_.symbol -eq $sh.sym }).Count -gt 0
         Write-AggrSkip @{ sym = $sh.sym; event = "SHADOW_EXIT"; skip_reason = "DRYRUN_EXIT"; dry_run = $true; exit_reason = $x.Reason
-                          source = $x.Source; entry = $sh.entry; stop = $sh.stop; tp = $sh.tp; qty = $sh.qty; exit_price = $x.Price
+                          source = $x.Source; limit = $sh.limit; entry = $sh.entry; filled_at = $sh.filled_at; fill_source = $sh.fill_source; stop = $sh.stop; tp = $sh.tp; qty = $sh.qty; exit_price = $x.Price
                           bar_model_price = $x.BarPrice; exit_time = [string]$x.Time; pnl = $pp.Pnl; r_multiple = $pp.R
                           kind = $sh.kind; opened_at = $sh.opened_at; live_position_still_open = $liveHeld
                           note = $(if ($sh.kind -eq 'call') { "call shadow: P&L is the stock-equivalent, not option premium" } else { $null }) }

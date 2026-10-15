@@ -948,8 +948,8 @@ function Sync-ClosedTrades {
             }
 
             Write-Host ("  [LEARN] {0,-6} {1}  entry=`${2:F2}  exit=`${3:F2}  qty={4}  PnL=`${5:F2}  hr={6}ET" -f `
-                $sym, (if ($won) { "WIN " } else { "LOSS" }), $entryPrice, $exitPrice, $qty, $pnl, $hourET) `
-                -ForegroundColor (if ($won) { "Green" } else { "Red" })
+                $sym, $(if ($won) { "WIN " } else { "LOSS" }), $entryPrice, $exitPrice, $qty, $pnl, $hourET) `
+                -ForegroundColor $(if ($won) { "Green" } else { "Red" })
 
             # Journal completion recovers the regime recorded at ENTRY --
             # the only reliable source for regime-aware expectancy stats.
@@ -1038,12 +1038,34 @@ function Sync-ClosedTrades {
         }
 
         Write-Host ("  [LEARN*] {0,-6} {1}  entry=`${2:F2}  exit=`${3:F2}  qty={4}  PnL=`${5:F2}  hr={6}ET  (standalone close)" -f `
-            $sym, (if ($won) { "WIN " } else { "LOSS" }), $entryPrice, $exitPrice, $qty, $pnl, $hourET) `
-            -ForegroundColor (if ($won) { "Green" } else { "Red" })
+            $sym, $(if ($won) { "WIN " } else { "LOSS" }), $entryPrice, $exitPrice, $qty, $pnl, $hourET) `
+            -ForegroundColor $(if ($won) { "Green" } else { "Red" })
 
-        $jrec    = Complete-JournalEntry -symbol $sym -exitPrice $exitPrice -pnl $pnl -qty ([int]$qty)
-        $jRegime = if ($null -ne $jrec -and $jrec.regime) { $jrec.regime } else { "" }
-        Update-TickerMemory -symbol $sym -won $won -pnl $pnl -strategy $strategy -hourET $hourET -regime $jRegime
+        # One closing fill can flatten several tranches (base + PYRA add): split it
+        # FIFO across the open journal records, each priced off its own entry fill.
+        $alloc = @()
+        try { $alloc = @(Get-ExitAllocation @((Load-Journal).open) $entriesBySym[$sym] $sym $entrySide ([int]$qty) $exitPrice) } catch { $alloc = @() }
+        if ($alloc.Count -gt 1 -or ($alloc.Count -eq 1 -and $alloc[0].Strategy -ne $strategy)) {
+            $pnl = 0.0
+            foreach ($al in $alloc) {
+                $jrec    = Complete-JournalEntry -symbol $sym -exitPrice $exitPrice -pnl $al.Pnl -openedAt $al.OpenedAt -closeQty $(if ($al.Partial) { $al.Qty } else { 0 })
+                $jRegime = if ($null -ne $jrec -and $jrec.regime) { $jrec.regime } else { "" }
+                Update-TickerMemory -symbol $sym -won ($al.Pnl -gt 0) -pnl $al.Pnl -strategy $al.Strategy -hourET $hourET -regime $jRegime
+                Write-Host ("  [LEARN*]   split {0,-6} {1} x{2} @ `${3:F2} -> `${4:F2}" -f $al.Strategy, $sym, $al.Qty, $al.Entry, $al.Pnl) -ForegroundColor DarkCyan
+                $pnl += $al.Pnl
+            }
+            $pnl = [Math]::Round($pnl, 2); $won = ($pnl -gt 0)
+        } elseif ($alloc.Count -eq 1) {
+            # Single tranche: close exactly that record (partially, if the fill was smaller).
+            $pnl = $alloc[0].Pnl; $won = ($pnl -gt 0)
+            $jrec    = Complete-JournalEntry -symbol $sym -exitPrice $exitPrice -pnl $pnl -openedAt $alloc[0].OpenedAt -closeQty $(if ($alloc[0].Partial) { $alloc[0].Qty } else { 0 })
+            $jRegime = if ($null -ne $jrec -and $jrec.regime) { $jrec.regime } else { "" }
+            Update-TickerMemory -symbol $sym -won $won -pnl $pnl -strategy $strategy -hourET $hourET -regime $jRegime
+        } else {
+            $jrec    = Complete-JournalEntry -symbol $sym -exitPrice $exitPrice -pnl $pnl -qty ([int]$qty)
+            $jRegime = if ($null -ne $jrec -and $jrec.regime) { $jrec.regime } else { "" }
+            Update-TickerMemory -symbol $sym -won $won -pnl $pnl -strategy $strategy -hourET $hourET -regime $jRegime
+        }
 
         $state.recorded_exits += $exitId
         # Daily gate counters move only for exits that actually filled today

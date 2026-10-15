@@ -89,17 +89,36 @@ function Add-JournalEntry {
 # (so the caller can recover the entry regime) or $null if no open record.
 # When a symbol has two open records (original + PYRA add), the exit qty
 # disambiguates which tranche closed.
+#
+# -openedAt picks one exact open record (multi-tranche exits are split by the
+# caller, one call per tranche). -closeQty below the record's qty closes only
+# that many shares: the closed row carries the closed qty and a pro-rated
+# risk_usd, the open row keeps the remainder.
 function Complete-JournalEntry {
-    param([string]$symbol, [double]$exitPrice, [double]$pnl, [int]$qty = 0)
+    param([string]$symbol, [double]$exitPrice, [double]$pnl, [int]$qty = 0, $openedAt = $null, [int]$closeQty = 0)
     $j = Load-Journal
     $cands = @($j.open | Where-Object { $_.symbol -eq $symbol })
-    if ($qty -gt 0) {
+    if ($null -ne $openedAt -and "$openedAt" -ne "") {
+        $t = _Journal-AsUtc $openedAt
+        $cands = @($cands | Where-Object { (_Journal-AsUtc $_.opened_at) -eq $t })
+    } elseif ($qty -gt 0) {
         $qtyMatch = @($cands | Where-Object { [int]$_.qty -eq $qty })
         if ($qtyMatch.Count -gt 0) { $cands = $qtyMatch }
     }
     $rec = $cands | Sort-Object { _Journal-AsUtc $_.opened_at } -Descending | Select-Object -First 1
     if ($null -eq $rec) { return $null }
-    $j.open = @($j.open | Where-Object { $_ -ne $rec })
+    if ($closeQty -gt 0 -and $closeQty -lt [int]$rec.qty) {
+        # Partial close: split the row. The closed part gets its share of the risk.
+        $part = $rec | Select-Object *
+        $frac = $closeQty / [double]$rec.qty
+        $part.qty      = $closeQty
+        $part.risk_usd = [Math]::Round([double]$rec.risk_usd * $frac, 2)
+        $rec.risk_usd  = [Math]::Round([double]$rec.risk_usd - $part.risk_usd, 2)
+        $rec.qty       = [int]$rec.qty - $closeQty
+        $rec = $part
+    } else {
+        $j.open = @($j.open | Where-Object { $_ -ne $rec })
+    }
 
     $rMult = if ($rec.risk_usd -gt 0) { [Math]::Round($pnl / $rec.risk_usd, 2) } else { 0.0 }
     $outcome = if ([Math]::Abs($rMult) -lt 0.15) { "SCRATCH" } elseif ($pnl -gt 0) { "WIN" } else { "LOSS" }
@@ -118,6 +137,51 @@ function Complete-JournalEntry {
     Write-Host ("  [JOURNAL] {0,-6} closed: {1} {2}  {3:+0.00;-0.00}R  `${4:F2}  held {5}d" -f `
         $symbol, $rec.strategy, $outcome, $rMult, $pnl, $holdDays) -ForegroundColor DarkCyan
     return $rec
+}
+
+# Records on the newest open row of a symbol that its entry filled away from
+# plan and the stop was moved to keep the planned distance from the fill.
+# entry / risk_usd stay as planned (the distance, hence the risk, is unchanged).
+function Set-JournalFillFix([string]$symbol, [double]$fill, [double]$newStop) {
+    $j = Load-Journal
+    $rec = @($j.open | Where-Object { $_.symbol -eq $symbol -and $_.strategy -ne "PYRA" }) |
+           Sort-Object { _Journal-AsUtc $_.opened_at } -Descending | Select-Object -First 1
+    if ($null -eq $rec) { return }
+    $rec | Add-Member -NotePropertyName fill_price -NotePropertyValue ([Math]::Round($fill, 2)) -Force
+    $rec | Add-Member -NotePropertyName stop_from_fill -NotePropertyValue ([Math]::Round($newStop, 2)) -Force
+    Save-Journal $j
+}
+
+# Splits ONE closing fill across the open journal tranches of a symbol, oldest
+# first (FIFO). A single market sell can flatten a base trade and its PYRA add
+# together (SNOW 14+7, MSFT 14+7 in Aug 2026); crediting the whole fill to the
+# newest tranche priced every share off the add's entry and orphaned the base.
+# Each tranche is priced off its OWN entry fill, found among $entryOrders by
+# "<strategy>_<symbol>" client_order_id submitted within 10 min of opened_at
+# (falls back to the journal entry). Pure: no I/O.
+# Returns @( @{ OpenedAt; Strategy; Qty; Entry; Pnl; Partial } ), or @() when
+# there is no matching open tranche (caller keeps its old single-entry path).
+function Get-ExitAllocation($openRecords, $entryOrders, [string]$symbol, [string]$entrySide, [int]$exitQty, [double]$exitPrice) {
+    $recs = @($openRecords | Where-Object { $_ -and $_.symbol -eq $symbol -and $_.side -eq $entrySide } |
+              Sort-Object { _Journal-AsUtc $_.opened_at })
+    if ($recs.Count -eq 0 -or $exitQty -le 0) { return @() }
+    $dir = if ($entrySide -eq "buy") { 1.0 } else { -1.0 }
+    $left = $exitQty; $out = @()
+    foreach ($r in $recs) {
+        if ($left -le 0) { break }
+        $take = [Math]::Min($left, [int]$r.qty)
+        if ($take -le 0) { continue }
+        $t0 = _Journal-AsUtc $r.opened_at
+        $ord = @($entryOrders | Where-Object {
+            $_ -and $_.status -eq "filled" -and $_.filled_avg_price -and $_.submitted_at -and
+            ([string]$_.client_order_id).StartsWith(("{0}_{1}_" -f $r.strategy, $symbol)) -and
+            [Math]::Abs(((_Journal-AsUtc $_.submitted_at) - $t0).TotalMinutes) -le 10 }) | Select-Object -First 1
+        $entry = if ($ord) { [double]$ord.filled_avg_price } else { [double]$r.entry }
+        $out += [pscustomobject]@{ OpenedAt = $r.opened_at; Strategy = [string]$r.strategy; Qty = $take; Entry = $entry
+                                   Pnl = [Math]::Round($dir * ($exitPrice - $entry) * $take, 2); Partial = ($take -lt [int]$r.qty) }
+        $left -= $take
+    }
+    return $out
 }
 
 # Drops journal 'open' rows for symbols the account no longer holds.

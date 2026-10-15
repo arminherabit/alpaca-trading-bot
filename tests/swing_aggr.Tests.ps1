@@ -189,6 +189,8 @@ Describe 'Dry-run guard' {
         Mock Test-EarningsBlackout { $false }
         Mock Test-AggrEarningsBefore { $false }
         Mock Get-DailyBars { @(1..80 | ForEach-Object { [pscustomobject]@{ Close = 100 } }) }
+        # Live-price guard is covered in its own Describe; pass the signal through here.
+        Mock Update-SignalForLivePrice { param($cfg, $symbol, $dailyBars, $regimeName, $spyBars, $signal) [pscustomobject]@{ Action = 'OK'; Signal = $signal; Mid = $signal.Entry; DriftPct = 0; SpreadPct = 0.1; AgeSec = 1; Reason = '' } }
         Mock Get-RelativeStrength { 4.0 }
         Mock Get-SwingBestSignal { [pscustomobject]@{ Strategy='BRKOUT'; Side='buy'; Entry=100; Stop=95; Confidence=95; Reason='t' } }
         Mock Get-AggrCallChain { @((C 'NVDA261127C00100000' 45 0.65 4.0 4.2)) }
@@ -405,5 +407,62 @@ Describe 'Stock partial with an open bracket (live path, mocked broker)' {
         $B.Orders.Clear(); [void]$B.Orders.Add((O 'tp9' 'limit' 'g9' @{ limit_price = '15.17' }))
         (Invoke-AggrStockPartial $CfgLive $St $Pos 227 2.11).Outcome | Should -Be 'ABORTED_NO_STOP'
         @($B.Calls | Where-Object { $_ -like 'DELETE*' -or $_ -like 'POST*' }).Count | Should -Be 0
+    }
+}
+
+Describe 'Extension logging (no gate)' {
+    BeforeAll {
+        # 60 completed days: High 100, Low 98, Close 99 (true range 2 -> ATR 2), then
+        # today's bar closing at 104: 2.0 ATR and 4% above the 20-day high of 100.
+        function ExtBars([double]$todayClose = 104) {
+            try   { $tz = [System.TimeZoneInfo]::FindSystemTimeZoneById("Eastern Standard Time") }
+            catch { $tz = [System.TimeZoneInfo]::FindSystemTimeZoneById("America/New_York") }
+            $today = [System.TimeZoneInfo]::ConvertTimeFromUtc([datetime]::UtcNow, $tz).Date
+            $b = @(60..1 | ForEach-Object { [pscustomobject]@{ Time = $today.AddDays(-$_); Open = 99; High = 100; Low = 98; Close = 99; Volume = 1e6 } })
+            $b + [pscustomobject]@{ Time = $today; Open = 101; High = $todayClose + 1; Low = 99; Close = $todayClose; Volume = 2e6 }
+        }
+    }
+    It 'matches the BRKOUT signal basis: completed days only, ATR(14), current close' {
+        $x = Get-AggrExtension (ExtBars 104)
+        $x.extension_atr | Should -Be 2.0; $x.pct_above_20d_high | Should -Be 4.0
+        $y = Get-AggrExtension (ExtBars 97)    # below the 20-day high: negative, still logged
+        $y.extension_atr | Should -Be (-1.5); $y.pct_above_20d_high | Should -Be (-3.0)
+    }
+    It 'never throws: missing or short bars give nulls' {
+        $n = Get-AggrExtension $null; $n.extension_atr | Should -BeNullOrEmpty; $n.pct_above_20d_high | Should -BeNullOrEmpty
+        (Get-AggrExtension @((ExtBars)[0..9])).extension_atr | Should -BeNullOrEmpty
+        (Get-AggrExtension @(1..80 | ForEach-Object { [pscustomobject]@{ Close = 100 } })).extension_atr | Should -BeNullOrEmpty   # no Time/High
+    }
+    It 'dry run: BRKOUT skip lines and every DRYRUN_ENTERED line carry the fields; decisions unchanged; no orders' {
+        $script:AggrSkipJournal = Join-Path $TestDrive 'ext.jsonl'
+        Mock Invoke-AlpacaApi { param($cfg,$method,$path,$body) if ($method -ne 'GET') { throw "LIVE CALL $method" }; return @() }
+        Mock Get-EasternTime { [datetime]'2026-10-15T11:00:00' }
+        Mock Get-TickerMemoryInfo { $null }
+        Mock Test-EarningsBlackout { $false }
+        Mock Get-RelativeStrength { 4.0 }
+        Mock Get-AggrOpusUnderlyings { @{} }
+        Mock Get-DailyBars { ExtBars 104 }
+        Mock Get-Quote { [pscustomobject]@{ Symbol = 'X'; BidPrice = 103.98; AskPrice = 104.02; MidPrice = 104.0; Time = [datetime]::UtcNow.AddSeconds(-2) } }   # fresh, at the signal price
+        Mock Get-SwingBestSignal {
+            param($cfg, $symbol)
+            switch ($symbol) {
+                'BRK1' { [pscustomobject]@{ Strategy = 'BRKOUT'; Side = 'buy'; Entry = 104; Stop = 100; Confidence = 70; Reason = 't' } }   # < NEUTRAL floor 80
+                'PUL1' { [pscustomobject]@{ Strategy = 'PULLBK'; Side = 'buy'; Entry = 104; Stop = 100; Confidence = 70; Reason = 't' } }   # < floor, not BRKOUT
+                'PUL2' { [pscustomobject]@{ Strategy = 'PULLBK'; Side = 'buy'; Entry = 104; Stop = 100; Confidence = 90; Reason = 't' } }   # enters
+            }
+        }
+        $cfg2 = $Cfg | ConvertTo-Json -Depth 6 | ConvertFrom-Json; $cfg2.adaptive_sizing = $false
+        $st = [pscustomobject]@{ losses = 0; equity_at_open = 95554.16; active_watchlist = @() }
+        Initialize-AggrState $st; $st.aggr_watchlist = @('BRK1', 'PUL1', 'PUL2')
+        Invoke-AggrEntries $cfg2 $st ([pscustomobject]@{ Regime = 'NEUTRAL'; SizeMult = 1.0 }) @() 95554.16 190000 @() @() @{}
+        $l = @(Get-Content $script:AggrSkipJournal | ForEach-Object { $_ | ConvertFrom-Json })
+        $b = $l | Where-Object sym -eq 'BRK1'
+        $b.skip_reason | Should -Be 'CONF_FLOOR'; $b.extension_atr | Should -Be 2.0; $b.pct_above_20d_high | Should -Be 4.0
+        $p1 = $l | Where-Object sym -eq 'PUL1'
+        $p1.skip_reason | Should -Be 'CONF_FLOOR'; $p1.PSObject.Properties.Name | Should -Not -Contain 'extension_atr'
+        $p2 = $l | Where-Object sym -eq 'PUL2'
+        $p2.skip_reason | Should -Be 'DRYRUN_ENTERED'; $p2.extension_atr | Should -Be 2.0; $p2.pct_above_20d_high | Should -Be 4.0
+        $p2.payload.qty | Should -Be '229'    # 25% notional cap (23,888.54 / $104) binds before 1.5% risk (358): sizing untouched
+        Should -Invoke Invoke-AlpacaApi -ParameterFilter { $method -ne 'GET' } -Times 0 -Exactly
     }
 }

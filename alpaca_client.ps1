@@ -294,7 +294,23 @@ function Get-Quote($cfg, [string]$symbol) {
         BidPrice = [double]$r.quote.bp
         AskPrice = [double]$r.quote.ap
         MidPrice = ([double]$r.quote.bp + [double]$r.quote.ap) / 2.0
+        # Quote timestamp (UTC). An IEX quote can be minutes old on a thin or
+        # halted name (AEHL 2026-10-14: 5 min old, 12.9% wide at entry time).
+        Time     = ConvertTo-UtcTime $r.quote.t
     }
+}
+
+# PowerShell 7 turns ISO-8601 JSON strings into [datetime]; 5.1 leaves strings.
+function ConvertTo-UtcTime($v) {
+    if ($null -eq $v -or "$v" -eq "") { return $null }
+    if ($v -is [datetime]) {
+        if ($v.Kind -eq [System.DateTimeKind]::Unspecified) { return [datetime]::SpecifyKind($v, [System.DateTimeKind]::Utc) }
+        return $v.ToUniversalTime()
+    }
+    try {
+        return [datetime]::Parse([string]$v, [System.Globalization.CultureInfo]::InvariantCulture,
+            [System.Globalization.DateTimeStyles]::AdjustToUniversal -bor [System.Globalization.DateTimeStyles]::AssumeUniversal)
+    } catch { return $null }
 }
 
 function Get-LatestTrade($cfg, [string]$symbol) {
