@@ -1378,3 +1378,23 @@
 {"ts":"2026-10-16T13:30:23.9760210Z","sym":"UNH","limit":405.12,"qty":31,"exit_reason":"UNFILLED","dry_run":true,"pnl":0.0,"event":"SHADOW_EXIT","opened_at":"2026-10-15T13:50:24.0107283Z","skip_reason":"DRYRUN_EXIT","kind":"stock"}
 {"ts":"2026-10-16T13:30:24.0717601Z","current_tp":15.16,"qty":682,"skip_reason":"DRYRUN_MIGRATE","new_tp":21.08,"note":"dry run: no order modified; legacy ladder keeps managing live","current_stop":11.07,"sym":"AI","event":"MIGRATE","r_per_share":0.91}
 {"ts":"2026-10-16T13:30:24.1229423Z","current_tp":32.77,"qty":605,"skip_reason":"DRYRUN_MIGRATE","new_tp":39.4,"note":"dry run: no order modified; legacy ladder keeps managing live","current_stop":28.18,"sym":"PFE","event":"MIGRATE","r_per_share":1.0197}
+{"ts":"2026-10-16T13:50:24.2213208Z","dd_pct":0.327,"heat_before":2067.84,"skip_reason":"INDEX_ANCHOR","regime":"BULL","sym":"SPY","dd_tier":"NORMAL","dry_run":true}
+{"ts":"2026-10-16T13:50:24.2648870Z","dd_pct":0.327,"heat_before":2067.84,"skip_reason":"INDEX_ANCHOR","regime":"BULL","sym":"QQQ","dd_tier":"NORMAL","dry_run":true}
+{"ts":"2026-10-16T13:50:24.5325765Z","dd_pct":0.327,"heat_before":2067.84,"skip_reason":"NO_SETUP","regime":"BULL","sym":"IREN","dd_tier":"NORMAL","dry_run":true}
+{"ts":"2026-10-16T13:50:24.6774990Z","dd_pct":0.327,"heat_before":2067.84,"skip_reason":"NO_SETUP","regime":"BULL","sym":"CRWV","dd_tier":"NORMAL","dry_run":true}
+{"ts":"2026-10-16T13:50:24.7780612Z","dd_pct":0.327,"heat_before":2067.84,"skip_reason":"NO_SETUP","regime":"BULL","sym":"INTC","dd_tier":"NORMAL","dry_run":true}
+{"ts":"2026-10-16T13:50:25.0858337Z","dd_pct":0.327,"heat_before":2067.84,"skip_reason":"NO_SETUP","regime":"BULL","sym":"DRAM","dd_tier":"NORMAL","dry_run":true}
+{"ts":"2026-10-16T13:50:25.3695934Z","dd_pct":0.327,"heat_before":2067.84,"skip_reason":"NO_SETUP","regime":"BULL","sym":"SMCI","dd_tier":"NORMAL","dry_run":true}
+{"ts":"2026-10-16T13:50:25.6434384Z","dd_pct":0.327,"heat_before":2067.84,"skip_reason":"NO_SETUP","regime":"BULL","sym":"SPCX","dd_tier":"NORMAL","dry_run":true}
+{"ts":"2026-10-16T13:50:25.7217162Z","dd_pct":0.327,"heat_before":2067.84,"skip_reason":"NO_SETUP","regime":"BULL","sym":"NKE","dd_tier":"NORMAL","dry_run":true}
+{"ts":"2026-10-16T13:50:25.7285893Z","dd_pct":0.327,"heat_before":2067.84,"skip_reason":"COOLDOWN","regime":"BULL","sym":"NVDA","dd_tier":"NORMAL","dry_run":true}
+{"ts":"2026-10-16T13:50:25.8217444Z","dd_pct":0.327,"heat_before":2067.84,"skip_reason":"NO_SETUP","regime":"BULL","sym":"GOOGL","dd_tier":"NORMAL","dry_run":true}
+{"ts":"2026-10-16T13:50:25.9108735Z","dd_pct":0.327,"heat_before":2067.84,"skip_reason":"NO_SETUP","regime":"BULL","sym":"GOOG","dd_tier":"NORMAL","dry_run":true}
+{"ts":"2026-10-16T13:50:26.2122763Z","dd_pct":0.327,"heat_before":2067.84,"skip_reason":"NO_SETUP","regime":"BULL","sym":"TSLA","dd_tier":"NORMAL","dry_run":true}
+{"ts":"2026-10-16T13:50:26.4710262Z","dd_pct":0.327,"heat_before":2067.84,"skip_reason":"NO_SETUP","regime":"BULL","sym":"HD","dd_tier":"NORMAL","dry_run":true}
+{"ts":"2026-10-16T13:50:26.8438452Z","dd_pct":0.327,"heat_before":2067.84,"skip_reason":"NO_SETUP","regime":"BULL","sym":"AMZN","dd_tier":"NORMAL","dry_run":true}
+{"ts":"2026-10-16T13:50:26.9514680Z","dd_pct":0.327,"heat_before":2067.84,"skip_reason":"NO_SETUP","regime":"BULL","sym":"MRNA","dd_tier":"NORMAL","dry_run":true}
+{"ts":"2026-10-16T13:50:27.0921119Z","dd_pct":0.327,"heat_before":2067.84,"skip_reason":"NO_SETUP","regime":"BULL","sym":"SBUX","dd_tier":"NORMAL","dry_run":true}
+{"ts":"2026-10-16T13:50:27.3662459Z","dd_pct":0.327,"heat_before":2067.84,"skip_reason":"NO_SETUP","regime":"BULL","sym":"TGT","dd_tier":"NORMAL","dry_run":true}
+{"ts":"2026-10-16T13:50:27.4798945Z","dd_pct":0.327,"heat_before":2067.84,"skip_reason":"NO_SETUP","regime":"BULL","sym":"ABBV","dd_tier":"NORMAL","dry_run":true}
+{"ts":"2026-10-16T13:50:27.6583676Z","dd_pct":0.327,"heat_before":2067.84,"skip_reason":"NO_SETUP","regime":"BULL","sym":"ISRG","dd_tier":"NORMAL","dry_run":true}
