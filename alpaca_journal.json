@@ -38,6 +38,19 @@
       "confidence": 85,
       "regime": "NEUTRAL",
       "reason": "20d-high break (ext 0.51 ATR, volPace 2.2x, RS +7.5%)"
+    },
+    {
+      "opened_at": "2026-10-16T14:01:23.3004332Z",
+      "symbol": "NKE",
+      "strategy": "BRKOUT",
+      "side": "buy",
+      "entry": 37.83,
+      "stop": 35.58,
+      "qty": 137,
+      "risk_usd": 308.25,
+      "confidence": 85,
+      "regime": "BULL",
+      "reason": "20d-high break (ext 0.17 ATR, volPace 1.3x, RS +5.1%)"
     }
   ],
   "closed": [
