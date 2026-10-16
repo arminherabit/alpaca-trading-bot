@@ -3,7 +3,7 @@
   "wins": 0,
   "losses": 0,
   "pnl_today": 0.0,
-  "last_scan": "2026-10-16T14:01:23.3029476+00:00",
+  "last_scan": "2026-10-16T14:10:33.8132032+00:00",
   "session_start": "2026-05-14T04:50:22.4733863+00:00",
   "watchlist_date": "2026-10-16",
   "active_watchlist": [
@@ -130,7 +130,8 @@
   ],
   "aggr_migrate_logged": [
     "2026-10-16:AI",
-    "2026-10-16:PFE"
+    "2026-10-16:PFE",
+    "2026-10-16:NKE"
   ],
   "aggr_partial_done": [],
   "aggr_migrated": [],
@@ -139,7 +140,8 @@
   "aggr_protect_restore": [],
   "fill_checked": [
     "586f5049-403f-431d-83ab-769aa6944621",
-    "93ac7b67-85c1-428f-ba7c-924ca13a8053"
+    "93ac7b67-85c1-428f-ba7c-924ca13a8053",
+    "4bbb3d99-afec-49df-98bf-bd5041341df6"
   ],
   "aggr_shadow_open": [
     {
@@ -161,15 +163,16 @@
       "sym": "NKE",
       "kind": "stock",
       "side": "buy",
-      "entry": 37.83,
       "stop": 35.58,
       "tp": 60.33,
       "qty": 206,
       "risk_usd": 463.5,
       "opened_at": "2026-10-16T14:01:18.4609651Z",
       "limit": 37.83,
-      "filled": false,
-      "filled_at": null
+      "entry": 37.83,
+      "filled": true,
+      "filled_at": "2026-10-16T14:01:23.8053357Z",
+      "fill_source": "LIVE_FILL"
     }
   ],
   "aggr_shadow_closed": [
