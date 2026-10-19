@@ -14,19 +14,6 @@
       "reason": "20d-high break (ext 0.51 ATR, volPace 2.7x, RS +3.7%)"
     },
     {
-      "opened_at": "2026-10-15T13:50:26.0879597Z",
-      "symbol": "UNH",
-      "strategy": "BRKOUT",
-      "side": "buy",
-      "entry": 405.12,
-      "stop": 383.37,
-      "qty": 21,
-      "risk_usd": 456.75,
-      "confidence": 85,
-      "regime": "NEUTRAL",
-      "reason": "20d-high break (ext 0.51 ATR, volPace 2.2x, RS +7.5%)"
-    },
-    {
       "opened_at": "2026-10-16T14:01:23.3004332Z",
       "symbol": "NKE",
       "strategy": "BRKOUT",
@@ -501,6 +488,21 @@
       "regime": "BULL",
       "reason": "20d-high break (ext 19.42 ATR, volPace 36.9x, RS +126.2%)",
       "orphaned_at": "2026-09-09T13:30:47.3929202Z",
+      "orphan_reason": "position not held; exit never journaled"
+    },
+    {
+      "opened_at": "2026-10-15T13:50:26.0879597Z",
+      "symbol": "UNH",
+      "strategy": "BRKOUT",
+      "side": "buy",
+      "entry": 405.12,
+      "stop": 383.37,
+      "qty": 21,
+      "risk_usd": 456.75,
+      "confidence": 85,
+      "regime": "NEUTRAL",
+      "reason": "20d-high break (ext 0.51 ATR, volPace 2.2x, RS +7.5%)",
+      "orphaned_at": "2026-10-19T13:30:24.5521128Z",
       "orphan_reason": "position not held; exit never journaled"
     }
   ]
