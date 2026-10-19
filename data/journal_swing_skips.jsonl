@@ -2081,3 +2081,23 @@
 {"ts":"2026-10-16T19:20:26.9248608Z","regime":"RANGING","dd_pct":1.269,"dry_run":true,"heat_before":2218.97,"sym":"AMZN","dd_tier":"NORMAL","skip_reason":"NO_SETUP"}
 {"ts":"2026-10-19T13:30:26.2323404Z","new_tp":60.33,"current_tp":45.7,"qty":137,"sym":"NKE","current_stop":35.58,"r_per_share":2.25,"note":"dry run: no order modified; legacy ladder keeps managing live","event":"MIGRATE","skip_reason":"DRYRUN_MIGRATE"}
 {"ts":"2026-10-19T13:30:26.2961820Z","new_tp":39.4,"current_tp":32.77,"qty":605,"sym":"PFE","current_stop":28.18,"r_per_share":1.0197,"note":"dry run: no order modified; legacy ladder keeps managing live","event":"MIGRATE","skip_reason":"DRYRUN_MIGRATE"}
+{"ts":"2026-10-19T13:50:27.6850525Z","dry_run":true,"dd_tier":"NORMAL","regime":"NEUTRAL","dd_pct":1.271,"skip_reason":"INDEX_ANCHOR","heat_before":2218.97,"sym":"SPY"}
+{"ts":"2026-10-19T13:50:27.7470520Z","dry_run":true,"dd_tier":"NORMAL","regime":"NEUTRAL","dd_pct":1.271,"skip_reason":"INDEX_ANCHOR","heat_before":2218.97,"sym":"QQQ"}
+{"ts":"2026-10-19T13:50:28.0556738Z","dry_run":true,"dd_tier":"NORMAL","regime":"NEUTRAL","dd_pct":1.271,"skip_reason":"NO_SETUP","heat_before":2218.97,"sym":"CRWV"}
+{"ts":"2026-10-19T13:50:28.4281405Z","dry_run":true,"dd_tier":"NORMAL","regime":"NEUTRAL","dd_pct":1.271,"skip_reason":"NO_SETUP","heat_before":2218.97,"sym":"SKHY"}
+{"ts":"2026-10-19T13:50:28.4527744Z","dry_run":true,"dd_tier":"NORMAL","regime":"NEUTRAL","dd_pct":1.271,"skip_reason":"EARNINGS","heat_before":2218.97,"sym":"TSLA"}
+{"ts":"2026-10-19T13:50:28.8173553Z","dry_run":true,"dd_tier":"NORMAL","regime":"NEUTRAL","dd_pct":1.271,"skip_reason":"NO_SETUP","heat_before":2218.97,"sym":"NVDA"}
+{"ts":"2026-10-19T13:50:29.1040922Z","dry_run":true,"dd_tier":"NORMAL","regime":"NEUTRAL","dd_pct":1.271,"skip_reason":"NO_SETUP","heat_before":2218.97,"sym":"AAPL"}
+{"ts":"2026-10-19T13:50:29.3938737Z","dry_run":true,"dd_tier":"NORMAL","regime":"NEUTRAL","dd_pct":1.271,"skip_reason":"NO_SETUP","heat_before":2218.97,"sym":"BAC"}
+{"ts":"2026-10-19T13:50:29.6356105Z","dry_run":true,"dd_tier":"NORMAL","regime":"NEUTRAL","dd_pct":1.271,"skip_reason":"NO_SETUP","heat_before":2218.97,"sym":"C"}
+{"ts":"2026-10-19T13:50:29.9197845Z","dry_run":true,"dd_tier":"NORMAL","regime":"NEUTRAL","dd_pct":1.271,"skip_reason":"NO_SETUP","heat_before":2218.97,"sym":"BX"}
+{"ts":"2026-10-19T13:50:30.1600600Z","dry_run":true,"dd_tier":"NORMAL","regime":"NEUTRAL","dd_pct":1.271,"skip_reason":"NO_SETUP","heat_before":2218.97,"sym":"SBUX"}
+{"ts":"2026-10-19T13:50:30.1609671Z","dry_run":true,"dd_tier":"NORMAL","regime":"NEUTRAL","dd_pct":1.271,"skip_reason":"HELD_OR_WORKING","heat_before":2218.97,"sym":"NKE"}
+{"ts":"2026-10-19T13:50:30.4160900Z","dry_run":true,"dd_tier":"NORMAL","regime":"NEUTRAL","dd_pct":1.271,"skip_reason":"NO_SETUP","heat_before":2218.97,"sym":"TGT"}
+{"ts":"2026-10-19T13:50:30.6964276Z","dry_run":true,"dd_tier":"NORMAL","regime":"NEUTRAL","dd_pct":1.271,"skip_reason":"NO_SETUP","heat_before":2218.97,"sym":"CMG"}
+{"ts":"2026-10-19T13:50:31.0268781Z","dry_run":true,"dd_tier":"NORMAL","regime":"NEUTRAL","dd_pct":1.271,"skip_reason":"NO_SETUP","heat_before":2218.97,"sym":"HD"}
+{"ts":"2026-10-19T13:50:31.3141120Z","dry_run":true,"dd_tier":"NORMAL","regime":"NEUTRAL","dd_pct":1.271,"skip_reason":"NO_SETUP","heat_before":2218.97,"sym":"JPM"}
+{"ts":"2026-10-19T13:50:31.6434557Z","dry_run":true,"dd_tier":"NORMAL","regime":"NEUTRAL","dd_pct":1.271,"skip_reason":"NO_SETUP","heat_before":2218.97,"sym":"MS"}
+{"ts":"2026-10-19T13:50:31.9088191Z","dry_run":true,"dd_tier":"NORMAL","regime":"NEUTRAL","dd_pct":1.271,"skip_reason":"NO_SETUP","heat_before":2218.97,"sym":"V"}
+{"ts":"2026-10-19T13:50:32.1715395Z","dry_run":true,"dd_tier":"NORMAL","regime":"NEUTRAL","dd_pct":1.271,"skip_reason":"NO_SETUP","heat_before":2218.97,"sym":"AVGO"}
+{"ts":"2026-10-19T13:50:32.4792236Z","dry_run":true,"dd_tier":"NORMAL","regime":"NEUTRAL","dd_pct":1.271,"skip_reason":"NO_SETUP","heat_before":2218.97,"sym":"AMZN"}
