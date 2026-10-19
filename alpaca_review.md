@@ -150,3 +150,21 @@ No closed trades this week.
 
 **By regime:** BULL 0/1 $-372.55
 
+
+## Week ending 2026-10-18
+
+| Metric | Value |
+|---|---|
+| Trades | 5 (1W / 4L, 20%) |
+| Net P&L | $-1360.68 |
+| Profit factor | 0.29 |
+| Expectancy / trade | $-272.14 |
+| Avg R | -0.32 |
+| Avg hold | 5.6 days |
+| Best | MSFT PULLBK $561.8 (1.53R) |
+| Worst | AI BRKOUT $-620.62 (-1R) |
+
+**By strategy:** BRKOUT 0/3 $-1573.07 | PULLBK 1/2 $212.39
+
+**By regime:** BULL 1/5 $-1360.68
+
