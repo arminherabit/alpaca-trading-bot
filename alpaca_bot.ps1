@@ -715,6 +715,27 @@ function Close-StalePositions($cfg, $positions) {
 # A GTC bracket whose ENTRY never filled is a stale bet: the signal was
 # priced off a level that the market rejected. Cancel any unfilled parent
 # bracket older than today so it can't fill days later in a different tape.
+# After canceling a stale entry: re-read the order and the symbol's position.
+# Ok only when the order is 'canceled' with filled_qty 0 and no position is held.
+# Invoke-AlpacaApi returns $null both on 404 and on error, so a position lookup
+# that cannot be told apart from "none" only counts when /v2/account answers
+# (the API is reachable, so the $null was a real 404 "no position").
+function Test-EntryCancelConfirmed($cfg, $o) {
+    $re = $null
+    try { $re = Invoke-AlpacaApi $cfg "GET" "/v2/orders/$($o.id)" } catch {}
+    if ($null -eq $re) { return [pscustomobject]@{ Ok = $false; Reason = "order re-check failed" } }
+    $fq = if ($re.filled_qty) { [double]$re.filled_qty } else { 0 }
+    if ($fq -gt 0) { return [pscustomobject]@{ Ok = $false; Reason = "fill race: filled_qty $fq" } }
+    if ([string]$re.status -ne "canceled") { return [pscustomobject]@{ Ok = $false; Reason = "status '$($re.status)' (not canceled yet)" } }
+    $pos = $null
+    try { $pos = Invoke-AlpacaApi $cfg "GET" "/v2/positions/$($o.symbol)" } catch {}
+    if ($null -ne $pos -and $pos.symbol) { return [pscustomobject]@{ Ok = $false; Reason = "position exists (qty $($pos.qty))" } }
+    $all = $null
+    try { $all = Invoke-AlpacaApi $cfg "GET" "/v2/account" } catch {}
+    if ($null -eq $all) { return [pscustomobject]@{ Ok = $false; Reason = "position check unavailable (API unreachable)" } }
+    return [pscustomobject]@{ Ok = $true; Reason = "canceled, filled_qty 0, no position" }
+}
+
 function Cancel-StaleEntries($cfg, $heldSyms = $null) {
     $etToday = (Get-EasternTime).ToString("yyyy-MM-dd")
     $orders  = Invoke-AlpacaApi $cfg "GET" "/v2/orders?status=open&nested=true&limit=100"
@@ -740,9 +761,18 @@ function Cancel-StaleEntries($cfg, $heldSyms = $null) {
             ).ToString("yyyy-MM-dd")
             if ($createdET -lt $etToday) {
                 Write-Host ("    [STALE] {0,-6} unfilled entry from {1} -- canceling" -f $o.symbol, $createdET) -ForegroundColor Yellow
-                $null = Invoke-AlpacaApi $cfg "DELETE" "/v2/orders/$($o.id)"
-                # Journal the never-filled entry as UNFILLED (not open / orphaned).
-                try { Set-JournalUnfilled -symbol $o.symbol -orderCreatedAt $o.created_at -reason ("stale unfilled entry from {0} canceled" -f $createdET) | Out-Null } catch {}
+                $delOk = $true
+                try { $null = Invoke-AlpacaApi $cfg "DELETE" "/v2/orders/$($o.id)" } catch { $delOk = $false }
+                # Journal the entry as UNFILLED only once Alpaca confirms it: the order
+                # re-reads as canceled with zero fill AND no position exists. Anything
+                # else (delete error, fill race, pending_cancel, lookup failure) leaves
+                # the journal row untouched; Reconcile-Journal handles it later.
+                $chk = if ($delOk) { Test-EntryCancelConfirmed $cfg $o } else { [pscustomobject]@{ Ok = $false; Reason = "DELETE failed" } }
+                if ($chk.Ok) {
+                    try { Set-JournalUnfilled -symbol $o.symbol -orderCreatedAt $o.created_at -reason ("stale unfilled entry from {0} canceled" -f $createdET) | Out-Null } catch {}
+                } else {
+                    Write-Host ("    [STALE][WARN] {0,-6} not journaled as unfilled: {1}" -f $o.symbol, $chk.Reason) -ForegroundColor DarkYellow
+                }
             }
         } catch {}
     }
