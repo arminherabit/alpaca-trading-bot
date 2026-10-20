@@ -18,8 +18,21 @@ BeforeAll {
     # Cancel-StaleEntries lives in alpaca_bot.ps1 (a script with a main body), so
     # load just that function from the AST.
     $ast = [System.Management.Automation.Language.Parser]::ParseFile((Join-Path $script:Root 'alpaca_bot.ps1'), [ref]$null, [ref]$null)
-    $fn = $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -eq 'Cancel-StaleEntries' }, $true) | Select-Object -First 1
-    . ([scriptblock]::Create($fn.Extent.Text))
+    foreach ($fn in $ast.FindAll({ param($n) $n -is [System.Management.Automation.Language.FunctionDefinitionAst] -and $n.Name -in @('Cancel-StaleEntries','Test-EntryCancelConfirmed') }, $true)) {
+        . ([scriptblock]::Create($fn.Extent.Text))
+    }
+    # Broker double for Cancel-StaleEntries: open-order list, DELETE, order re-check, position, account.
+    function StaleBroker([string]$recheckStatus = 'canceled', [string]$recheckFilled = '0', [bool]$deleteThrows = $false, $position = $null) {
+        $script:SB = @{ Status = $recheckStatus; Filled = $recheckFilled; DelThrows = $deleteThrows; Pos = $position }
+        Mock Get-EasternTime { [datetime]'2026-10-16T10:00:00' }
+        Mock Invoke-AlpacaApi { param($cfg, $method, $path, $body)
+            if ($method -eq 'DELETE') { if ($script:SB.DelThrows) { throw '422 order not cancelable' }; return $null }
+            if ($path -like '/v2/orders?status=open*') { return @([pscustomobject]@{ id = 'o1'; symbol = 'UNH'; order_class = 'bracket'; filled_qty = '0'; created_at = '2026-10-15T13:50:25Z' }) }
+            if ($path -eq '/v2/orders/o1') { return [pscustomobject]@{ id = 'o1'; symbol = 'UNH'; status = $script:SB.Status; filled_qty = $script:SB.Filled } }
+            if ($path -eq '/v2/positions/UNH') { return $script:SB.Pos }
+            if ($path -eq '/v2/account') { return [pscustomobject]@{ equity = '94339.09' } }
+            return $null }
+    }
 
     function Bars([double]$todayClose) {
         try   { $tz = [System.TimeZoneInfo]::FindSystemTimeZoneById("Eastern Standard Time") }
@@ -171,15 +184,33 @@ Describe 'Fix 5: unfilled entries are journaled as UNFILLED' {
         Set-JournalUnfilled -symbol 'UNH' -orderCreatedAt '2026-10-17T13:50:25Z' | Should -BeNullOrEmpty
         @((Load-Journal).open).Count | Should -Be 2
     }
-    It 'Cancel-StaleEntries journals the canceled unfilled entry' {
-        Mock Get-EasternTime { [datetime]'2026-10-16T10:00:00' }
-        Mock Invoke-AlpacaApi { param($cfg, $method, $path, $body)
-            if ($method -eq 'GET') { return @([pscustomobject]@{ id = 'o1'; symbol = 'UNH'; order_class = 'bracket'; filled_qty = '0'; created_at = '2026-10-15T13:50:25Z' }) }
-            return $null }
+    It 'Cancel-StaleEntries: normal path (canceled, 0 fill, no position) journals UNFILLED' {
+        StaleBroker
         Cancel-StaleEntries ([pscustomobject]@{}) @{}
         Should -Invoke Invoke-AlpacaApi -Times 1 -Exactly -ParameterFilter { $method -eq 'DELETE' }
         $j = Load-Journal
         @($j.unfilled).Count | Should -Be 1; @($j.open | Where-Object symbol -eq 'UNH').Count | Should -Be 0
+    }
+    It 'Cancel-StaleEntries: DELETE fails -> journal untouched, no re-check' {
+        StaleBroker -deleteThrows $true
+        Cancel-StaleEntries ([pscustomobject]@{}) @{}
+        @((Load-Journal).open).Count | Should -Be 2; @((Load-Journal).unfilled | Where-Object { $_ }).Count | Should -Be 0
+        Should -Invoke Invoke-AlpacaApi -Times 0 -Exactly -ParameterFilter { $path -eq '/v2/orders/o1' -and $method -eq 'GET' }
+    }
+    It 'Cancel-StaleEntries: fill race (re-check shows filled_qty > 0) -> journal untouched' {
+        StaleBroker -recheckStatus 'filled' -recheckFilled '21'
+        Cancel-StaleEntries ([pscustomobject]@{}) @{}
+        @((Load-Journal).open | Where-Object symbol -eq 'UNH').Count | Should -Be 1; @((Load-Journal).unfilled | Where-Object { $_ }).Count | Should -Be 0
+    }
+    It 'Cancel-StaleEntries: position appeared after cancel -> journal untouched' {
+        StaleBroker -position ([pscustomobject]@{ symbol = 'UNH'; qty = '21' })
+        Cancel-StaleEntries ([pscustomobject]@{}) @{}
+        @((Load-Journal).unfilled | Where-Object { $_ }).Count | Should -Be 0
+    }
+    It 'Cancel-StaleEntries: still pending_cancel -> journal untouched' {
+        StaleBroker -recheckStatus 'pending_cancel'
+        Cancel-StaleEntries ([pscustomobject]@{}) @{}
+        @((Load-Journal).unfilled | Where-Object { $_ }).Count | Should -Be 0
     }
     It 'a held symbol (live protection) is never canceled or journaled' {
         Mock Get-EasternTime { [datetime]'2026-10-16T10:00:00' }
