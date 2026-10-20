@@ -3,7 +3,7 @@
   "wins": 0,
   "losses": 0,
   "pnl_today": 0.0,
-  "last_scan": "2026-10-20T14:00:59.3237031+00:00",
+  "last_scan": "2026-10-20T14:10:27.8268128+00:00",
   "session_start": "2026-05-14T04:50:22.4733863+00:00",
   "watchlist_date": "2026-10-20",
   "active_watchlist": [
@@ -105,7 +105,7 @@
   "pyramided_syms": [],
   "aggr_halted": false,
   "aggr_day": "2026-10-20",
-  "aggr_trades_today": 1,
+  "aggr_trades_today": 2,
   "aggr_dry_entered": [],
   "aggr_watchlist": [
     "SPY",
@@ -131,7 +131,8 @@
   ],
   "aggr_migrate_logged": [
     "2026-10-20:NKE",
-    "2026-10-20:PFE"
+    "2026-10-20:PFE",
+    "2026-10-20:V"
   ],
   "aggr_partial_done": [],
   "aggr_migrated": [],
@@ -141,7 +142,8 @@
   "fill_checked": [
     "586f5049-403f-431d-83ab-769aa6944621",
     "93ac7b67-85c1-428f-ba7c-924ca13a8053",
-    "4bbb3d99-afec-49df-98bf-bd5041341df6"
+    "4bbb3d99-afec-49df-98bf-bd5041341df6",
+    "d8346b5b-a7a1-49b2-a60f-5705c84e696b"
   ],
   "aggr_shadow_open": [
     {
@@ -178,13 +180,28 @@
       "sym": "V",
       "kind": "stock",
       "side": "buy",
-      "entry": 407.84,
       "stop": 394.88,
       "tp": 453.2,
       "qty": 58,
       "risk_usd": 751.68,
       "opened_at": "2026-10-20T14:00:56.1534696Z",
       "limit": 407.84,
+      "entry": 407.5,
+      "filled": true,
+      "filled_at": "2026-10-20T14:00:59.9440988Z",
+      "fill_source": "LIVE_FILL"
+    },
+    {
+      "sym": "UNH",
+      "kind": "stock",
+      "side": "buy",
+      "entry": 417.09,
+      "stop": 394.0,
+      "tp": 497.9,
+      "qty": 34,
+      "risk_usd": 785.06,
+      "opened_at": "2026-10-20T14:10:27.7985679Z",
+      "limit": 417.09,
       "filled": false,
       "filled_at": null
     }
