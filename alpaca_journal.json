@@ -474,7 +474,8 @@
       "outcome": "LOSS"
     }
   ],
-  "orphaned": [
+  "orphaned": [],
+  "unfilled": [
     {
       "opened_at": "2026-08-19T14:01:48.6390152Z",
       "symbol": "MRNA",
@@ -488,7 +489,11 @@
       "regime": "BULL",
       "reason": "20d-high break (ext 19.42 ATR, volPace 36.9x, RS +126.2%)",
       "orphaned_at": "2026-09-09T13:30:47.3929202Z",
-      "orphan_reason": "position not held; exit never journaled"
+      "orphan_reason": "position not held; exit never journaled",
+      "unfilled_at": "2026-10-20T05:47:10.1371975Z",
+      "unfilled_reason": "entry never filled (one-time correction 2026-10)",
+      "outcome": "UNFILLED",
+      "correction_note": "corrected 2026-10-19: orphaned -> unfilled; journal evidence only: no closed row within 1 day, orphaned with no exit (not verified against Alpaca)"
     },
     {
       "opened_at": "2026-10-15T13:50:26.0879597Z",
@@ -503,7 +508,11 @@
       "regime": "NEUTRAL",
       "reason": "20d-high break (ext 0.51 ATR, volPace 2.2x, RS +7.5%)",
       "orphaned_at": "2026-10-19T13:30:24.5521128Z",
-      "orphan_reason": "position not held; exit never journaled"
+      "orphan_reason": "position not held; exit never journaled",
+      "unfilled_at": "2026-10-20T05:47:10.1464735Z",
+      "unfilled_reason": "entry never filled (one-time correction 2026-10)",
+      "outcome": "UNFILLED",
+      "correction_note": "corrected 2026-10-19: orphaned -> unfilled; journal evidence only: no closed row within 1 day, orphaned with no exit (not verified against Alpaca)"
     }
   ]
 }
