@@ -73,7 +73,7 @@ Describe 'Update-AggrShadowBook (dry run, read-only)' {
         $st.aggr_shadow_realized | Should -Be (-511.20)                                                      # was -1,431.36 when filled at the limit
         $j = Get-Content $script:AggrSkipJournal | ConvertFrom-Json
         $j.skip_reason | Should -Be 'DRYRUN_EXIT'; $j.source | Should -Be 'LIVE_FILL'; $j.fill_source | Should -Be 'LIVE_FILL'
-        $j.limit | Should -Be 29.0; $j.entry | Should -Be 26.84; $j.r_multiple | Should -Be (-120)  # the 26.83 stop sat $0.01 under the real fill
+        $j.limit | Should -Be 29.0; $j.entry | Should -Be 26.84; $j.r_multiple | Should -Be (-0.55)  # v1.2: R from the planned 29.00-26.83 distance (was -120 off the 1c fill-to-stop gap)
         Should -Invoke Invoke-AlpacaApi -ParameterFilter { $method -ne 'GET' } -Times 0 -Exactly
     }
     It 'migrates old {sym,kind,risk_usd} entries from the journal payload' {

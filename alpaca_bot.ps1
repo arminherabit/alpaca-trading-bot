@@ -740,7 +740,9 @@ function Cancel-StaleEntries($cfg, $heldSyms = $null) {
             ).ToString("yyyy-MM-dd")
             if ($createdET -lt $etToday) {
                 Write-Host ("    [STALE] {0,-6} unfilled entry from {1} -- canceling" -f $o.symbol, $createdET) -ForegroundColor Yellow
-                Invoke-AlpacaApi $cfg "DELETE" "/v2/orders/$($o.id)" | Out-Null
+                $null = Invoke-AlpacaApi $cfg "DELETE" "/v2/orders/$($o.id)"
+                # Journal the never-filled entry as UNFILLED (not open / orphaned).
+                try { Set-JournalUnfilled -symbol $o.symbol -orderCreatedAt $o.created_at -reason ("stale unfilled entry from {0} canceled" -f $createdET) | Out-Null } catch {}
             }
         } catch {}
     }
