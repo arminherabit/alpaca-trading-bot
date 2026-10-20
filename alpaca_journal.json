@@ -25,6 +25,19 @@
       "confidence": 85,
       "regime": "BULL",
       "reason": "20d-high break (ext 0.17 ATR, volPace 1.3x, RS +5.1%)"
+    },
+    {
+      "opened_at": "2026-10-20T14:00:59.3214994Z",
+      "symbol": "V",
+      "strategy": "BRKOUT",
+      "side": "buy",
+      "entry": 407.84,
+      "stop": 394.88,
+      "qty": 35,
+      "risk_usd": 453.6,
+      "confidence": 100,
+      "regime": "NEUTRAL",
+      "reason": "20d-high break (ext 0.49 ATR, volPace 1.9x, RS +13.3%)"
     }
   ],
   "closed": [
