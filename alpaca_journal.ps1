@@ -139,6 +139,29 @@ function Complete-JournalEntry {
     return $rec
 }
 
+# Called when an entry order is canceled/expired with ZERO fill (Cancel-StaleEntries).
+# Moves the matching open row (same symbol, opened within $windowMin minutes of the
+# order's created_at) to journal.unfilled with outcome UNFILLED, so it is neither
+# left "open" nor later mislabeled "orphaned". No P&L, no R, never counted in stats.
+# Only touches rows matched at cancel time; existing journal rows are not migrated.
+function Set-JournalUnfilled([string]$symbol, $orderCreatedAt, [string]$reason = "entry canceled unfilled", [int]$windowMin = 15) {
+    $j = Load-Journal
+    $t = $null; try { $t = _Journal-AsUtc $orderCreatedAt } catch {}
+    $cands = @($j.open | Where-Object { $_.symbol -eq $symbol })
+    if ($null -ne $t) { $cands = @($cands | Where-Object { [Math]::Abs(((_Journal-AsUtc $_.opened_at) - $t).TotalMinutes) -le $windowMin }) }
+    $rec = $cands | Sort-Object { _Journal-AsUtc $_.opened_at } -Descending | Select-Object -First 1
+    if ($null -eq $rec) { return $null }
+    $j.open = @($j.open | Where-Object { $_ -ne $rec })
+    $rec | Add-Member -NotePropertyName unfilled_at   -NotePropertyValue ((Get-Date).ToUniversalTime().ToString("o")) -Force
+    $rec | Add-Member -NotePropertyName unfilled_reason -NotePropertyValue $reason -Force
+    $rec | Add-Member -NotePropertyName outcome       -NotePropertyValue "UNFILLED" -Force
+    if ($null -eq $j.PSObject.Properties['unfilled']) { $j | Add-Member -NotePropertyName unfilled -NotePropertyValue @() -Force }
+    $j.unfilled = @($j.unfilled) + $rec
+    Save-Journal $j
+    Write-Host ("  [JOURNAL] {0,-6} unfilled: {1} entry never filled -- {2}" -f $symbol, $rec.strategy, $reason) -ForegroundColor DarkCyan
+    return $rec
+}
+
 # Records on the newest open row of a symbol that its entry filled away from
 # plan and the stop was moved to keep the planned distance from the fill.
 # entry / risk_usd stay as planned (the distance, hence the risk, is unchanged).

@@ -158,7 +158,10 @@ Describe 'Aggressive dry run uses the same guard' {
         Mock Get-Quote { $script:AehlStaleQuote }
         $st = [pscustomobject]@{ losses = 0; equity_at_open = 95554.16; active_watchlist = @() }
         Initialize-AggrState $st; $st.aggr_watchlist = @('AEHL')
-        Invoke-AggrEntries $Cfg $st ([pscustomobject]@{ Regime = 'BULL'; SizeMult = 1.0 }) @() 95554.16 190000 @() @() @{}
+        # Extension gate off here: this test isolates the stale-quote guard (AEHL at
+        # 11.87 ATR would otherwise be stopped earlier as EXTENSION, see swing_aggr_v12).
+        $cfgNoExt = $Cfg | ConvertTo-Json -Depth 8 | ConvertFrom-Json; $cfgNoExt.aggr.max_extension_atr = 0
+        Invoke-AggrEntries $cfgNoExt $st ([pscustomobject]@{ Regime = 'BULL'; SizeMult = 1.0 }) @() 95554.16 190000 @() @() @{}
         $l = @(Get-Content $script:AggrSkipJournal | ForEach-Object { $_ | ConvertFrom-Json })
         $a = $l | Where-Object sym -eq 'AEHL'
         $a.skip_reason | Should -Be 'STALE_SIGNAL'; $a.stale_reason | Should -Match 'old'; $a.quote_spread_pct | Should -Be 12.94

@@ -167,7 +167,10 @@ function New-AggrStockOrderPayload([string]$sym, [string]$side, [int]$qty, [doub
 # ── Exits (spec 8) ───────────────────────────────────────────────────────────
 
 # Stock: one-time 1/3 partial at +partial_exit_r. Returns qty to sell (0 = none).
+# partial_exit_r <= 0 (v1.2 Variant I) disables the partial entirely: the bracket
+# take-profit at dummy_tp_r (3.5R) is the real exit target instead.
 function Get-AggrStockPartialQty([double]$rMult, [int]$qty, [bool]$partialDone, $a) {
+    if ($null -eq $a.partial_exit_r -or [double]$a.partial_exit_r -le 0) { return 0 }
     if ($partialDone -or $rMult -lt [double]$a.partial_exit_r) { return 0 }
     $q = [int][Math]::Floor([Math]::Abs($qty) * [double]$a.partial_exit_fraction)
     if ($q -ge [Math]::Abs($qty)) { $q = [Math]::Abs($qty) - 1 }
@@ -682,7 +685,7 @@ function Invoke-AggrManage($cfg, $state, $myPositions, $allPositions) {
 
 # ── Entry evaluation (shadow in dry run) ─────────────────────────────────────
 
-# Breakout extension, logged only (no gate): same basis as Get-SwingBreakoutSignal
+# Breakout extension (logged; gated by Test-AggrExtensionGate since v1.2): same basis as Get-SwingBreakoutSignal
 # -- 20-day high and ATR(14) from COMPLETED prior days, price = current bar close.
 # Returns nulls instead of throwing, so it can never change an entry decision.
 function Get-AggrExtension($bars) {
@@ -713,6 +716,39 @@ function Get-AggrGateSkip($live, [string]$gate, [hashtable]$rec) {
     return $gate
 }
 
+# Slots + heat source. Dry run: shadow book only, shadow stocks booked as stock
+# risk (qty x |entry - stop|), shadow calls at their premium (risk_usd).
+# Live: the live book only (the shadow book is empty when dry_run=false).
+function Get-AggrSlotBook($cfg, $state, $myPositions, [bool]$dry) {
+    $items = @(); $sc = 0; $cc = 0
+    if ($dry) {
+        foreach ($s in @($state.aggr_shadow_open)) {
+            if ($null -eq $s) { continue }
+            if ($s.kind -eq 'call') { $cc++; $items += @{ Kind = 'call'; MarketValue = [double]$s.risk_usd }; continue }
+            $sc++
+            $side = if ($s.side -eq 'sell') { 'short' } else { 'long' }
+            $items += @{ Kind = 'stock'; Side = $side; Qty = [double]$s.qty; Entry = [double]$s.entry; Stop = [double]$s.stop }
+        }
+    } else {
+        foreach ($p in @($myPositions)) {
+            if ($null -eq $p) { continue }
+            if ($p.asset_class -eq "us_option") { $cc++; $items += @{ Kind = 'call'; MarketValue = [double]$p.market_value }; continue }
+            $sc++
+            $legs = Get-LiveExitLegs $cfg $p
+            $items += @{ Kind = 'stock'; Side = $p.side; Qty = [double]$p.qty; Entry = [double]$p.avg_entry_price; Stop = [double]$legs.stop }
+        }
+    }
+    return [pscustomobject]@{ StockCount = $sc; CallCount = $cc; HeatItems = $items }
+}
+
+# Extension gate (v1.2): BRKOUT more than max_extension_atr ATR above the prior
+# 20-day high is skipped as EXTENSION. 0/absent = off. Unknown extension = pass.
+function Test-AggrExtensionGate($ext, $a) {
+    if ($null -eq $a.max_extension_atr -or [double]$a.max_extension_atr -le 0) { return $true }
+    if ($null -eq $ext) { return $true }
+    return ([double]$ext -le [double]$a.max_extension_atr)
+}
+
 function Invoke-AggrEntries($cfg, $state, $regime, $spyDaily, [double]$equity, [double]$bp, $myPositions, $allPositions, $workingOrderSyms) {
     $a = Get-AggrCfg $cfg; $dry = Test-AggrDryRun $cfg
     $etToday = (Get-EasternTime).ToString("yyyy-MM-dd")
@@ -724,15 +760,13 @@ function Invoke-AggrEntries($cfg, $state, $regime, $spyDaily, [double]$equity, [
     # Heat from live book (+ simulated dry-run entries today)
     $heatItems = @()
     $stockCount = 0; $callCount = 0
-    foreach ($p in @($myPositions)) {
-        if ($p.asset_class -eq "us_option") { $callCount++; $heatItems += @{ Kind = 'call'; MarketValue = [double]$p.market_value }; continue }
-        $stockCount++
-        $legs = Get-LiveExitLegs $cfg $p
-        $heatItems += @{ Kind = 'stock'; Side = $p.side; Qty = [double]$p.qty; Entry = [double]$p.avg_entry_price; Stop = [double]$legs.stop }
-    }
-    # Open SHADOW positions (dry run) count toward slots and heat until a hypothetical exit closes them.
-    foreach ($s in @($state.aggr_shadow_open)) { if ($s) { if ($s.kind -eq 'call') { $callCount++ } else { $stockCount++ }; $heatItems += @{ Kind = 'call'; MarketValue = [double]$s.risk_usd } } }
-    $heat = Get-AggrHeat $heatItems
+    # FIX v1.2: in dry run, slots and heat come from the SHADOW book only. The
+    # shadow book already mirrors every name the engine would hold (including
+    # copies of legacy-held PFE/NKE), so also counting the live book counted
+    # those names twice and blocked ABBV/HD/V/PLTR with STOCK_SLOTS_FULL.
+    $book = Get-AggrSlotBook $cfg $state $myPositions $dry
+    $stockCount = $book.StockCount; $callCount = $book.CallCount
+    $heat = Get-AggrHeat $book.HeatItems
 
     $opusSyms = Get-AggrOpusUnderlyings $allPositions
     $watch = if (@($state.aggr_watchlist).Count -gt 0) { @($state.aggr_watchlist) } else { @($state.active_watchlist) }
@@ -772,6 +806,7 @@ function Invoke-AggrEntries($cfg, $state, $regime, $spyDaily, [double]$equity, [
                     $rec.setup = $sig.Strategy; $rec.conf = $sig.Confidence; $rec.rs = [Math]::Round([double]$rs, 2)
                     if ($sig.Strategy -eq "BRKOUT") { Add-AggrExtension $rec $bars }   # every BRKOUT line from here on
                     if ([int]$sig.Confidence -lt $confFloor) { $skip = "CONF_FLOOR" }
+                    elseif ($sig.Strategy -eq "BRKOUT" -and -not (Test-AggrExtensionGate $rec.extension_atr $a)) { $skip = "EXTENSION" }
                 }
             }
         }
@@ -958,10 +993,19 @@ function Resolve-AggrShadowExit($sh, $bars, $closedOrders, [int]$weekdaysHeld, $
     return $null
 }
 
+function Get-AggrShadowPlannedR($sh) {
+    if ($null -ne $sh.PSObject.Properties['limit'] -and $null -ne $sh.limit -and [double]$sh.limit -gt 0) {
+        $d = [Math]::Abs([double]$sh.limit - [double]$sh.stop); if ($d -gt 0) { return $d } }
+    if ([double]$sh.qty -gt 0 -and [double]$sh.risk_usd -gt 0 -and $sh.kind -ne 'call') { return [double]$sh.risk_usd / [double]$sh.qty }
+    return [Math]::Abs([double]$sh.entry - [double]$sh.stop)
+}
+
 function Get-AggrShadowPnl($sh, [double]$exitPx) {
     $dir = if ($sh.side -eq "sell") { -1.0 } else { 1.0 }
     $pnl = $dir * ($exitPx - [double]$sh.entry) * [double]$sh.qty
-    $r = [Math]::Abs([double]$sh.entry - [double]$sh.stop)
+    # R from the PLANNED stop distance (limit - stop), not fill - stop: a fill far
+    # through the limit left AEHL 1c above its stop and logged -119.9R (true -0.55R).
+    $r = Get-AggrShadowPlannedR $sh
     $rm = if ($r -gt 0) { $dir * ($exitPx - [double]$sh.entry) / $r } else { 0 }
     return [pscustomobject]@{ Pnl = [Math]::Round($pnl, 2); R = [Math]::Round($rm, 2) }
 }

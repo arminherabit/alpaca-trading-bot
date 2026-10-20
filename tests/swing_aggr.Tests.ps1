@@ -11,6 +11,11 @@ BeforeAll {
     . (Join-Path $script:Root 'alpaca_swing_aggr.ps1')
     $script:Cfg = Get-Content (Join-Path $script:Root 'alpaca_config.json') -Raw | ConvertFrom-Json
     $script:A = $script:Cfg.aggr
+    # v1.1 exit settings (partial 1/3 at +2R, dummy 10R TP): the partial machinery
+    # stays in the code for a future re-enable, so its tests run against this copy.
+    $script:Cfg11 = $script:Cfg | ConvertTo-Json -Depth 8 | ConvertFrom-Json
+    $script:Cfg11.aggr.partial_exit_r = 2.0; $script:Cfg11.aggr.dummy_tp_r = 10.0
+    $script:A11 = $script:Cfg11.aggr
     function Near($x, $y, $t = 1e-6) { [Math]::Abs([double]$x - [double]$y) | Should -BeLessOrEqual $t }
     function C($occ, $dte, $delta, $bid, $ask, $oi = 1000, $vol = 100) {
         [pscustomobject]@{ Occ = $occ; Expiration = '2026-11-27'; Dte = $dte; Delta = $delta; Bid = $bid; Ask = $ask; Oi = $oi; Volume = $vol }
@@ -33,20 +38,20 @@ Describe 'Legacy Get-PositionSize cap from config' {
 }
 
 Describe 'Stock sizing' {
-    It '1.5% risk on $95,554' {
+    It '1.75% risk on $95,554 (v1.2 Variant I)' {
         $s = Get-AggrStockSize -equity 95554.16 -buyingPower 0 -entry 50 -stop 45 -a $A
-        $s.RiskPct | Should -Be 1.5; $s.Shares | Should -Be 286   # 1433.31/5
+        $s.RiskPct | Should -Be 1.75; $s.Shares | Should -Be 334   # 1672.20/5
     }
     It 'cap 2.0% with edge/regime multipliers' {
         (Get-AggrStockSize -equity 100000 -buyingPower 0 -entry 100 -stop 90 -a $A -edgeMult 2.0).RiskPct | Should -Be 2.0
     }
-    It 'dd multiplier halves' { (Get-AggrStockSize -equity 100000 -buyingPower 0 -entry 100 -stop 90 -a $A -ddMult 0.5).Shares | Should -Be 75 }
+    It 'dd multiplier halves' { (Get-AggrStockSize -equity 100000 -buyingPower 0 -entry 100 -stop 90 -a $A -ddMult 0.5).Shares | Should -Be 87 }   # 0.875% of 100k / 10
     It '25% notional cap binds on tight stop' {
         $s = Get-AggrStockSize -equity 100000 -buyingPower 0 -entry 100 -stop 99.5 -a $A
         $s.Shares | Should -Be 250; $s.CappedBy | Should -Be 'notional'
     }
-    It 'BP/6*0.8 cap binds' { (Get-AggrStockSize -equity 100000 -buyingPower 30000 -entry 100 -stop 90 -a $A).Shares | Should -Be 40 }
-    It 'short side sizes the same' { (Get-AggrStockSize -equity 100000 -buyingPower 0 -entry 100 -stop 110 -a $A).Shares | Should -Be 150 }
+    It 'BP/5*0.8 cap binds' { (Get-AggrStockSize -equity 100000 -buyingPower 30000 -entry 100 -stop 90 -a $A).Shares | Should -Be 48 }
+    It 'short side sizes the same' { (Get-AggrStockSize -equity 100000 -buyingPower 0 -entry 100 -stop 110 -a $A).Shares | Should -Be 175 }
 }
 
 Describe 'Heat' {
@@ -58,7 +63,7 @@ Describe 'Heat' {
 }
 
 Describe 'Drawdown floor and throttles' {
-    It 'normal' { $d = Get-AggrDdState 95000 $A; $d.Tier | Should -Be 'NORMAL'; $d.Mult | Should -Be 1.0; $d.MaxPositions | Should -Be 6 }
+    It 'normal' { $d = Get-AggrDdState 95000 $A; $d.Tier | Should -Be 'NORMAL'; $d.Mult | Should -Be 1.0; $d.MaxPositions | Should -Be 5 }
     It '-10% throttle1' { $d = Get-AggrDdState 85998 $A; $d.Tier | Should -Be 'THROTTLE1'; $d.Mult | Should -Be 0.5; $d.MaxPositions | Should -Be 4; $d.CallsAllowed | Should -BeFalse }
     It '-15% throttle2' { $d = Get-AggrDdState 81000 $A; $d.Tier | Should -Be 'THROTTLE2'; $d.Mult | Should -Be 0.25; $d.MaxPositions | Should -Be 2 }
     It 'halt at floor exactly' { (Get-AggrDdState 76443.33 $A).Halted | Should -BeTrue }
@@ -127,10 +132,10 @@ Describe 'Exits' {
         (Get-AggrCallExitDecision (X @{PartialDone=$true; UnderPx=115; LastClose=115; HighestClose=118}) $A).Action | Should -Be 'HOLD'
     }
     It 'stock 1/3 partial at +2R once' {
-        Get-AggrStockPartialQty 2.0 682 $false $A | Should -Be 227
-        Get-AggrStockPartialQty 1.9 682 $false $A | Should -Be 0
-        Get-AggrStockPartialQty 3.0 682 $true  $A | Should -Be 0
-        Get-AggrStockPartialQty 2.0 1 $false $A | Should -Be 0
+        Get-AggrStockPartialQty 2.0 682 $false $A11 | Should -Be 227
+        Get-AggrStockPartialQty 1.9 682 $false $A11 | Should -Be 0
+        Get-AggrStockPartialQty 3.0 682 $true  $A11 | Should -Be 0
+        Get-AggrStockPartialQty 2.0 1 $false $A11 | Should -Be 0
     }
     It 'stock payload uses dummy 10R TP' {
         $p = New-AggrStockOrderPayload 'AI' 'buy' 100 11.98 11.07 10 'BRKOUT' '100000'
@@ -145,7 +150,7 @@ Describe 'Dry-run guard' {
         { Invoke-AggrApi $Cfg 'DELETE' '/v2/orders/x' } | Should -Throw '*DRY-RUN GUARD*'
     }
     It 'missing dry_run flag defaults to dry' { Test-AggrDryRun ([pscustomobject]@{ aggr = [pscustomobject]@{ enabled = $true } }) | Should -BeTrue }
-    It 'manage in dry run (AI migration + partial) writes journal and sends no order' {
+    It 'manage in dry run (AI migration + partial, v1.1 exits) writes journal and sends no order' {
         $script:AggrSkipJournal = Join-Path $TestDrive 'skips.jsonl'
         Mock Invoke-AlpacaApi {
             param($cfg,$method,$path,$body)
@@ -162,8 +167,8 @@ Describe 'Dry-run guard' {
         Mock Get-EasternTime { [datetime]'2026-10-14T10:00:00' }
         $st = [pscustomobject]@{}; Initialize-AggrState $st
         $pos = [pscustomobject]@{ symbol='AI'; asset_class='us_equity'; qty='682'; side='long'; avg_entry_price='11.98'; current_price='13.90' }  # +2.1R
-        Invoke-AggrManage $Cfg $st @($pos) @($pos)
-        Invoke-AggrManage $Cfg $st @($pos) @($pos)   # second scan same day: migration not re-logged
+        Invoke-AggrManage $Cfg11 $st @($pos) @($pos)
+        Invoke-AggrManage $Cfg11 $st @($pos) @($pos)   # second scan same day: migration not re-logged
         $lines = @(Get-Content $script:AggrSkipJournal | ForEach-Object { $_ | ConvertFrom-Json })
         @($lines | Where-Object skip_reason -eq 'DRYRUN_MIGRATE').Count | Should -Be 1
         ($lines | Where-Object skip_reason -eq 'DRYRUN_MIGRATE').new_tp | Should -Be 21.08
@@ -216,6 +221,7 @@ Describe 'Stock partial with an open bracket (live path, mocked broker)' {
         $script:AggrPollDelayMs = 0
         $script:CfgLive = $Cfg | ConvertTo-Json -Depth 8 | ConvertFrom-Json
         $script:CfgLive.aggr.dry_run = $false
+        $script:CfgLive.aggr.partial_exit_r = 2.0   # partial mechanics under the v1.1 exit (v1.2 ships with it off)
         function O($id, $type, $grp, $extra = @{}) {
             $h = [ordered]@{ id = $id; symbol = 'AI'; side = 'sell'; status = 'new'; type = $type; qty = '682'; group = $grp }
             foreach ($k in $extra.Keys) { $h[$k] = $extra[$k] }; [pscustomobject]$h
