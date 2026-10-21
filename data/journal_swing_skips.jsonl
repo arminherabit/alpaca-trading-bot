@@ -3507,3 +3507,23 @@
 {"ts":"2026-10-21T13:50:34.3346148Z","dd_pct":0.831,"regime":"BULL","sym":"SOXX","dry_run":true,"dd_tier":"NORMAL","heat_before":2776.76,"skip_reason":"NO_SETUP"}
 {"ts":"2026-10-21T13:50:34.7599459Z","dd_pct":0.831,"regime":"BULL","sym":"NET","dry_run":true,"dd_tier":"NORMAL","heat_before":2776.76,"skip_reason":"NO_SETUP"}
 {"ts":"2026-10-21T13:50:34.9653324Z","dd_pct":0.831,"regime":"BULL","sym":"SBUX","dry_run":true,"dd_tier":"NORMAL","heat_before":2776.76,"skip_reason":"NO_SETUP"}
+{"ts":"2026-10-21T14:01:41.0105490Z","skip_reason":"INDEX_ANCHOR","dd_pct":0.943,"sym":"SPY","heat_before":2776.76,"dd_tier":"NORMAL","dry_run":true,"regime":"BULL"}
+{"ts":"2026-10-21T14:01:41.0184674Z","skip_reason":"INDEX_ANCHOR","dd_pct":0.943,"sym":"QQQ","heat_before":2776.76,"dd_tier":"NORMAL","dry_run":true,"regime":"BULL"}
+{"ts":"2026-10-21T14:01:41.7499806Z","skip_reason":"NO_SETUP","dd_pct":0.943,"sym":"SMCI","heat_before":2776.76,"dd_tier":"NORMAL","dry_run":true,"regime":"BULL"}
+{"ts":"2026-10-21T14:01:42.4667533Z","skip_reason":"NO_SETUP","dd_pct":0.943,"sym":"SPCX","heat_before":2776.76,"dd_tier":"NORMAL","dry_run":true,"regime":"BULL"}
+{"ts":"2026-10-21T14:01:43.2297071Z","skip_reason":"NO_SETUP","dd_pct":0.943,"sym":"SPCH","heat_before":2776.76,"dd_tier":"NORMAL","dry_run":true,"regime":"BULL"}
+{"ts":"2026-10-21T14:01:43.5720360Z","skip_reason":"NO_SETUP","dd_pct":0.943,"sym":"KORU","heat_before":2776.76,"dd_tier":"NORMAL","dry_run":true,"regime":"BULL"}
+{"ts":"2026-10-21T14:01:43.8458316Z","skip_reason":"NO_SETUP","dd_pct":0.943,"sym":"NFLX","heat_before":2776.76,"dd_tier":"NORMAL","dry_run":true,"regime":"BULL"}
+{"ts":"2026-10-21T14:01:44.0954305Z","skip_reason":"NO_SETUP","dd_pct":0.943,"sym":"TSLL","heat_before":2776.76,"dd_tier":"NORMAL","dry_run":true,"regime":"BULL"}
+{"ts":"2026-10-21T14:01:44.4983298Z","skip_reason":"NO_SETUP","dd_pct":0.943,"sym":"NVDA","heat_before":2776.76,"dd_tier":"NORMAL","dry_run":true,"regime":"BULL"}
+{"ts":"2026-10-21T14:01:44.7568891Z","skip_reason":"NO_SETUP","dd_pct":0.943,"sym":"GOOGL","heat_before":2776.76,"dd_tier":"NORMAL","dry_run":true,"regime":"BULL"}
+{"ts":"2026-10-21T14:01:45.2228385Z","skip_reason":"NO_SETUP","dd_pct":0.943,"sym":"AVGO","heat_before":2776.76,"dd_tier":"NORMAL","dry_run":true,"regime":"BULL"}
+{"ts":"2026-10-21T14:01:45.8069359Z","call_skip":"CONF","live_check":"OK","quote_spread_pct":0.47,"live_mid":259.755,"regime":"BULL","quote_age_sec":0.1,"conf":75,"drift_pct":0.31,"heat_before":2776.76,"dd_pct":0.943,"setup":"PULLBK","rs":4.11,"dry_run":true,"skip_reason":"STOCK_SLOTS_FULL","dd_tier":"NORMAL","instrument":"stock","sym":"AMZN"}
+{"ts":"2026-10-21T14:01:46.0947354Z","skip_reason":"NO_SETUP","dd_pct":0.943,"sym":"ISRG","heat_before":2776.76,"dd_tier":"NORMAL","dry_run":true,"regime":"BULL"}
+{"ts":"2026-10-21T14:01:46.4889523Z","skip_reason":"NO_SETUP","dd_pct":0.943,"sym":"INTC","heat_before":2776.76,"dd_tier":"NORMAL","dry_run":true,"regime":"BULL"}
+{"ts":"2026-10-21T14:01:46.7889084Z","skip_reason":"NO_SETUP","dd_pct":0.943,"sym":"CMG","heat_before":2776.76,"dd_tier":"NORMAL","dry_run":true,"regime":"BULL"}
+{"ts":"2026-10-21T14:01:47.0667290Z","skip_reason":"NO_SETUP","dd_pct":0.943,"sym":"CRWV","heat_before":2776.76,"dd_tier":"NORMAL","dry_run":true,"regime":"BULL"}
+{"ts":"2026-10-21T14:01:47.3352248Z","skip_reason":"NO_SETUP","dd_pct":0.943,"sym":"MRVL","heat_before":2776.76,"dd_tier":"NORMAL","dry_run":true,"regime":"BULL"}
+{"ts":"2026-10-21T14:01:48.5728287Z","call_skip":"NO_LIQUID_CALL","live_check":"OK","quote_spread_pct":0.27,"live_mid":222.055,"regime":"BULL","quote_age_sec":1.6,"conf":95,"drift_pct":0.03,"heat_before":2776.76,"dd_pct":0.943,"setup":"PULLBK","rs":3.13,"dry_run":true,"skip_reason":"STOCK_SLOTS_FULL","dd_tier":"NORMAL","instrument":"stock","sym":"ZS"}
+{"ts":"2026-10-21T14:01:49.1360390Z","dry_run":true,"stale_reason":"live quote unusable: spread 7.72% (max 2%)","dd_tier":"NORMAL","rs":6.14,"heat_before":2776.76,"live_check":"STALE_SIGNAL","quote_age_sec":4.3,"conf":88,"dd_pct":0.943,"skip_reason":"STALE_SIGNAL","quote_spread_pct":7.72,"setup":"PULLBK","sym":"DDOG","drift_pct":null,"live_mid":264.305,"regime":"BULL"}
+{"ts":"2026-10-21T14:01:49.6297695Z","dry_run":true,"stale_reason":"live quote unusable: spread 8.71% (max 2%)","dd_tier":"NORMAL","rs":1.87,"heat_before":2776.76,"live_check":"STALE_SIGNAL","quote_age_sec":1.0,"conf":80,"dd_pct":0.943,"skip_reason":"STALE_SIGNAL","quote_spread_pct":8.71,"setup":"PULLBK","sym":"PLTR","drift_pct":null,"live_mid":193.785,"regime":"BULL"}
