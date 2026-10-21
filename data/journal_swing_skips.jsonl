@@ -3484,3 +3484,6 @@
 {"ts":"2026-10-20T19:20:33.2178138Z","dd_tier":"NORMAL","regime":"NEUTRAL","dry_run":true,"sym":"SOXX","heat_before":2776.76,"dd_pct":0.754,"skip_reason":"TRADES_PER_DAY"}
 {"ts":"2026-10-20T19:20:33.2185316Z","dd_tier":"NORMAL","regime":"NEUTRAL","dry_run":true,"sym":"NET","heat_before":2776.76,"dd_pct":0.754,"skip_reason":"TRADES_PER_DAY"}
 {"ts":"2026-10-20T19:20:33.2192703Z","dd_tier":"NORMAL","regime":"NEUTRAL","dry_run":true,"sym":"SBUX","heat_before":2776.76,"dd_pct":0.754,"skip_reason":"TRADES_PER_DAY"}
+{"ts":"2026-10-21T13:30:26.1519208Z","event":"MIGRATE","qty":137,"r_per_share":2.25,"sym":"NKE","skip_reason":"DRYRUN_MIGRATE","note":"dry run: no order modified; legacy ladder keeps managing live","current_tp":45.7,"current_stop":35.58,"new_tp":45.7}
+{"ts":"2026-10-21T13:30:26.3288408Z","event":"MIGRATE","qty":605,"r_per_share":1.0197,"sym":"PFE","skip_reason":"DRYRUN_MIGRATE","note":"dry run: no order modified; legacy ladder keeps managing live","current_tp":32.77,"current_stop":28.18,"new_tp":32.77}
+{"ts":"2026-10-21T13:30:26.4428403Z","event":"MIGRATE","qty":35,"r_per_share":12.62,"sym":"V","skip_reason":"DRYRUN_MIGRATE","note":"dry run: no order modified; legacy ladder keeps managing live","current_tp":453.2,"current_stop":394.88,"new_tp":451.67}

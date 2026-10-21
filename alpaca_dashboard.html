@@ -91,27 +91,27 @@
   <h1>&#9650; ALPACA TRADING DASHBOARD</h1>
   <div class="badges">
     <span class="badge" style="color:#d29922; border-color:#d29922;">PAPER TRADING</span>
-    <span class="badge" style="color:#8b949e;  border-color:#8b949e;">CLOSED</span>
-    <span class="badge" style="color:var(--sub); border-color:var(--border);">Opens Wed 1:30 PM</span>
+    <span class="badge" style="color:#3fb950;  border-color:#3fb950;">OPEN</span>
+    <span class="badge" style="color:var(--sub); border-color:var(--border);">Closes 8:00 PM</span>
   </div>
-  <span class="gen-time">Generated: 2026-10-21 13:20:24 &nbsp;|&nbsp; Auto-refresh: 30s</span>
+  <span class="gen-time">Generated: 2026-10-21 13:30:31 &nbsp;|&nbsp; Auto-refresh: 30s</span>
 </header>
 
 <!-- Account Stats -->
 <div class="grid-top">
   <div class="stat-card">
     <div class="label">Equity</div>
-    <div class="value blue">$94,634.67</div>
+    <div class="value blue">$94,586.28</div>
     <div class="sub">Paper account</div>
   </div>
   <div class="stat-card">
     <div class="label">Day P&amp;L</div>
-    <div class="value red">$-164.51</div>
-    <div class="sub">-0.17%</div>
+    <div class="value red">$-212.90</div>
+    <div class="sub">-0.22%</div>
   </div>
   <div class="stat-card">
     <div class="label">Buying Power</div>
-    <div class="value">$333,572.82</div>
+    <div class="value">$333,437.33</div>
     <div class="sub">Cash: $57,163.12</div>
   </div>
   <div class="stat-card">
@@ -157,7 +157,7 @@
 </footer>
 
 <script>
-const positions = [{"symbol":"NKE","side":"long","qty":137.0,"entry":37.83,"current":37.85,"stop":35.58,"target":45.7,"rr":3.5,"unrlPnl":2.74,"unrlPct":0.05,"projProfit":1078.19,"projLoss":308.25,"pctToTarget":20.74,"pctToStop":6.0,"progress":22,"value":5185.45},{"symbol":"PFE","side":"long","qty":605.0,"entry":29.199736,"current":29.89,"stop":28.18,"target":32.77,"rr":3.5,"unrlPnl":417.61,"unrlPct":2.36,"projProfit":2160.01,"projLoss":616.94,"pctToTarget":9.64,"pctToStop":5.72,"progress":37,"value":18083.45},{"symbol":"V","side":"long","qty":35.0,"entry":407.5,"current":405.79,"stop":394.88,"target":453.2,"rr":3.62,"unrlPnl":-59.85,"unrlPct":-0.42,"projProfit":1599.5,"projLoss":441.7,"pctToTarget":11.68,"pctToStop":2.69,"progress":19,"value":14202.65}];
+const positions = [{"symbol":"NKE","side":"long","qty":137.0,"entry":37.83,"current":37.68,"stop":35.58,"target":45.7,"rr":3.5,"unrlPnl":-20.55,"unrlPct":-0.4,"projProfit":1078.19,"projLoss":308.25,"pctToTarget":21.28,"pctToStop":5.57,"progress":21,"value":5162.16},{"symbol":"PFE","side":"long","qty":605.0,"entry":29.199736,"current":29.9,"stop":28.18,"target":32.77,"rr":3.5,"unrlPnl":423.66,"unrlPct":2.4,"projProfit":2160.01,"projLoss":616.94,"pctToTarget":9.6,"pctToStop":5.75,"progress":38,"value":18089.5},{"symbol":"V","side":"long","qty":35.0,"entry":407.5,"current":404.9,"stop":394.88,"target":453.2,"rr":3.62,"unrlPnl":-91.0,"unrlPct":-0.64,"projProfit":1599.5,"projLoss":441.7,"pctToTarget":11.93,"pctToStop":2.47,"progress":17,"value":14171.5}];
 const closed    = [];
 function fmt(n, d=2) {
   return (n >= 0 ? '+' : '') + Number(n).toFixed(d);
