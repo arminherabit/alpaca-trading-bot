@@ -4432,3 +4432,23 @@
 {"ts":"2026-10-22T15:40:27.9982312Z","sym":"TGT","dd_pct":0.409,"heat_before":1968.59,"dd_tier":"NORMAL","dry_run":true,"skip_reason":"NO_SETUP","regime":"RANGING"}
 {"ts":"2026-10-22T15:40:28.1703814Z","sym":"JPM","dd_pct":0.409,"heat_before":1968.59,"dd_tier":"NORMAL","dry_run":true,"skip_reason":"NO_SETUP","regime":"RANGING"}
 {"ts":"2026-10-22T15:40:28.1722555Z","sym":"UNH","dd_pct":0.409,"heat_before":1968.59,"dd_tier":"NORMAL","dry_run":true,"skip_reason":"HELD_OR_WORKING","regime":"RANGING"}
+{"ts":"2026-10-22T15:50:29.5037341Z","skip_reason":"INDEX_ANCHOR","heat_before":1968.59,"regime":"RANGING","dd_tier":"NORMAL","dry_run":true,"sym":"SPY","dd_pct":0.433}
+{"ts":"2026-10-22T15:50:29.5447808Z","skip_reason":"INDEX_ANCHOR","heat_before":1968.59,"regime":"RANGING","dd_tier":"NORMAL","dry_run":true,"sym":"QQQ","dd_pct":0.433}
+{"ts":"2026-10-22T15:50:30.1796350Z","sym":"BHVN","dd_tier":"NORMAL","drift_pct":null,"dd_pct":0.433,"conf":85,"quote_spread_pct":13.64,"extension_atr":1.44,"live_mid":13.705,"heat_before":1968.59,"rs":11.78,"skip_reason":"STALE_SIGNAL","dry_run":true,"live_check":"STALE_SIGNAL","quote_age_sec":0.1,"regime":"RANGING","stale_reason":"live quote unusable: spread 13.64% (max 2%)","pct_above_20d_high":7.71,"setup":"BRKOUT"}
+{"ts":"2026-10-22T15:50:30.4644937Z","skip_reason":"NO_SETUP","heat_before":1968.59,"regime":"RANGING","dd_tier":"NORMAL","dry_run":true,"sym":"INTC","dd_pct":0.433}
+{"ts":"2026-10-22T15:50:30.7966205Z","conf":65,"rs":1.69,"setup":"PULLBK","heat_before":1968.59,"dry_run":true,"sym":"TSLA","dd_pct":0.433,"skip_reason":"CONF_FLOOR","dd_tier":"NORMAL","regime":"RANGING"}
+{"ts":"2026-10-22T15:50:31.0759386Z","skip_reason":"NO_SETUP","heat_before":1968.59,"regime":"RANGING","dd_tier":"NORMAL","dry_run":true,"sym":"TSLL","dd_pct":0.433}
+{"ts":"2026-10-22T15:50:31.3727118Z","skip_reason":"NO_SETUP","heat_before":1968.59,"regime":"RANGING","dd_tier":"NORMAL","dry_run":true,"sym":"ABBV","dd_pct":0.433}
+{"ts":"2026-10-22T15:50:31.6523594Z","skip_reason":"NO_SETUP","heat_before":1968.59,"regime":"RANGING","dd_tier":"NORMAL","dry_run":true,"sym":"SPCX","dd_pct":0.433}
+{"ts":"2026-10-22T15:50:31.9336762Z","skip_reason":"NO_SETUP","heat_before":1968.59,"regime":"RANGING","dd_tier":"NORMAL","dry_run":true,"sym":"CRWV","dd_pct":0.433}
+{"ts":"2026-10-22T15:50:32.2469267Z","skip_reason":"NO_SETUP","heat_before":1968.59,"regime":"RANGING","dd_tier":"NORMAL","dry_run":true,"sym":"IBIT","dd_pct":0.433}
+{"ts":"2026-10-22T15:50:32.6089435Z","skip_reason":"NO_SETUP","heat_before":1968.59,"regime":"RANGING","dd_tier":"NORMAL","dry_run":true,"sym":"MRNA","dd_pct":0.433}
+{"ts":"2026-10-22T15:50:32.8684485Z","skip_reason":"NO_SETUP","heat_before":1968.59,"regime":"RANGING","dd_tier":"NORMAL","dry_run":true,"sym":"SMCI","dd_pct":0.433}
+{"ts":"2026-10-22T15:50:32.8693654Z","skip_reason":"HELD_OR_WORKING","heat_before":1968.59,"regime":"RANGING","dd_tier":"NORMAL","dry_run":true,"sym":"V","dd_pct":0.433}
+{"ts":"2026-10-22T15:50:33.1542838Z","skip_reason":"NO_SETUP","heat_before":1968.59,"regime":"RANGING","dd_tier":"NORMAL","dry_run":true,"sym":"C","dd_pct":0.433}
+{"ts":"2026-10-22T15:50:33.1555083Z","skip_reason":"HELD_OR_WORKING","heat_before":1968.59,"regime":"RANGING","dd_tier":"NORMAL","dry_run":true,"sym":"PFE","dd_pct":0.433}
+{"ts":"2026-10-22T15:50:33.4257016Z","skip_reason":"NO_SETUP","heat_before":1968.59,"regime":"RANGING","dd_tier":"NORMAL","dry_run":true,"sym":"BAC","dd_pct":0.433}
+{"ts":"2026-10-22T15:50:33.6875557Z","skip_reason":"NO_SETUP","heat_before":1968.59,"regime":"RANGING","dd_tier":"NORMAL","dry_run":true,"sym":"MS","dd_pct":0.433}
+{"ts":"2026-10-22T15:50:33.9915972Z","skip_reason":"NO_SETUP","heat_before":1968.59,"regime":"RANGING","dd_tier":"NORMAL","dry_run":true,"sym":"TGT","dd_pct":0.433}
+{"ts":"2026-10-22T15:50:34.2365147Z","skip_reason":"NO_SETUP","heat_before":1968.59,"regime":"RANGING","dd_tier":"NORMAL","dry_run":true,"sym":"JPM","dd_pct":0.433}
+{"ts":"2026-10-22T15:50:34.2379386Z","skip_reason":"HELD_OR_WORKING","heat_before":1968.59,"regime":"RANGING","dd_tier":"NORMAL","dry_run":true,"sym":"UNH","dd_pct":0.433}
