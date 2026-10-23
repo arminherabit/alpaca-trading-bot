@@ -74,6 +74,7 @@
     "max_call_positions": 1,
     "max_portfolio_heat_pct": 15.0,
     "max_notional_pct": 25.0,
+    "bp_cap_divisor": 5,
     "max_watchlist": 20,
     "max_trades_per_day": 2,
     "max_losses_per_day": 2,

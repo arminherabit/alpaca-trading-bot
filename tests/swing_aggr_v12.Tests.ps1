@@ -78,7 +78,7 @@ Describe 'v1.2 config (Variant I, calls kept)' {
         $A.partial_exit_r | Should -Be 0; $A.dummy_tp_r | Should -Be 3.5; $A.max_extension_atr | Should -Be 3.0
     }
     It 'unchanged guard rails' {
-        $A.max_portfolio_heat_pct | Should -Be 15.0; $A.max_notional_pct | Should -Be 25.0; $A.dd_floor_equity | Should -Be 76443.33
+        $A.max_portfolio_heat_pct | Should -Be 15.0; $A.max_notional_pct | Should -Be 25.0; $A.bp_cap_divisor | Should -Be 5; $A.dd_floor_equity | Should -Be 76443.33
         $A.dd_throttle1_pct | Should -Be 10.0; $A.dd_throttle2_pct | Should -Be 15.0; $A.call_min_conf | Should -Be 90
         $Cfg.pyramiding_enabled | Should -BeFalse
     }

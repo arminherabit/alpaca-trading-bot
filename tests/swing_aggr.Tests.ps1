@@ -50,7 +50,12 @@ Describe 'Stock sizing' {
         $s = Get-AggrStockSize -equity 100000 -buyingPower 0 -entry 100 -stop 99.5 -a $A
         $s.Shares | Should -Be 250; $s.CappedBy | Should -Be 'notional'
     }
-    It 'BP/max_positions*0.8 cap binds (BP 30000 / 11 * 0.8 = 2181.82 -> 21 sh)' { (Get-AggrStockSize -equity 100000 -buyingPower 30000 -entry 100 -stop 90 -a $A).Shares | Should -Be 21 }
+    It 'BP/bp_cap_divisor*0.8 cap binds (30000 / 5 * 0.8 -> 48 sh)' { (Get-AggrStockSize -equity 100000 -buyingPower 30000 -entry 100 -stop 90 -a $A).Shares | Should -Be 48 }
+    It 'changing max_positions does not change size' {
+        $a2 = $A | ConvertTo-Json -Depth 8 | ConvertFrom-Json; $a2.max_positions = 3
+        $a3 = $A | ConvertTo-Json -Depth 8 | ConvertFrom-Json; $a3.max_positions = 20
+        foreach ($x in $a2, $a3) { (Get-AggrStockSize -equity 100000 -buyingPower 30000 -entry 100 -stop 90 -a $x).Shares | Should -Be 48 }
+    }
     It 'short side sizes the same' { (Get-AggrStockSize -equity 100000 -buyingPower 0 -entry 100 -stop 110 -a $A).Shares | Should -Be 175 }
 }
 
@@ -468,7 +473,7 @@ Describe 'Extension logging (no gate)' {
         $p1.skip_reason | Should -Be 'CONF_FLOOR'; $p1.PSObject.Properties.Name | Should -Not -Contain 'extension_atr'
         $p2 = $l | Where-Object sym -eq 'PUL2'
         $p2.skip_reason | Should -Be 'DRYRUN_ENTERED'; $p2.extension_atr | Should -Be 2.0; $p2.pct_above_20d_high | Should -Be 4.0
-        $p2.payload.qty | Should -Be '132'    # BP slot cap (190,000 / 11 * 0.8 = 13,818 / $104) binds before 25% notional (229) and risk (358): sizing untouched
+        $p2.payload.qty | Should -Be '229'    # 25% notional cap (23,888.54 / $104) binds before 1.5% risk (358): sizing untouched
         Should -Invoke Invoke-AlpacaApi -ParameterFilter { $method -ne 'GET' } -Times 0 -Exactly
     }
 }
