@@ -50,7 +50,7 @@ Describe 'Stock sizing' {
         $s = Get-AggrStockSize -equity 100000 -buyingPower 0 -entry 100 -stop 99.5 -a $A
         $s.Shares | Should -Be 250; $s.CappedBy | Should -Be 'notional'
     }
-    It 'BP/5*0.8 cap binds' { (Get-AggrStockSize -equity 100000 -buyingPower 30000 -entry 100 -stop 90 -a $A).Shares | Should -Be 48 }
+    It 'BP/max_positions*0.8 cap binds (BP 30000 / 11 * 0.8 = 2181.82 -> 21 sh)' { (Get-AggrStockSize -equity 100000 -buyingPower 30000 -entry 100 -stop 90 -a $A).Shares | Should -Be 21 }
     It 'short side sizes the same' { (Get-AggrStockSize -equity 100000 -buyingPower 0 -entry 100 -stop 110 -a $A).Shares | Should -Be 175 }
 }
 
@@ -59,11 +59,11 @@ Describe 'Heat' {
         $h = Get-AggrHeat @(@{Kind='stock';Side='long';Qty=100;Entry=50;Stop=45}, @{Kind='call';MarketValue=900}, @{Kind='stock';Side='long';Qty=10;Entry=50;Stop=55})
         $h | Should -Be 1400
     }
-    It '8% cap' { Test-AggrHeatOk 7000 1000 100000 $A | Should -BeTrue; Test-AggrHeatOk 7000 1001 100000 $A | Should -BeFalse }
+    It '15% cap' { Test-AggrHeatOk 14000 1000 100000 $A | Should -BeTrue; Test-AggrHeatOk 14000 1001 100000 $A | Should -BeFalse }
 }
 
 Describe 'Drawdown floor and throttles' {
-    It 'normal' { $d = Get-AggrDdState 95000 $A; $d.Tier | Should -Be 'NORMAL'; $d.Mult | Should -Be 1.0; $d.MaxPositions | Should -Be 5 }
+    It 'normal' { $d = Get-AggrDdState 95000 $A; $d.Tier | Should -Be 'NORMAL'; $d.Mult | Should -Be 1.0; $d.MaxPositions | Should -Be 11 }
     It '-10% throttle1' { $d = Get-AggrDdState 85998 $A; $d.Tier | Should -Be 'THROTTLE1'; $d.Mult | Should -Be 0.5; $d.MaxPositions | Should -Be 4; $d.CallsAllowed | Should -BeFalse }
     It '-15% throttle2' { $d = Get-AggrDdState 81000 $A; $d.Tier | Should -Be 'THROTTLE2'; $d.Mult | Should -Be 0.25; $d.MaxPositions | Should -Be 2 }
     It 'halt at floor exactly' { (Get-AggrDdState 76443.33 $A).Halted | Should -BeTrue }
@@ -468,7 +468,7 @@ Describe 'Extension logging (no gate)' {
         $p1.skip_reason | Should -Be 'CONF_FLOOR'; $p1.PSObject.Properties.Name | Should -Not -Contain 'extension_atr'
         $p2 = $l | Where-Object sym -eq 'PUL2'
         $p2.skip_reason | Should -Be 'DRYRUN_ENTERED'; $p2.extension_atr | Should -Be 2.0; $p2.pct_above_20d_high | Should -Be 4.0
-        $p2.payload.qty | Should -Be '229'    # 25% notional cap (23,888.54 / $104) binds before 1.5% risk (358): sizing untouched
+        $p2.payload.qty | Should -Be '132'    # BP slot cap (190,000 / 11 * 0.8 = 13,818 / $104) binds before 25% notional (229) and risk (358): sizing untouched
         Should -Invoke Invoke-AlpacaApi -ParameterFilter { $method -ne 'GET' } -Times 0 -Exactly
     }
 }
