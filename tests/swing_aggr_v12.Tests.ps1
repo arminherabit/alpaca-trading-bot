@@ -73,12 +73,12 @@ Describe 'v1.2 config (Variant I, calls kept)' {
     It 'sizes, slots and limits' {
         $A.enabled | Should -BeTrue; $A.dry_run | Should -BeTrue
         $A.max_risk_pct | Should -Be 1.75; $A.max_risk_pct_cap | Should -Be 2.0
-        $A.max_stock_positions | Should -Be 4; $A.max_call_positions | Should -Be 1; $A.max_positions | Should -Be 5
+        $A.max_stock_positions | Should -Be 10; $A.max_call_positions | Should -Be 1; $A.max_positions | Should -Be 11
         $A.call_enabled | Should -BeTrue; $A.max_trades_per_day | Should -Be 2
         $A.partial_exit_r | Should -Be 0; $A.dummy_tp_r | Should -Be 3.5; $A.max_extension_atr | Should -Be 3.0
     }
     It 'unchanged guard rails' {
-        $A.max_portfolio_heat_pct | Should -Be 8.0; $A.max_notional_pct | Should -Be 25.0; $A.dd_floor_equity | Should -Be 76443.33
+        $A.max_portfolio_heat_pct | Should -Be 15.0; $A.max_notional_pct | Should -Be 25.0; $A.bp_cap_divisor | Should -Be 5; $A.dd_floor_equity | Should -Be 76443.33
         $A.dd_throttle1_pct | Should -Be 10.0; $A.dd_throttle2_pct | Should -Be 15.0; $A.call_min_conf | Should -Be 90
         $Cfg.pyramiding_enabled | Should -BeFalse
     }
@@ -111,10 +111,15 @@ Describe 'Fix 1: dry-run slots/heat from the shadow book only' {
         $r.Line.skip_reason | Should -Be 'DRYRUN_ENTERED'
         @($r.State.aggr_shadow_open).Count | Should -Be 3
     }
-    It 'four real shadow stocks still fill the 4 stock slots' {
-        $sh = @((Shadow 'PFE' 29.20 28.18 100), (Shadow 'NKE' 37.83 35.58 100), (Shadow 'V' 403.46 389.34 10), (Shadow 'HD' 311.99 298.27 10))
+    It 'ten shadow stocks fill the 10 stock slots' {
+        $sh = @('S1','S2','S3','S4','S5','S6','S7','S8','S9','S10' | ForEach-Object { Shadow $_ 100 99 10 })
         $r = RunEntries $Cfg $sh @() 12.3 12.3 10.13
         $r.Line.skip_reason | Should -Be 'STOCK_SLOTS_FULL'
+    }
+    It 'nine shadow stocks still leave a 10th stock slot' {
+        $sh = @('S1','S2','S3','S4','S5','S6','S7','S8','S9' | ForEach-Object { Shadow $_ 100 99 10 })
+        $r = RunEntries $Cfg $sh @() 12.3 12.3 10.13
+        $r.Line.skip_reason | Should -Be 'DRYRUN_ENTERED'
     }
 }
 

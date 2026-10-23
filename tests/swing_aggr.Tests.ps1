@@ -50,7 +50,12 @@ Describe 'Stock sizing' {
         $s = Get-AggrStockSize -equity 100000 -buyingPower 0 -entry 100 -stop 99.5 -a $A
         $s.Shares | Should -Be 250; $s.CappedBy | Should -Be 'notional'
     }
-    It 'BP/5*0.8 cap binds' { (Get-AggrStockSize -equity 100000 -buyingPower 30000 -entry 100 -stop 90 -a $A).Shares | Should -Be 48 }
+    It 'BP/bp_cap_divisor*0.8 cap binds (30000 / 5 * 0.8 -> 48 sh)' { (Get-AggrStockSize -equity 100000 -buyingPower 30000 -entry 100 -stop 90 -a $A).Shares | Should -Be 48 }
+    It 'changing max_positions does not change size' {
+        $a2 = $A | ConvertTo-Json -Depth 8 | ConvertFrom-Json; $a2.max_positions = 3
+        $a3 = $A | ConvertTo-Json -Depth 8 | ConvertFrom-Json; $a3.max_positions = 20
+        foreach ($x in $a2, $a3) { (Get-AggrStockSize -equity 100000 -buyingPower 30000 -entry 100 -stop 90 -a $x).Shares | Should -Be 48 }
+    }
     It 'short side sizes the same' { (Get-AggrStockSize -equity 100000 -buyingPower 0 -entry 100 -stop 110 -a $A).Shares | Should -Be 175 }
 }
 
@@ -59,11 +64,11 @@ Describe 'Heat' {
         $h = Get-AggrHeat @(@{Kind='stock';Side='long';Qty=100;Entry=50;Stop=45}, @{Kind='call';MarketValue=900}, @{Kind='stock';Side='long';Qty=10;Entry=50;Stop=55})
         $h | Should -Be 1400
     }
-    It '8% cap' { Test-AggrHeatOk 7000 1000 100000 $A | Should -BeTrue; Test-AggrHeatOk 7000 1001 100000 $A | Should -BeFalse }
+    It '15% cap' { Test-AggrHeatOk 14000 1000 100000 $A | Should -BeTrue; Test-AggrHeatOk 14000 1001 100000 $A | Should -BeFalse }
 }
 
 Describe 'Drawdown floor and throttles' {
-    It 'normal' { $d = Get-AggrDdState 95000 $A; $d.Tier | Should -Be 'NORMAL'; $d.Mult | Should -Be 1.0; $d.MaxPositions | Should -Be 5 }
+    It 'normal' { $d = Get-AggrDdState 95000 $A; $d.Tier | Should -Be 'NORMAL'; $d.Mult | Should -Be 1.0; $d.MaxPositions | Should -Be 11 }
     It '-10% throttle1' { $d = Get-AggrDdState 85998 $A; $d.Tier | Should -Be 'THROTTLE1'; $d.Mult | Should -Be 0.5; $d.MaxPositions | Should -Be 4; $d.CallsAllowed | Should -BeFalse }
     It '-15% throttle2' { $d = Get-AggrDdState 81000 $A; $d.Tier | Should -Be 'THROTTLE2'; $d.Mult | Should -Be 0.25; $d.MaxPositions | Should -Be 2 }
     It 'halt at floor exactly' { (Get-AggrDdState 76443.33 $A).Halted | Should -BeTrue }

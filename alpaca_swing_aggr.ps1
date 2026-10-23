@@ -62,7 +62,8 @@ function Get-AggrStockSize {
     $riskPct = [Math]::Min([double]$a.max_risk_pct * $edgeMult * $regimeMult * $ddMult, [double]$a.max_risk_pct_cap)
     $shares  = [Math]::Floor($equity * $riskPct / 100.0 / $rps)
     $cappedBy = "risk"
-    $slotVal  = if ($buyingPower -gt 0) { $buyingPower / [double]$a.max_positions * 0.80 } else { [double]::MaxValue }
+    $bpDiv    = if ($null -ne $a.bp_cap_divisor -and [double]$a.bp_cap_divisor -gt 0) { [double]$a.bp_cap_divisor } else { [double]$a.max_positions }
+    $slotVal  = if ($buyingPower -gt 0) { $buyingPower / $bpDiv * 0.80 } else { [double]::MaxValue }
     $maxVal   = [Math]::Min($slotVal, [double]$a.max_notional_pct / 100.0 * $equity)
     $maxByVal = [Math]::Floor($maxVal / $entry)
     if ($maxByVal -lt $shares) { $shares = $maxByVal; $cappedBy = "notional" }
