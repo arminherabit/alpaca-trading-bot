@@ -168,3 +168,7 @@ No closed trades this week.
 
 **By regime:** BULL 1/5 $-1360.68
 
+
+## Week ending 2026-10-25
+No closed trades this week.
+
