@@ -5575,3 +5575,6 @@
 {"ts":"2026-10-23T19:20:35.8464787Z","dd_tier":"NORMAL","dd_pct":0.811,"sym":"C","regime":"RANGING","heat_before":2576.87,"skip_reason":"NO_SETUP","dry_run":true}
 {"ts":"2026-10-23T19:20:35.9964123Z","dd_tier":"NORMAL","dd_pct":0.811,"sym":"CMG","regime":"RANGING","heat_before":2576.87,"skip_reason":"NO_SETUP","dry_run":true}
 {"ts":"2026-10-23T19:20:36.2281153Z","dd_tier":"NORMAL","dd_pct":0.811,"sym":"INTC","regime":"RANGING","heat_before":2576.87,"skip_reason":"NO_SETUP","dry_run":true}
+{"ts":"2026-10-26T13:30:21.0903592Z","current_stop":35.58,"note":"dry run: no order modified; legacy ladder keeps managing live","event":"MIGRATE","skip_reason":"DRYRUN_MIGRATE","sym":"NKE","current_tp":45.7,"r_per_share":2.25,"qty":137,"new_tp":45.7}
+{"ts":"2026-10-26T13:30:21.1527790Z","current_stop":29.23,"note":"dry run: no order modified; legacy ladder keeps managing live","event":"MIGRATE","skip_reason":"DRYRUN_MIGRATE","sym":"PFE","current_tp":32.77,"r_per_share":1.0197,"qty":605,"new_tp":32.77}
+{"ts":"2026-10-26T13:30:21.1879891Z","current_stop":394.88,"note":"dry run: no order modified; legacy ladder keeps managing live","event":"MIGRATE","skip_reason":"DRYRUN_MIGRATE","sym":"V","current_tp":453.2,"r_per_share":12.62,"qty":35,"new_tp":451.67}
