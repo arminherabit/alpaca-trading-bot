@@ -6287,3 +6287,23 @@
 {"ts":"2026-10-27T13:30:46.3317174Z","skip_reason":"MIGRATED","current_stop":35.58,"qty":137,"r_per_share":2.25,"current_tp":45.7,"new_tp":45.7,"sym":"NKE","event":"MIGRATE"}
 {"ts":"2026-10-27T13:30:51.8831437Z","skip_reason":"MIGRATED","current_stop":29.23,"qty":605,"r_per_share":1.0197,"current_tp":32.77,"new_tp":32.77,"sym":"PFE","event":"MIGRATE"}
 {"ts":"2026-10-27T13:30:52.5911597Z","skip_reason":"MIGRATED","current_stop":394.88,"qty":35,"r_per_share":12.62,"current_tp":453.2,"new_tp":451.67,"sym":"V","event":"MIGRATE"}
+{"ts":"2026-10-27T13:50:22.4762463Z","regime":"NEUTRAL","dd_pct":1.238,"heat_before":749.95,"dd_tier":"NORMAL","skip_reason":"INDEX_ANCHOR","dry_run":false,"sym":"SPY"}
+{"ts":"2026-10-27T13:50:22.5101671Z","regime":"NEUTRAL","dd_pct":1.238,"heat_before":749.95,"dd_tier":"NORMAL","skip_reason":"INDEX_ANCHOR","dry_run":false,"sym":"QQQ"}
+{"ts":"2026-10-27T13:50:22.8997594Z","sym":"TSLA","stale_reason":"live quote unusable: spread 2.38% (max 2%)","pct_above_20d_high":1.43,"extension_atr":0.43,"live_check":"STALE_SIGNAL","drift_pct":null,"dd_pct":1.238,"setup":"BRKOUT","heat_before":749.95,"skip_reason":"STALE_SIGNAL","quote_age_sec":1.8,"dd_tier":"NORMAL","dry_run":false,"quote_spread_pct":2.38,"regime":"NEUTRAL","conf":100,"live_mid":399.75,"rs":13.91}
+{"ts":"2026-10-27T13:50:22.9998303Z","regime":"NEUTRAL","dd_pct":1.238,"heat_before":749.95,"dd_tier":"NORMAL","skip_reason":"NO_SETUP","dry_run":false,"sym":"EWZ"}
+{"ts":"2026-10-27T13:50:23.1034315Z","regime":"NEUTRAL","dd_pct":1.238,"heat_before":749.95,"dd_tier":"NORMAL","skip_reason":"NO_SETUP","dry_run":false,"sym":"PBR"}
+{"ts":"2026-10-27T13:50:23.3541580Z","regime":"NEUTRAL","dd_pct":1.238,"heat_before":749.95,"dd_tier":"NORMAL","skip_reason":"NO_SETUP","dry_run":false,"sym":"IREN"}
+{"ts":"2026-10-27T13:50:23.5361062Z","regime":"NEUTRAL","dd_pct":1.238,"heat_before":749.95,"dd_tier":"NORMAL","skip_reason":"NO_SETUP","dry_run":false,"sym":"TSLL"}
+{"ts":"2026-10-27T13:50:23.6749544Z","regime":"NEUTRAL","dd_pct":1.238,"heat_before":749.95,"dd_tier":"NORMAL","skip_reason":"NO_SETUP","dry_run":false,"sym":"NU"}
+{"ts":"2026-10-27T13:50:23.7849301Z","regime":"NEUTRAL","dd_pct":1.238,"heat_before":749.95,"dd_tier":"NORMAL","skip_reason":"NO_SETUP","dry_run":false,"sym":"CRWV"}
+{"ts":"2026-10-27T13:50:23.8938145Z","regime":"NEUTRAL","dd_pct":1.238,"heat_before":749.95,"dd_tier":"NORMAL","skip_reason":"NO_SETUP","dry_run":false,"sym":"XP"}
+{"ts":"2026-10-27T13:50:23.8950124Z","regime":"NEUTRAL","dd_pct":1.238,"heat_before":749.95,"dd_tier":"NORMAL","skip_reason":"HELD_OR_WORKING","dry_run":false,"sym":"NKE"}
+{"ts":"2026-10-27T13:50:23.9980528Z","regime":"NEUTRAL","dd_pct":1.238,"heat_before":749.95,"dd_tier":"NORMAL","skip_reason":"NO_SETUP","dry_run":false,"sym":"NVDA"}
+{"ts":"2026-10-27T13:50:24.1997257Z","regime":"NEUTRAL","dd_pct":1.238,"heat_before":749.95,"dd_tier":"NORMAL","skip_reason":"NO_SETUP","dry_run":false,"sym":"SPCX"}
+{"ts":"2026-10-27T13:50:24.2615523Z","regime":"NEUTRAL","dd_pct":1.238,"heat_before":749.95,"dd_tier":"NORMAL","skip_reason":"EARNINGS","dry_run":false,"sym":"AMZN"}
+{"ts":"2026-10-27T13:50:24.3942852Z","regime":"NEUTRAL","dd_pct":1.238,"heat_before":749.95,"dd_tier":"NORMAL","skip_reason":"NO_SETUP","dry_run":false,"sym":"HD"}
+{"ts":"2026-10-27T13:50:24.4458141Z","regime":"NEUTRAL","dd_pct":1.238,"heat_before":749.95,"dd_tier":"NORMAL","skip_reason":"EARNINGS","dry_run":false,"sym":"VALE"}
+{"ts":"2026-10-27T13:50:24.6429272Z","regime":"NEUTRAL","dd_pct":1.238,"heat_before":749.95,"dd_tier":"NORMAL","skip_reason":"NO_SETUP","dry_run":false,"sym":"BMNR"}
+{"ts":"2026-10-27T13:50:24.7479135Z","regime":"NEUTRAL","heat_before":749.95,"sym":"SGRY","dd_tier":"NORMAL","dry_run":false,"setup":"PULLBK","rs":60.59,"conf":78,"dd_pct":1.238,"skip_reason":"CONF_FLOOR"}
+{"ts":"2026-10-27T13:50:24.8795719Z","regime":"NEUTRAL","dd_pct":1.238,"heat_before":749.95,"dd_tier":"NORMAL","skip_reason":"NO_SETUP","dry_run":false,"sym":"MRNA"}
+{"ts":"2026-10-27T13:50:24.9350548Z","regime":"NEUTRAL","dd_pct":1.238,"heat_before":749.95,"dd_tier":"NORMAL","skip_reason":"EARNINGS","dry_run":false,"sym":"INTC"}
