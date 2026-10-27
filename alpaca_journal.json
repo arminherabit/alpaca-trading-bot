@@ -38,6 +38,19 @@
       "confidence": 100,
       "regime": "NEUTRAL",
       "reason": "20d-high break (ext 0.49 ATR, volPace 1.9x, RS +13.3%)"
+    },
+    {
+      "opened_at": "2026-10-27T14:01:00.9521495Z",
+      "symbol": "TSLA",
+      "strategy": "BRKOUT",
+      "side": "buy",
+      "entry": 402.34,
+      "stop": 375.63,
+      "qty": 30,
+      "risk_usd": 801.3,
+      "confidence": 100,
+      "regime": "NEUTRAL",
+      "reason": "20d-high break (ext 0.38 ATR, volPace 2.3x, RS +13.8%)"
     }
   ],
   "closed": [
