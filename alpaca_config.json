@@ -63,10 +63,10 @@
 
   "cycle_screener_enabled":  true,
 
-  "//aggr": "Swing Aggressive Mode, spec v1.1 (owner-approved 2026-10-13). enabled+dry_run => shadow evaluation only: read-only API, logs payloads to data/journal_swing_skips.jsonl, places NO orders. Legacy bot behaviour is unchanged while dry_run=true.",
+  "//aggr": "Swing Aggressive Mode, spec v1.2 (Opus Aggressive Swing). enabled+dry_run=false => live PAPER orders for stocks (AGSW_*) and calls (SWCALL_*). Legacy entry loop skipped while dry_run=false; legacy exits still manage legacy-held stocks. Legacy-held stocks do NOT consume aggr stock slots; they DO count toward portfolio heat. bp_cap_divisor left at 5 (undecided).",
   "aggr": {
     "enabled": true,
-    "dry_run": true,
+    "dry_run": false,
     "max_risk_pct": 1.75,
     "max_risk_pct_cap": 2.0,
     "max_positions": 11,

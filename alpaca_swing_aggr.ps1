@@ -1,11 +1,12 @@
 # alpaca_swing_aggr.ps1 -- Swing Aggressive Mode (spec v1.1).
 #
 # Everything here is gated by cfg.aggr.enabled. With cfg.aggr.dry_run = $true
-# (stage S1) this module is READ-ONLY against Alpaca: every API call goes
-# through Invoke-AggrApi, which refuses any non-GET while dry-run is on. It
-# evaluates the aggressive rules in SHADOW alongside the unchanged legacy bot,
-# writes one line per symbol per scan to data/journal_swing_skips.jsonl and
-# logs the full order payload it WOULD have sent (DRYRUN_ENTERED / DRYRUN_*).
+# this module is READ-ONLY against Alpaca (shadow book). With dry_run = $false
+# it places live PAPER orders. Stock entries use client_order_id prefix AGSW_
+# so they can be told apart from legacy BRKOUT/PULLBK/... fills; calls keep
+# SWCALL. Legacy-held stocks do not consume aggr stock slots but still count
+# toward portfolio heat. Every API call goes through Invoke-AggrApi (GET-only
+# while dry-run is on).
 #
 # The Opus options sleeve (opus_options*.ps1) is not touched. Swing skips any
 # underlying Opus holds or works (OPUS_CONFLICT).
@@ -158,11 +159,13 @@ function New-AggrStockOrderPayload([string]$sym, [string]$side, [int]$qty, [doub
     if (-not $stamp) { $stamp = (Get-Date).ToString("HHmmss") }
     $r  = [Math]::Abs($entry - $stop)
     $tp = if ($side -eq "buy") { $entry + $tpR * $r } else { [Math]::Max(0.01, $entry - $tpR * $r) }
+    # Prefix AGSW so live slot counting can tell aggr fills from legacy BRKOUT/PULLBK/... .
+    # $tag (strategy) stays in the journal; it is not the client_order_id first segment.
     return [ordered]@{ symbol = $sym; qty = $qty.ToString(); side = $side; type = "limit"; time_in_force = "gtc"
                        limit_price = $entry.ToString("F2"); order_class = "bracket"
                        take_profit = @{ limit_price = ([Math]::Round($tp, 2)).ToString("F2") }
                        stop_loss   = @{ stop_price  = $stop.ToString("F2") }
-                       client_order_id = ("{0}_{1}_{2}" -f $tag, $sym, $stamp) }
+                       client_order_id = ("AGSW_{0}_{1}" -f $sym, $stamp) }
 }
 
 # ── Exits (spec 8) ───────────────────────────────────────────────────────────
@@ -717,10 +720,35 @@ function Get-AggrGateSkip($live, [string]$gate, [hashtable]$rec) {
     return $gate
 }
 
+# Ownership: aggr live stock entries use client_order_id prefix AGSW_; calls use
+# SWCALL. Legacy bot entries keep BRKOUT/PULLBK/... . Used so legacy-held stocks
+# do not consume aggr max_stock_positions / max_positions slots.
+function Test-AggrOwnedCoid([string]$coid) {
+    if (-not $coid) { return $false }
+    $tag = ($coid -split '_')[0]
+    return ($tag -eq 'AGSW' -or $tag -eq 'SWCALL')
+}
+# Returns hashtable {symbol=$true} of symbols this module opened (AGSW/SWCALL
+# filled orders in the lookback), or $null if the orders API failed.
+function Get-AggrOwnedSymbols($cfg) {
+    $lookback = (Get-Date).ToUniversalTime().AddDays(-20).ToString("yyyy-MM-ddTHH:mm:ssZ")
+    $orders = Invoke-AggrApi $cfg "GET" "/v2/orders?status=all&after=$lookback&direction=desc&limit=500"
+    if ($null -eq $orders) { return $null }
+    $owned = @{}
+    foreach ($o in @($orders)) {
+        if ($null -eq $o -or $o.status -ne "filled" -or -not $o.client_order_id) { continue }
+        if (Test-AggrOwnedCoid $o.client_order_id) { $owned[$o.symbol] = $true }
+    }
+    return $owned
+}
+
 # Slots + heat source. Dry run: shadow book only, shadow stocks booked as stock
 # risk (qty x |entry - stop|), shadow calls at their premium (risk_usd).
-# Live: the live book only (the shadow book is empty when dry_run=false).
-function Get-AggrSlotBook($cfg, $state, $myPositions, [bool]$dry) {
+# Live: heat from the full live book (legacy + aggr); stock/call SLOT counts
+# only for aggr-owned positions. $aggrOwnedSyms: hashtable of AGSW/SWCALL
+# symbols, or $null when ownership is unknown (conservative: count all stocks
+# toward slots so we do not over-open on top of unresolved legacy risk).
+function Get-AggrSlotBook($cfg, $state, $myPositions, [bool]$dry, $aggrOwnedSyms = $null) {
     $items = @(); $sc = 0; $cc = 0
     if ($dry) {
         foreach ($s in @($state.aggr_shadow_open)) {
@@ -733,10 +761,14 @@ function Get-AggrSlotBook($cfg, $state, $myPositions, [bool]$dry) {
     } else {
         foreach ($p in @($myPositions)) {
             if ($null -eq $p) { continue }
-            if ($p.asset_class -eq "us_option") { $cc++; $items += @{ Kind = 'call'; MarketValue = [double]$p.market_value }; continue }
-            $sc++
+            if ($p.asset_class -eq "us_option") {
+                # myPositions options are already ownership-filtered (SWCALL in MY_ENTRY_PREFIXES).
+                $cc++; $items += @{ Kind = 'call'; MarketValue = [double]$p.market_value }; continue
+            }
             $legs = Get-LiveExitLegs $cfg $p
             $items += @{ Kind = 'stock'; Side = $p.side; Qty = [double]$p.qty; Entry = [double]$p.avg_entry_price; Stop = [double]$legs.stop }
+            $isAggr = if ($null -eq $aggrOwnedSyms) { $true } else { [bool]$aggrOwnedSyms.ContainsKey($p.symbol) }
+            if ($isAggr) { $sc++ }
         }
     }
     return [pscustomobject]@{ StockCount = $sc; CallCount = $cc; HeatItems = $items }
@@ -761,11 +793,15 @@ function Invoke-AggrEntries($cfg, $state, $regime, $spyDaily, [double]$equity, [
     # Heat from live book (+ simulated dry-run entries today)
     $heatItems = @()
     $stockCount = 0; $callCount = 0
-    # FIX v1.2: in dry run, slots and heat come from the SHADOW book only. The
-    # shadow book already mirrors every name the engine would hold (including
-    # copies of legacy-held PFE/NKE), so also counting the live book counted
-    # those names twice and blocked ABBV/HD/V/PLTR with STOCK_SLOTS_FULL.
-    $book = Get-AggrSlotBook $cfg $state $myPositions $dry
+    # FIX v1.2: in dry run, slots and heat come from the SHADOW book only.
+    # Live (v1.2 go-live): heat includes legacy-held stocks; stock slots count
+    # only AGSW/SWCALL-owned positions so legacy does not eat the 10 slots.
+    $aggrOwned = $null
+    if (-not $dry) {
+        $aggrOwned = Get-AggrOwnedSymbols $cfg
+        # $null (orders API failed) => Get-AggrSlotBook counts all stocks (conservative).
+    }
+    $book = Get-AggrSlotBook $cfg $state $myPositions $dry $aggrOwned
     $stockCount = $book.StockCount; $callCount = $book.CallCount
     $heat = Get-AggrHeat $book.HeatItems
 
