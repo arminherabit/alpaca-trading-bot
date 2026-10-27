@@ -49,6 +49,8 @@ BeforeAll {
     function LivePos($sym, $entry, $qty) { [pscustomobject]@{ symbol = $sym; asset_class = 'us_equity'; qty = "$qty"; side = 'long'; avg_entry_price = "$entry"; current_price = "$entry"; market_value = "$($entry*$qty)" } }
 
     function RunEntries($cfg, $shadows, $myPos, [double]$close, [double]$entry, [double]$stop) {
+        $cfg = $cfg | ConvertTo-Json -Depth 8 | ConvertFrom-Json
+        $cfg.aggr.dry_run = $true   # behavioural dry-run paths; shipped config is live
         $script:AggrSkipJournal = Join-Path $TestDrive ([guid]::NewGuid().ToString() + '.jsonl')
         Mock Invoke-AlpacaApi { param($cfg, $method, $path, $body) if ($method -ne 'GET') { throw "LIVE CALL $method" }; return @() }
         Mock Get-TickerMemoryInfo { $null }
@@ -71,7 +73,7 @@ BeforeAll {
 
 Describe 'v1.2 config (Variant I, calls kept)' {
     It 'sizes, slots and limits' {
-        $A.enabled | Should -BeTrue; $A.dry_run | Should -BeTrue
+        $A.enabled | Should -BeTrue; $A.dry_run | Should -BeFalse
         $A.max_risk_pct | Should -Be 1.75; $A.max_risk_pct_cap | Should -Be 2.0
         $A.max_stock_positions | Should -Be 10; $A.max_call_positions | Should -Be 1; $A.max_positions | Should -Be 11
         $A.call_enabled | Should -BeTrue; $A.max_trades_per_day | Should -Be 2
@@ -101,10 +103,43 @@ Describe 'Fix 1: dry-run slots/heat from the shadow book only' {
         $b = Get-AggrSlotBook $Cfg ([pscustomobject]@{ aggr_shadow_open = @($c) }) @() $true
         $b.CallCount | Should -Be 1; $b.StockCount | Should -Be 0; Get-AggrHeat $b.HeatItems | Should -Be 950
     }
-    It 'live mode counts the live book' {
+    It 'live mode with unknown ownership (null) counts all stocks conservatively' {
         Mock Get-LiveExitLegs { @{ stop = 28.18; target = $null } }
-        $b = Get-AggrSlotBook $Cfg ([pscustomobject]@{ aggr_shadow_open = @() }) @((LivePos 'PFE' 29.2 605)) $false
+        $b = Get-AggrSlotBook $Cfg ([pscustomobject]@{ aggr_shadow_open = @() }) @((LivePos 'PFE' 29.2 605)) $false $null
         $b.StockCount | Should -Be 1
+    }
+    It 'live mode: legacy-held stock is heat-only, not a stock slot' {
+        # Same stop for both keeps the mock simple; the point is slots vs heat.
+        Mock Get-LiveExitLegs { @{ stop = 28.18; target = $null } }
+        $owned = @{ ISRG = $true }   # AGSW-owned
+        $legacyOnly = Get-AggrSlotBook $Cfg ([pscustomobject]@{ aggr_shadow_open = @() }) @(
+            (LivePos 'PFE' 29.2 605)
+        ) $false @{}
+        $both = Get-AggrSlotBook $Cfg ([pscustomobject]@{ aggr_shadow_open = @() }) @(
+            (LivePos 'PFE' 29.2 605), (LivePos 'ISRG' 432.93 20)
+        ) $false $owned
+        $legacyOnly.StockCount | Should -Be 0
+        $both.StockCount | Should -Be 1
+        @($both.HeatItems).Count | Should -Be 2
+        $heatLegacy = Get-AggrHeat $legacyOnly.HeatItems
+        $heatBoth   = Get-AggrHeat $both.HeatItems
+        $heatBoth | Should -BeGreaterThan $heatLegacy   # legacy still in the heat total
+        [Math]::Round($heatLegacy, 2) | Should -Be ([Math]::Round(605 * (29.2 - 28.18), 2))
+    }
+    It 'live mode: two legacy holdings leave all 10 stock slots free' {
+        Mock Get-LiveExitLegs { @{ stop = 28.18; target = $null } }
+        $b = Get-AggrSlotBook $Cfg ([pscustomobject]@{ aggr_shadow_open = @() }) @(
+            (LivePos 'PFE' 29.2 605), (LivePos 'NKE' 37.83 137)
+        ) $false @{}
+        $b.StockCount | Should -Be 0
+        @($b.HeatItems).Count | Should -Be 2
+    }
+    It 'AGSW-owned stock fills a slot; empty owned set means zero slots' {
+        Mock Get-LiveExitLegs { @{ stop = 408.66; target = $null } }
+        $b = Get-AggrSlotBook $Cfg ([pscustomobject]@{ aggr_shadow_open = @() }) @((LivePos 'ISRG' 432.93 20)) $false @{ ISRG = $true }
+        $b.StockCount | Should -Be 1
+        $b0 = Get-AggrSlotBook $Cfg ([pscustomobject]@{ aggr_shadow_open = @() }) @((LivePos 'ISRG' 432.93 20)) $false @{}
+        $b0.StockCount | Should -Be 0
     }
     It 'ABBV is entered with PFE+NKE held live and shadowed (was STOCK_SLOTS_FULL)' {
         $r = RunEntries $Cfg @((Shadow 'PFE' 29.20 28.18 814), (Shadow 'NKE' 37.83 35.58 206)) @((LivePos 'PFE' 29.2 605), (LivePos 'NKE' 37.83 137)) 12.3 12.3 10.13

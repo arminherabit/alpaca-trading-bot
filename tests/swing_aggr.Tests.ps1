@@ -14,6 +14,7 @@ BeforeAll {
     # v1.1 exit settings (partial 1/3 at +2R, dummy 10R TP): the partial machinery
     # stays in the code for a future re-enable, so its tests run against this copy.
     $script:Cfg11 = $script:Cfg | ConvertTo-Json -Depth 8 | ConvertFrom-Json
+    $script:Cfg11.aggr.dry_run = $true   # dry-run behavioural tests keep an explicit dry copy
     $script:Cfg11.aggr.partial_exit_r = 2.0; $script:Cfg11.aggr.dummy_tp_r = 10.0
     $script:A11 = $script:Cfg11.aggr
     function Near($x, $y, $t = 1e-6) { [Math]::Abs([double]$x - [double]$y) | Should -BeLessOrEqual $t }
@@ -23,7 +24,7 @@ BeforeAll {
 }
 
 Describe 'Config' {
-    It 'ships with aggr enabled AND dry_run on' { $A.enabled | Should -BeTrue; $A.dry_run | Should -BeTrue }
+    It 'ships with aggr enabled AND dry_run off (live paper)' { $A.enabled | Should -BeTrue; $A.dry_run | Should -BeFalse }
     It 'legacy risk cap moved to config at 1.5 (unchanged behaviour)' { $Cfg.max_risk_pct_cap | Should -Be 1.5; $Cfg.max_risk_pct | Should -Be 1.0; $Cfg.max_positions | Should -Be 3 }
     It 'floor = 0.80 x start' { Near $A.dd_floor_equity ([Math]::Round(0.8 * $A.dd_start_equity, 2)) 0.01 }
 }
@@ -142,17 +143,24 @@ Describe 'Exits' {
         Get-AggrStockPartialQty 3.0 682 $true  $A11 | Should -Be 0
         Get-AggrStockPartialQty 2.0 1 $false $A11 | Should -Be 0
     }
-    It 'stock payload uses dummy 10R TP' {
+    It 'stock payload uses dummy 10R TP and AGSW client_order_id' {
         $p = New-AggrStockOrderPayload 'AI' 'buy' 100 11.98 11.07 10 'BRKOUT' '100000'
         $p.take_profit.limit_price | Should -Be '21.08'; $p.order_class | Should -Be 'bracket'; $p.time_in_force | Should -Be 'gtc'
+        $p.client_order_id | Should -Be 'AGSW_AI_100000'
+        (($p.client_order_id -split '_')[0]) | Should -Be 'AGSW'
     }
 }
 
 Describe 'Dry-run guard' {
     It 'refuses POST/PATCH/DELETE when dry_run' {
-        { Invoke-AggrApi $Cfg 'POST' '/v2/orders' @{} } | Should -Throw '*DRY-RUN GUARD*'
-        { Invoke-AggrApi $Cfg 'PATCH' '/v2/orders/x' @{} } | Should -Throw '*DRY-RUN GUARD*'
-        { Invoke-AggrApi $Cfg 'DELETE' '/v2/orders/x' } | Should -Throw '*DRY-RUN GUARD*'
+        $dry = $Cfg | ConvertTo-Json -Depth 8 | ConvertFrom-Json; $dry.aggr.dry_run = $true
+        { Invoke-AggrApi $dry 'POST' '/v2/orders' @{} } | Should -Throw '*DRY-RUN GUARD*'
+        { Invoke-AggrApi $dry 'PATCH' '/v2/orders/x' @{} } | Should -Throw '*DRY-RUN GUARD*'
+        { Invoke-AggrApi $dry 'DELETE' '/v2/orders/x' } | Should -Throw '*DRY-RUN GUARD*'
+    }
+    It 'ships live (dry_run false) so the guard does not fire on POST' {
+        Mock Invoke-AlpacaApi { param($cfg,$method,$path,$body) return @{ id = 'x' } }
+        { Invoke-AggrApi $Cfg 'POST' '/v2/orders' @{} } | Should -Not -Throw
     }
     It 'missing dry_run flag defaults to dry' { Test-AggrDryRun ([pscustomobject]@{ aggr = [pscustomobject]@{ enabled = $true } }) | Should -BeTrue }
     It 'manage in dry run (AI migration + partial, v1.1 exits) writes journal and sends no order' {
@@ -205,7 +213,7 @@ Describe 'Dry-run guard' {
         Mock Get-SwingBestSignal { [pscustomobject]@{ Strategy='BRKOUT'; Side='buy'; Entry=100; Stop=95; Confidence=95; Reason='t' } }
         Mock Get-AggrCallChain { @((C 'NVDA261127C00100000' 45 0.65 4.0 4.2)) }
         Mock Get-AggrOpusUnderlyings { @{ 'MSFT' = $true } }
-        $cfg2 = $Cfg | ConvertTo-Json -Depth 6 | ConvertFrom-Json; $cfg2.adaptive_sizing = $false
+        $cfg2 = $Cfg | ConvertTo-Json -Depth 6 | ConvertFrom-Json; $cfg2.aggr.dry_run = $true; $cfg2.adaptive_sizing = $false
         $st = [pscustomobject]@{ losses = 0; equity_at_open = 95554.16; active_watchlist = @(); aggr_watchlist = @('SPY','MSFT','NVDA','AMD') }
         Initialize-AggrState $st; $st.aggr_watchlist = @('SPY','MSFT','NVDA','AMD')
         Invoke-AggrEntries $cfg2 $st ([pscustomobject]@{ Regime='BULL'; SizeMult=1.0 }) @() 95554.16 190000 @() @() @{}
@@ -462,7 +470,7 @@ Describe 'Extension logging (no gate)' {
                 'PUL2' { [pscustomobject]@{ Strategy = 'PULLBK'; Side = 'buy'; Entry = 104; Stop = 100; Confidence = 90; Reason = 't' } }   # enters
             }
         }
-        $cfg2 = $Cfg | ConvertTo-Json -Depth 6 | ConvertFrom-Json; $cfg2.adaptive_sizing = $false
+        $cfg2 = $Cfg | ConvertTo-Json -Depth 6 | ConvertFrom-Json; $cfg2.aggr.dry_run = $true; $cfg2.adaptive_sizing = $false
         $st = [pscustomobject]@{ losses = 0; equity_at_open = 95554.16; active_watchlist = @() }
         Initialize-AggrState $st; $st.aggr_watchlist = @('BRK1', 'PUL1', 'PUL2')
         Invoke-AggrEntries $cfg2 $st ([pscustomobject]@{ Regime = 'NEUTRAL'; SizeMult = 1.0 }) @() 95554.16 190000 @() @() @{}
@@ -475,5 +483,20 @@ Describe 'Extension logging (no gate)' {
         $p2.skip_reason | Should -Be 'DRYRUN_ENTERED'; $p2.extension_atr | Should -Be 2.0; $p2.pct_above_20d_high | Should -Be 4.0
         $p2.payload.qty | Should -Be '229'    # 25% notional cap (23,888.54 / $104) binds before 1.5% risk (358): sizing untouched
         Should -Invoke Invoke-AlpacaApi -ParameterFilter { $method -ne 'GET' } -Times 0 -Exactly
+    }
+}
+
+Describe 'Aggr ownership tags' {
+    It 'AGSW and SWCALL are owned; legacy BRKOUT is not' {
+        Test-AggrOwnedCoid 'AGSW_V_100000' | Should -BeTrue
+        Test-AggrOwnedCoid 'SWCALL_NVDA_202610141000' | Should -BeTrue
+        Test-AggrOwnedCoid 'BRKOUT_PFE_140116' | Should -BeFalse
+        Test-AggrOwnedCoid 'PULLBK_NKE_140118' | Should -BeFalse
+        Test-AggrOwnedCoid '' | Should -BeFalse
+    }
+    It 'MY_ENTRY_PREFIXES includes AGSW so ownership management still sees aggr fills' {
+        $MY_ENTRY_PREFIXES -contains 'AGSW' | Should -BeTrue
+        $MY_ENTRY_PREFIXES -contains 'SWCALL' | Should -BeTrue
+        $MY_ENTRY_PREFIXES -contains 'BRKOUT' | Should -BeTrue
     }
 }
