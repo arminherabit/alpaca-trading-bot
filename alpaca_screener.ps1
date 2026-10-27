@@ -47,6 +47,9 @@ $LEVERAGED_BLOCKLIST = @(
 # trades is the strategy prefix we stamp into every entry's client_order_id.
 # Positions/orders without one of these prefixes belong to the other bot and
 # must never be managed, counted, or learned from.
+# AGSW/SWCALL stay here so journal sync, pages, and foreign-bot scoping see
+# aggr fills as ours. Legacy exit loops must NOT manage them -- they filter via
+# Select-LegacyManagedPositions / Get-AggrOwnedSymbols (one owner per position).
 $MY_ENTRY_PREFIXES = @("BRKOUT","PULLBK","BRKDN","RALLYF","ORB","VWAP","EMA","PYRA","SWCALL","AGSW")
 
 # ── Correlated ticker groups ──────────────────────────────────────────────────

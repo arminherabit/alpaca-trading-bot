@@ -1025,21 +1025,39 @@ function Run-Scan($cfg, $state) {
     $allPositions = @(Get-Positions $cfg)
     $allPosSyms   = @{}; foreach ($p in $allPositions) { if ($p) { $allPosSyms[$p.symbol] = $true } }
     $myAllPositions = @($allPositions | Where-Object { $mySymbols.ContainsKey($_.symbol) })
-    # Legacy logic manages stock only; aggressive-mode calls (SWCALL) are managed by alpaca_swing_aggr.ps1.
-    $positions    = @($myAllPositions | Where-Object { $_.asset_class -ne "us_option" })
-    $foreignCount = $allPositions.Count - $positions.Count
+    # Legacy exit/management loops own ONLY legacy-tagged stocks (BRKOUT/PULLBK/...).
+    # AGSW stocks and SWCALL calls are managed exclusively by alpaca_swing_aggr.ps1
+    # so each position has one owner. AGSW/SWCALL stay in $MY_ENTRY_PREFIXES (and
+    # therefore in $myAllPositions) for journal sync, pages, foreign-bot scoping,
+    # Cancel-ForeignManagementOrders, and the aggr cycle's slot/heat book.
+    $aggrOwnedForLegacy = Get-AggrOwnedSymbols $cfg
+    $positions = Select-LegacyManagedPositions $myAllPositions $aggrOwnedForLegacy
+    if ($null -eq $aggrOwnedForLegacy) {
+        Write-Host "  [OWNERSHIP] could not resolve aggr-owned symbols -- skipping legacy position management this scan (GTC stops remain)." -ForegroundColor Yellow
+    }
+    $foreignCount = $allPositions.Count - $myAllPositions.Count
     $posCount     = $positions.Count
+    $aggrStockCount = 0
+    if ($null -ne $aggrOwnedForLegacy) {
+        $aggrStockCount = @($myAllPositions | Where-Object { $_ -and $_.asset_class -ne "us_option" -and $aggrOwnedForLegacy.ContainsKey($_.symbol) }).Count
+    }
 
     $foreignNote = if ($foreignCount -gt 0) { "  (+{0} other-bot, ignored)" -f $foreignCount } else { "" }
-    Write-Host ("  Equity: `${0:N2}  |  Buying Power: `${1:N2}  |  My Positions: {2}/{3}{4}" -f `
-        $equity, $bp, $posCount, $cfg.max_positions, $foreignNote)
+    $aggrNote    = if ($aggrStockCount -gt 0) { "  (+{0} aggr, managed separately)" -f $aggrStockCount } else { "" }
+    Write-Host ("  Equity: `${0:N2}  |  Buying Power: `${1:N2}  |  Legacy Positions: {2}/{3}{4}{5}" -f `
+        $equity, $bp, $posCount, $cfg.max_positions, $foreignNote, $aggrNote)
     Write-Host ("  P&L Today: `${0:F2}  |  Trades: {1}  |  W/L: {2}/{3}" -f `
         $state.pnl_today, $state.trades_today, $state.wins, $state.losses)
     Write-Host ""
 
-    # Show + manage OUR open positions only
+    # Journal reconcile needs ALL our held stocks (legacy + AGSW) so AGSW open
+    # rows are not orphaned when legacy management skips them.
+    $heldForJournal = @($myAllPositions | Where-Object { $_ -and $_.asset_class -ne "us_option" } | ForEach-Object { $_.symbol })
+    Reconcile-Journal $heldForJournal | Out-Null
+
+    # Show + manage LEGACY-owned open stocks only
     if ($positions.Count -gt 0) {
-        Write-Host "  Open Positions (mine):"
+        Write-Host "  Open Positions (legacy-managed):"
         foreach ($p in $positions) {
             $pnl    = [double]$p.unrealized_pl
             $pnlPct = [double]$p.unrealized_plpc * 100
@@ -1058,9 +1076,6 @@ function Run-Scan($cfg, $state) {
         # pyramided flag so a future NEW position there can pyramid again.
         $curSyms = @($positions | ForEach-Object { $_.symbol })
         $state.pyramided_syms = @($state.pyramided_syms | Where-Object { $curSyms -contains $_ })
-
-        # Retire journal 'open' rows whose position is long gone.
-        Reconcile-Journal $curSyms | Out-Null
 
         # Active position management: staged exits + controlled pyramiding
         Manage-OpenPositions $cfg $positions $state

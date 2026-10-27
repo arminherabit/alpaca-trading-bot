@@ -494,9 +494,48 @@ Describe 'Aggr ownership tags' {
         Test-AggrOwnedCoid 'PULLBK_NKE_140118' | Should -BeFalse
         Test-AggrOwnedCoid '' | Should -BeFalse
     }
-    It 'MY_ENTRY_PREFIXES includes AGSW so ownership management still sees aggr fills' {
+    It 'MY_ENTRY_PREFIXES keeps AGSW/SWCALL for journal/foreign scoping (not legacy exits)' {
         $MY_ENTRY_PREFIXES -contains 'AGSW' | Should -BeTrue
         $MY_ENTRY_PREFIXES -contains 'SWCALL' | Should -BeTrue
         $MY_ENTRY_PREFIXES -contains 'BRKOUT' | Should -BeTrue
+        $MY_ENTRY_PREFIXES -contains 'PULLBK' | Should -BeTrue
+    }
+}
+
+Describe 'Select-LegacyManagedPositions (one owner per position)' {
+    BeforeAll {
+        function Pos($sym, $cls = 'us_equity') {
+            [pscustomobject]@{ symbol = $sym; asset_class = $cls; qty = '10'; side = 'long'; avg_entry_price = '100' }
+        }
+    }
+    It 'keeps BRKOUT/PULLBK legacy stocks and drops AGSW stocks + SWCALL options' {
+        $book = @(
+            (Pos 'NKE'), (Pos 'PFE'), (Pos 'V'),
+            (Pos 'TSLA'),                          # AGSW-owned
+            (Pos 'NVDA261127C00180000' 'us_option') # SWCALL
+        )
+        $aggrOwned = @{ TSLA = $true; 'NVDA261127C00180000' = $true }
+        $got = Select-LegacyManagedPositions $book $aggrOwned
+        $syms = @($got | ForEach-Object { $_.symbol })
+        $syms | Should -Be @('NKE','PFE','V')
+    }
+    It 'returns empty when aggr ownership is unknown (null) so legacy touches nothing' {
+        $book = @((Pos 'NKE'), (Pos 'TSLA'))
+        @(Select-LegacyManagedPositions $book $null).Count | Should -Be 0
+    }
+    It 'returns empty when every stock is AGSW-owned' {
+        $book = @((Pos 'TSLA'), (Pos 'XLE'))
+        $aggrOwned = @{ TSLA = $true; XLE = $true }
+        @(Select-LegacyManagedPositions $book $aggrOwned).Count | Should -Be 0
+    }
+    It 'returns all stocks when aggr owns nothing (empty hashtable)' {
+        $book = @((Pos 'NKE'), (Pos 'PFE'))
+        $got = Select-LegacyManagedPositions $book @{}
+        @($got | ForEach-Object { $_.symbol }) | Should -Be @('NKE','PFE')
+    }
+    It 'never returns us_option rows even if missing from aggrOwned' {
+        $book = @((Pos 'NKE'), (Pos 'NVDA261127C00180000' 'us_option'))
+        $got = Select-LegacyManagedPositions $book @{}
+        @($got | ForEach-Object { $_.symbol }) | Should -Be @('NKE')
     }
 }
