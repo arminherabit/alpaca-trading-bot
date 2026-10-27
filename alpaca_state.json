@@ -3,7 +3,7 @@
   "wins": 0,
   "losses": 0,
   "pnl_today": 0.0,
-  "last_scan": "2026-10-27T14:01:00.9604729+00:00",
+  "last_scan": "2026-10-27T14:10:31.1437372+00:00",
   "session_start": "2026-05-14T04:50:22.4733863+00:00",
   "watchlist_date": "2026-10-27",
   "active_watchlist": [
@@ -138,7 +138,8 @@
   "aggr_migrated": [
     "NKE",
     "PFE",
-    "V"
+    "V",
+    "TSLA"
   ],
   "aggr_calls": [],
   "aggr_partial_failed": [],
