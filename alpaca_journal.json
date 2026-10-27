@@ -51,6 +51,19 @@
       "confidence": 100,
       "regime": "NEUTRAL",
       "reason": "20d-high break (ext 0.38 ATR, volPace 2.3x, RS +13.8%)"
+    },
+    {
+      "opened_at": "2026-10-27T14:30:36.4006052Z",
+      "symbol": "PLTR",
+      "strategy": "PULLBK",
+      "side": "buy",
+      "entry": 197.5,
+      "stop": 181.77,
+      "qty": 31,
+      "risk_usd": 487.63,
+      "confidence": 90,
+      "regime": "NEUTRAL",
+      "reason": "EMA20 pullback reclaim (trendQ 1.39 ATR, RS +5.3%)"
     }
   ],
   "closed": [
