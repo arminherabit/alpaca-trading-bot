@@ -742,6 +742,20 @@ function Get-AggrOwnedSymbols($cfg) {
     return $owned
 }
 
+# Legacy management filter: stocks the legacy ladder / time-stop / fill-repair
+# may act on. Excludes us_option (SWCALL) and AGSW-owned symbols so each
+# position has exactly one owner (legacy OR aggr, never both). When
+# $aggrOwnedSyms is $null (orders API failed), returns @() -- existing GTC
+# stops keep protecting; do not guess. AGSW/SWCALL stay in $MY_ENTRY_PREFIXES
+# for journal sync, pages, and foreign-bot scoping; this filter is only for
+# legacy exit/management loops.
+function Select-LegacyManagedPositions($myAllPositions, $aggrOwnedSyms) {
+    if ($null -eq $aggrOwnedSyms) { return @() }
+    return @($myAllPositions | Where-Object {
+        $_ -and $_.asset_class -ne "us_option" -and -not $aggrOwnedSyms.ContainsKey($_.symbol)
+    })
+}
+
 # Slots + heat source. Dry run: shadow book only, shadow stocks booked as stock
 # risk (qty x |entry - stop|), shadow calls at their premium (risk_usd).
 # Live: heat from the full live book (legacy + aggr); stock/call SLOT counts
