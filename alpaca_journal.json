@@ -51,6 +51,19 @@
       "confidence": 90,
       "regime": "NEUTRAL",
       "reason": "EMA20 pullback reclaim (trendQ 1.39 ATR, RS +5.3%)"
+    },
+    {
+      "opened_at": "2026-10-28T14:01:47.3232275Z",
+      "symbol": "SOFI",
+      "strategy": "BRKOUT",
+      "side": "buy",
+      "entry": 16.97,
+      "stop": 15.51,
+      "qty": 225,
+      "risk_usd": 328.5,
+      "confidence": 95,
+      "regime": "BULL",
+      "reason": "20d-high break (ext 0.30 ATR, volPace 3.9x, RS +6.9%)"
     }
   ],
   "closed": [
