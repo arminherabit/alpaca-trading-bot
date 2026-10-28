@@ -1,19 +1,6 @@
 {
   "open": [
     {
-      "opened_at": "2026-10-14T14:01:17.4418801Z",
-      "symbol": "PFE",
-      "strategy": "BRKOUT",
-      "side": "buy",
-      "entry": 29.2,
-      "stop": 28.18,
-      "qty": 605,
-      "risk_usd": 617.1,
-      "confidence": 95,
-      "regime": "BULL",
-      "reason": "20d-high break (ext 0.51 ATR, volPace 2.7x, RS +3.7%)"
-    },
-    {
       "opened_at": "2026-10-16T14:01:23.3004332Z",
       "symbol": "NKE",
       "strategy": "BRKOUT",
@@ -530,6 +517,25 @@
       "r_multiple": -0.76,
       "hold_days": 6,
       "outcome": "LOSS"
+    },
+    {
+      "opened_at": "2026-10-14T14:01:17.4418801Z",
+      "symbol": "PFE",
+      "strategy": "BRKOUT",
+      "side": "buy",
+      "entry": 29.2,
+      "stop": 28.18,
+      "qty": 605,
+      "risk_usd": 617.1,
+      "confidence": 95,
+      "regime": "BULL",
+      "reason": "20d-high break (ext 0.51 ATR, volPace 2.7x, RS +3.7%)",
+      "closed_at": "2026-10-28T18:40:23.0730144Z",
+      "exit": 29.23,
+      "pnl": 18.31,
+      "r_multiple": 0.03,
+      "hold_days": 10,
+      "outcome": "SCRATCH"
     }
   ],
   "orphaned": [],
