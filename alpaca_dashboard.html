@@ -94,34 +94,34 @@
     <span class="badge" style="color:#3fb950;  border-color:#3fb950;">OPEN</span>
     <span class="badge" style="color:var(--sub); border-color:var(--border);">Closes 8:00 PM</span>
   </div>
-  <span class="gen-time">Generated: 2026-10-28 13:30:34 &nbsp;|&nbsp; Auto-refresh: 30s</span>
+  <span class="gen-time">Generated: 2026-10-28 13:40:29 &nbsp;|&nbsp; Auto-refresh: 30s</span>
 </header>
 
 <!-- Account Stats -->
 <div class="grid-top">
   <div class="stat-card">
     <div class="label">Equity</div>
-    <div class="value blue">$94,215.49</div>
+    <div class="value blue">$94,129.29</div>
     <div class="sub">Paper account</div>
   </div>
   <div class="stat-card">
     <div class="label">Day P&amp;L</div>
-    <div class="value red">$-382.73</div>
-    <div class="sub">-0.4%</div>
+    <div class="value red">$-468.93</div>
+    <div class="sub">-0.5%</div>
   </div>
   <div class="stat-card">
     <div class="label">Buying Power</div>
-    <div class="value">$300,729.24</div>
-    <div class="sub">Cash: $38,973.97</div>
+    <div class="value">$317,318.51</div>
+    <div class="sub">Cash: $52,892.87</div>
   </div>
   <div class="stat-card">
     <div class="label">Trades Today</div>
     <div class="value">0</div>
-    <div class="sub">W: 0 &nbsp;/&nbsp; L: 0</div>
+    <div class="sub">W: 0 &nbsp;/&nbsp; L: 1</div>
   </div>
   <div class="stat-card">
     <div class="label">Open Positions</div>
-    <div class="value">5 <span style="font-size:14px;color:var(--sub)">/ 3</span></div>
+    <div class="value">4 <span style="font-size:14px;color:var(--sub)">/ 3</span></div>
     <div class="sub">Max 3 allowed</div>
   </div>
   <div class="stat-card">
@@ -157,8 +157,8 @@
 </footer>
 
 <script>
-const positions = [{"symbol":"NKE","side":"long","qty":137.0,"entry":37.83,"current":37.315,"stop":35.58,"target":45.7,"rr":3.5,"unrlPnl":-70.56,"unrlPct":-1.36,"projProfit":1078.19,"projLoss":308.25,"pctToTarget":22.47,"pctToStop":4.65,"progress":17,"value":5112.16},{"symbol":"PFE","side":"long","qty":605.0,"entry":29.199736,"current":29.38,"stop":29.23,"target":32.77,"rr":117.97,"unrlPnl":109.06,"unrlPct":0.62,"projProfit":2160.01,"projLoss":18.31,"pctToTarget":11.54,"pctToStop":0.51,"progress":4,"value":17774.9},{"symbol":"PLTR","side":"long","qty":31.0,"entry":197.491613,"current":197.125,"stop":181.77,"target":252.52,"rr":3.5,"unrlPnl":-11.37,"unrlPct":-0.19,"projProfit":1705.88,"projLoss":487.37,"pctToTarget":28.1,"pctToStop":7.79,"progress":22,"value":6110.88},{"symbol":"TSLA","side":"long","qty":30.0,"entry":402.23,"current":410.02,"stop":375.63,"target":495.33,"rr":3.5,"unrlPnl":233.7,"unrlPct":1.94,"projProfit":2793.0,"projLoss":798.0,"pctToTarget":20.81,"pctToStop":8.39,"progress":29,"value":12300.6},{"symbol":"V","side":"long","qty":35.0,"entry":407.5,"current":397.61,"stop":394.88,"target":0.0,"rr":0,"unrlPnl":-346.15,"unrlPct":-2.43,"projProfit":0.0,"projLoss":441.7,"pctToTarget":null,"pctToStop":0.69,"progress":null,"value":13916.35}];
-const closed    = [];
+const positions = [{"symbol":"NKE","side":"long","qty":137.0,"entry":37.83,"current":37.345,"stop":35.58,"target":45.7,"rr":3.5,"unrlPnl":-66.44,"unrlPct":-1.28,"projProfit":1078.19,"projLoss":308.25,"pctToTarget":22.37,"pctToStop":4.73,"progress":17,"value":5116.26},{"symbol":"PFE","side":"long","qty":605.0,"entry":29.199736,"current":29.5199,"stop":29.23,"target":32.77,"rr":117.97,"unrlPnl":193.7,"unrlPct":1.1,"projProfit":2160.01,"projLoss":18.31,"pctToTarget":11.01,"pctToStop":0.98,"progress":8,"value":17859.54},{"symbol":"PLTR","side":"long","qty":31.0,"entry":197.491613,"current":197.36,"stop":181.77,"target":252.52,"rr":3.5,"unrlPnl":-4.08,"unrlPct":-0.07,"projProfit":1705.88,"projLoss":487.37,"pctToTarget":27.95,"pctToStop":7.9,"progress":22,"value":6118.16},{"symbol":"TSLA","side":"long","qty":30.0,"entry":402.23,"current":404.73,"stop":375.63,"target":495.33,"rr":3.5,"unrlPnl":75.0,"unrlPct":0.62,"projProfit":2793.0,"projLoss":798.0,"pctToTarget":22.39,"pctToStop":7.19,"progress":24,"value":12141.9}];
+const closed    = [{"symbol":"V","side":"sell","qty":"35","fillPrice":397.68,"filledAt":"13:33:47","orderType":"stop"}];
 function fmt(n, d=2) {
   return (n >= 0 ? '+' : '') + Number(n).toFixed(d);
 }
