@@ -29,7 +29,7 @@
         "PULLBK": 2
       },
       "last_trade": "2026-06-23T13:40:36.8884942+00:00",
-      "added_count": 322
+      "added_count": 323
     },
     "QQQ": {
       "trades": 12,
@@ -54,7 +54,7 @@
         "PULLBK": 4
       },
       "last_trade": "2026-07-08T15:31:08.1753324+00:00",
-      "added_count": 322
+      "added_count": 323
     },
     "NVDA": {
       "trades": 3,
@@ -201,7 +201,7 @@
         "VWAP": 1
       },
       "last_trade": "2026-06-16T05:30:39.6760723+00:00",
-      "added_count": 28
+      "added_count": 29
     },
     "RGTI": {
       "trades": 1,
@@ -281,7 +281,7 @@
         "PYRA": 1
       },
       "last_trade": "2026-09-09T13:40:38.6037568+00:00",
-      "added_count": 4
+      "added_count": 5
     },
     "ZS": {
       "trades": 1,
@@ -747,7 +747,7 @@
         "PULLBK": 1
       },
       "last_trade": "2026-09-28T13:50:28.3864746+00:00",
-      "added_count": 4
+      "added_count": 5
     },
     "SPCX": {
       "trades": 1,
@@ -883,8 +883,8 @@
       "added_count": 1
     }
   },
-  "last_updated": "2026-10-28T18:40:23.1833390+00:00",
-  "last_screened": "2026-10-28T14:01:39.1825792+00:00",
+  "last_updated": "2026-10-29T14:01:09.0797225+00:00",
+  "last_screened": "2026-10-29T14:01:09.0714507+00:00",
   "total_trades": 79,
   "strategy_stats": {
     "EMA": {
