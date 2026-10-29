@@ -51,6 +51,19 @@
       "confidence": 95,
       "regime": "BULL",
       "reason": "20d-high break (ext 0.30 ATR, volPace 3.9x, RS +6.9%)"
+    },
+    {
+      "opened_at": "2026-10-29T13:50:42.5840589Z",
+      "symbol": "PFE",
+      "strategy": "PULLBK",
+      "side": "buy",
+      "entry": 29.87,
+      "stop": 28.78,
+      "qty": 453,
+      "risk_usd": 493.77,
+      "confidence": 95,
+      "regime": "NEUTRAL",
+      "reason": "EMA20 pullback reclaim (trendQ 1.56 ATR, RS +5.8%)"
     }
   ],
   "closed": [
