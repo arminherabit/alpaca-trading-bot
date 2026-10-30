@@ -1,35 +1,15 @@
 {
-  "refreshed_at": "2026-10-29T04:00:22.0117922Z",
+  "refreshed_at": "2026-10-30T04:00:23.0568558Z",
   "source": "nasdaq",
   "window": {
-    "from": "2026-10-26",
-    "to": "2027-01-07"
+    "from": "2026-10-27",
+    "to": "2027-01-08"
   },
   "backfill_completed_at": "2026-10-12T07:00:23.7744077Z",
   "symbols": {
-    "V": {
+    "NOW": {
       "next_earnings_date": null,
-      "last_earnings_date": "2026-10-27",
-      "confirmed": false
-    },
-    "PANW": {
-      "next_earnings_date": "2026-11-18",
-      "last_earnings_date": "2026-09-01",
-      "confirmed": false
-    },
-    "AMZN": {
-      "next_earnings_date": "2026-10-29",
-      "last_earnings_date": "2026-07-30",
-      "confirmed": false
-    },
-    "TSM": {
-      "next_earnings_date": null,
-      "last_earnings_date": "2026-10-15",
-      "confirmed": false
-    },
-    "AAPL": {
-      "next_earnings_date": "2026-11-02",
-      "last_earnings_date": "2026-07-30",
+      "last_earnings_date": "2026-10-28",
       "confirmed": false
     },
     "AVGO": {
@@ -37,89 +17,9 @@
       "last_earnings_date": "2026-09-02",
       "confirmed": false
     },
-    "ISRG": {
-      "next_earnings_date": null,
-      "last_earnings_date": "2026-10-20",
-      "confirmed": false
-    },
-    "GOOGL": {
-      "next_earnings_date": null,
-      "last_earnings_date": "2026-10-28",
-      "confirmed": false
-    },
-    "ANET": {
-      "next_earnings_date": "2026-11-03",
-      "last_earnings_date": "2026-08-04",
-      "confirmed": false
-    },
-    "COST": {
-      "next_earnings_date": "2026-12-10",
-      "last_earnings_date": "2026-09-24",
-      "confirmed": false
-    },
-    "MSFT": {
-      "next_earnings_date": null,
-      "last_earnings_date": "2026-10-28",
-      "confirmed": false
-    },
-    "LLY": {
-      "next_earnings_date": "2026-10-29",
-      "last_earnings_date": "2026-08-05",
-      "confirmed": false
-    },
-    "ORCL": {
-      "next_earnings_date": "2026-12-09",
-      "last_earnings_date": "2026-09-10",
-      "confirmed": false
-    },
-    "NVDA": {
-      "next_earnings_date": "2026-11-18",
-      "last_earnings_date": "2026-08-26",
-      "confirmed": false
-    },
-    "KLAC": {
-      "next_earnings_date": null,
-      "last_earnings_date": "2026-10-28",
-      "confirmed": false
-    },
     "UBER": {
       "next_earnings_date": "2026-11-04",
       "last_earnings_date": "2026-08-05",
-      "confirmed": false
-    },
-    "NFLX": {
-      "next_earnings_date": null,
-      "last_earnings_date": "2026-10-20",
-      "confirmed": false
-    },
-    "AMD": {
-      "next_earnings_date": "2026-11-03",
-      "last_earnings_date": "2026-08-04",
-      "confirmed": false
-    },
-    "NOW": {
-      "next_earnings_date": null,
-      "last_earnings_date": "2026-10-28",
-      "confirmed": false
-    },
-    "LRCX": {
-      "next_earnings_date": null,
-      "last_earnings_date": "2026-10-21",
-      "confirmed": false
-    },
-    "MA": {
-      "next_earnings_date": "2026-10-29",
-      "last_earnings_date": "2026-07-30",
-      "confirmed": false
-    },
-    "INTU": {
-      "next_earnings_date": "2026-11-19",
-      "last_earnings_date": "2026-08-25",
-      "confirmed": false
-    },
-    "META": {
-      "next_earnings_date": null,
-      "last_earnings_date": "2026-10-21",
       "confirmed": false
     },
     "CRWD": {
@@ -127,9 +27,109 @@
       "last_earnings_date": "2026-08-26",
       "confirmed": false
     },
+    "ANET": {
+      "next_earnings_date": "2026-11-03",
+      "last_earnings_date": "2026-08-04",
+      "confirmed": false
+    },
+    "GOOGL": {
+      "next_earnings_date": null,
+      "last_earnings_date": "2026-10-28",
+      "confirmed": false
+    },
+    "MSFT": {
+      "next_earnings_date": null,
+      "last_earnings_date": "2026-10-28",
+      "confirmed": false
+    },
+    "AAPL": {
+      "next_earnings_date": "2026-11-02",
+      "last_earnings_date": "2026-07-30",
+      "confirmed": false
+    },
+    "MA": {
+      "next_earnings_date": null,
+      "last_earnings_date": "2026-10-29",
+      "confirmed": false
+    },
+    "AMD": {
+      "next_earnings_date": "2026-11-03",
+      "last_earnings_date": "2026-08-04",
+      "confirmed": false
+    },
+    "META": {
+      "next_earnings_date": null,
+      "last_earnings_date": "2026-10-21",
+      "confirmed": false
+    },
+    "NVDA": {
+      "next_earnings_date": "2026-11-18",
+      "last_earnings_date": "2026-08-26",
+      "confirmed": false
+    },
+    "TSM": {
+      "next_earnings_date": null,
+      "last_earnings_date": "2026-10-15",
+      "confirmed": false
+    },
+    "LRCX": {
+      "next_earnings_date": null,
+      "last_earnings_date": "2026-10-21",
+      "confirmed": false
+    },
+    "INTU": {
+      "next_earnings_date": "2026-11-19",
+      "last_earnings_date": "2026-08-25",
+      "confirmed": false
+    },
+    "AMZN": {
+      "next_earnings_date": null,
+      "last_earnings_date": "2026-10-29",
+      "confirmed": false
+    },
     "ADBE": {
       "next_earnings_date": "2026-12-09",
       "last_earnings_date": "2026-09-10",
+      "confirmed": false
+    },
+    "PANW": {
+      "next_earnings_date": "2026-11-18",
+      "last_earnings_date": "2026-09-01",
+      "confirmed": false
+    },
+    "ISRG": {
+      "next_earnings_date": null,
+      "last_earnings_date": "2026-10-20",
+      "confirmed": false
+    },
+    "V": {
+      "next_earnings_date": null,
+      "last_earnings_date": "2026-10-27",
+      "confirmed": false
+    },
+    "KLAC": {
+      "next_earnings_date": null,
+      "last_earnings_date": "2026-10-28",
+      "confirmed": false
+    },
+    "ORCL": {
+      "next_earnings_date": "2026-12-09",
+      "last_earnings_date": "2026-09-10",
+      "confirmed": false
+    },
+    "NFLX": {
+      "next_earnings_date": null,
+      "last_earnings_date": "2026-10-20",
+      "confirmed": false
+    },
+    "COST": {
+      "next_earnings_date": "2026-12-10",
+      "last_earnings_date": "2026-09-24",
+      "confirmed": false
+    },
+    "LLY": {
+      "next_earnings_date": null,
+      "last_earnings_date": "2026-10-29",
       "confirmed": false
     }
   }
