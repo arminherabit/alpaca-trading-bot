@@ -91,27 +91,27 @@
   <h1>&#9650; ALPACA TRADING DASHBOARD</h1>
   <div class="badges">
     <span class="badge" style="color:#d29922; border-color:#d29922;">PAPER TRADING</span>
-    <span class="badge" style="color:#3fb950;  border-color:#3fb950;">OPEN</span>
-    <span class="badge" style="color:var(--sub); border-color:var(--border);">Closes 8:00 PM</span>
+    <span class="badge" style="color:#8b949e;  border-color:#8b949e;">CLOSED</span>
+    <span class="badge" style="color:var(--sub); border-color:var(--border);">Opens Mon 2:30 PM</span>
   </div>
-  <span class="gen-time">Generated: 2026-10-30 19:50:24 &nbsp;|&nbsp; Auto-refresh: 30s</span>
+  <span class="gen-time">Generated: 2026-10-30 20:00:26 &nbsp;|&nbsp; Auto-refresh: 30s</span>
 </header>
 
 <!-- Account Stats -->
 <div class="grid-top">
   <div class="stat-card">
     <div class="label">Equity</div>
-    <div class="value blue">$93,556.43</div>
+    <div class="value blue">$93,589.55</div>
     <div class="sub">Paper account</div>
   </div>
   <div class="stat-card">
     <div class="label">Day P&amp;L</div>
-    <div class="value red">$-629.17</div>
-    <div class="sub">-0.67%</div>
+    <div class="value red">$-596.05</div>
+    <div class="sub">-0.63%</div>
   </div>
   <div class="stat-card">
     <div class="label">Buying Power</div>
-    <div class="value">$322,841.01</div>
+    <div class="value">$322,920.42</div>
     <div class="sub">Cash: $58,715.74</div>
   </div>
   <div class="stat-card">
@@ -157,7 +157,7 @@
 </footer>
 
 <script>
-const positions = [{"symbol":"NKE","side":"long","qty":137.0,"entry":37.83,"current":38.545,"stop":35.58,"target":45.7,"rr":3.5,"unrlPnl":97.96,"unrlPct":1.89,"projProfit":1078.19,"projLoss":308.25,"pctToTarget":18.56,"pctToStop":7.69,"progress":29,"value":5280.66},{"symbol":"PFE","side":"long","qty":453.0,"entry":29.85,"current":30.495,"stop":28.78,"target":33.6,"rr":3.5,"unrlPnl":292.18,"unrlPct":2.16,"projProfit":1698.75,"projLoss":484.71,"pctToTarget":10.18,"pctToStop":5.62,"progress":36,"value":13814.24},{"symbol":"SOFI","side":"long","qty":225.0,"entry":16.97,"current":16.785,"stop":15.51,"target":22.08,"rr":3.5,"unrlPnl":-41.62,"unrlPct":-1.09,"projProfit":1149.75,"projLoss":328.5,"pctToTarget":31.55,"pctToStop":7.6,"progress":19,"value":3776.62},{"symbol":"TSLA","side":"long","qty":30.0,"entry":402.23,"current":398.995,"stop":375.63,"target":495.33,"rr":3.5,"unrlPnl":-97.05,"unrlPct":-0.8,"projProfit":2793.0,"projLoss":798.0,"pctToTarget":24.14,"pctToStop":5.86,"progress":20,"value":11969.85}];
+const positions = [{"symbol":"NKE","side":"long","qty":137.0,"entry":37.83,"current":38.67,"stop":35.58,"target":45.7,"rr":3.5,"unrlPnl":115.08,"unrlPct":2.22,"projProfit":1078.19,"projLoss":308.25,"pctToTarget":18.18,"pctToStop":7.99,"progress":30,"value":5297.79},{"symbol":"PFE","side":"long","qty":453.0,"entry":29.85,"current":30.505,"stop":28.78,"target":33.6,"rr":3.5,"unrlPnl":296.71,"unrlPct":2.19,"projProfit":1698.75,"projLoss":484.71,"pctToTarget":10.15,"pctToStop":5.65,"progress":36,"value":13818.76},{"symbol":"SOFI","side":"long","qty":225.0,"entry":16.97,"current":16.76,"stop":15.51,"target":22.08,"rr":3.5,"unrlPnl":-47.25,"unrlPct":-1.24,"projProfit":1149.75,"projLoss":328.5,"pctToTarget":31.74,"pctToStop":7.46,"progress":19,"value":3771.0},{"symbol":"TSLA","side":"long","qty":30.0,"entry":402.23,"current":399.55,"stop":375.63,"target":495.33,"rr":3.5,"unrlPnl":-80.4,"unrlPct":-0.67,"projProfit":2793.0,"projLoss":798.0,"pctToTarget":23.97,"pctToStop":5.99,"progress":20,"value":11986.5}];
 const closed    = [{"symbol":"AAPL","side":"sell","qty":"40","fillPrice":343.73,"filledAt":"18:24:45","orderType":"stop"},{"symbol":"PLTR","side":"sell","qty":"31","fillPrice":184.46,"filledAt":"17:48:28","orderType":"stop"}];
 function fmt(n, d=2) {
   return (n >= 0 ? '+' : '') + Number(n).toFixed(d);
