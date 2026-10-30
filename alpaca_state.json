@@ -1,9 +1,9 @@
 {
   "trades_today": 0,
   "wins": 0,
-  "losses": 1,
-  "pnl_today": -403.85,
-  "last_scan": "2026-10-30T18:20:33.6588183+00:00",
+  "losses": 2,
+  "pnl_today": -642.54,
+  "last_scan": "2026-10-30T18:30:22.8059645+00:00",
   "session_start": "2026-05-14T04:50:22.4733863+00:00",
   "watchlist_date": "2026-10-30",
   "active_watchlist": [
@@ -100,7 +100,8 @@
     "5e0e5a93-5a70-46e0-949b-55fc994759bc",
     "e558ed5a-2e1e-44b8-b0e2-0bd61974729e",
     "ac368fbd-14ee-43b0-a4b7-1f0c4f923bfa",
-    "a3fd9c09-8107-46fe-8ea0-69402a7dff5f"
+    "a3fd9c09-8107-46fe-8ea0-69402a7dff5f",
+    "9813f563-dca0-484e-ab7b-6f5dcdd1f715"
   ],
   "equity_at_open": 93893.75,
   "equity_at_open_date": "2026-10-30",
@@ -142,8 +143,7 @@
     "NKE",
     "TSLA",
     "SOFI",
-    "PFE",
-    "AAPL"
+    "PFE"
   ],
   "aggr_calls": [],
   "aggr_partial_failed": [],

@@ -51,19 +51,6 @@
       "confidence": 95,
       "regime": "NEUTRAL",
       "reason": "EMA20 pullback reclaim (trendQ 1.56 ATR, RS +5.8%)"
-    },
-    {
-      "opened_at": "2026-10-29T14:01:16.0967119Z",
-      "symbol": "AAPL",
-      "strategy": "PULLBK",
-      "side": "buy",
-      "entry": 349.7,
-      "stop": 337.48,
-      "qty": 40,
-      "risk_usd": 488.8,
-      "confidence": 95,
-      "regime": "NEUTRAL",
-      "reason": "EMA20 pullback reclaim (trendQ 1.33 ATR, RS +5.2%)"
     }
   ],
   "closed": [
@@ -567,6 +554,25 @@
       "pnl": -403.85,
       "r_multiple": -0.83,
       "hold_days": 3,
+      "outcome": "LOSS"
+    },
+    {
+      "opened_at": "2026-10-29T14:01:16.0967119Z",
+      "symbol": "AAPL",
+      "strategy": "PULLBK",
+      "side": "buy",
+      "entry": 349.7,
+      "stop": 337.48,
+      "qty": 40,
+      "risk_usd": 488.8,
+      "confidence": 95,
+      "regime": "NEUTRAL",
+      "reason": "EMA20 pullback reclaim (trendQ 1.33 ATR, RS +5.2%)",
+      "closed_at": "2026-10-30T18:30:18.2028850Z",
+      "exit": 343.73,
+      "pnl": -238.69,
+      "r_multiple": -0.49,
+      "hold_days": 1,
       "outcome": "LOSS"
     }
   ],
