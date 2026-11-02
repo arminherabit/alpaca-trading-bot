@@ -51,6 +51,19 @@
       "confidence": 95,
       "regime": "NEUTRAL",
       "reason": "EMA20 pullback reclaim (trendQ 1.56 ATR, RS +5.8%)"
+    },
+    {
+      "opened_at": "2026-11-02T14:50:29.2597391Z",
+      "symbol": "ISRG",
+      "strategy": "PULLBK",
+      "side": "buy",
+      "entry": 437.88,
+      "stop": 413.06,
+      "qty": 15,
+      "risk_usd": 372.3,
+      "confidence": 90,
+      "regime": "RANGING",
+      "reason": "EMA20 pullback reclaim (trendQ 1.42 ATR, RS +9.6%)"
     }
   ],
   "closed": [
@@ -568,7 +581,7 @@
       "confidence": 95,
       "regime": "NEUTRAL",
       "reason": "EMA20 pullback reclaim (trendQ 1.33 ATR, RS +5.2%)",
-      "closed_at": "2026-10-30T18:30:18.2028850Z",
+      "closed_at": "2026-10-30T18:30:18.202885Z",
       "exit": 343.73,
       "pnl": -238.69,
       "r_multiple": -0.49,
