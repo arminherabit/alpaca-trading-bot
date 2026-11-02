@@ -172,3 +172,21 @@ No closed trades this week.
 ## Week ending 2026-10-25
 No closed trades this week.
 
+
+## Week ending 2026-11-01
+
+| Metric | Value |
+|---|---|
+| Trades | 4 (1W / 3L, 25%) |
+| Net P&L | $-967.83 |
+| Profit factor | 0.02 |
+| Expectancy / trade | $-241.96 |
+| Avg R | -0.51 |
+| Avg hold | 5 days |
+| Best | PFE BRKOUT $18.31 (0.03R) |
+| Worst | PLTR PULLBK $-403.85 (-0.83R) |
+
+**By strategy:** BRKOUT 1/2 $-325.29 | PULLBK 0/2 $-642.54
+
+**By regime:** BULL 1/1 $18.31 | NEUTRAL 0/3 $-986.14
+
