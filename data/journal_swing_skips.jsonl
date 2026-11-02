@@ -9112,3 +9112,23 @@
 {"ts":"2026-11-02T14:50:29.2721227Z","regime":"RANGING","sym":"SLB","heat_before":2291.76,"skip_reason":"ONE_PER_SCAN","dd_tier":"NORMAL","dry_run":false,"dd_pct":1.953}
 {"ts":"2026-11-02T14:50:29.2730146Z","regime":"RANGING","sym":"UNH","heat_before":2291.76,"skip_reason":"ONE_PER_SCAN","dd_tier":"NORMAL","dry_run":false,"dd_pct":1.953}
 {"ts":"2026-11-02T14:50:29.2738319Z","regime":"RANGING","sym":"DDOG","heat_before":2291.76,"skip_reason":"ONE_PER_SCAN","dd_tier":"NORMAL","dry_run":false,"dd_pct":1.953}
+{"ts":"2026-11-02T15:01:24.6015046Z","dd_tier":"NORMAL","skip_reason":"INDEX_ANCHOR","regime":"RANGING","sym":"SPY","dd_pct":1.868,"dry_run":false,"heat_before":1919.46}
+{"ts":"2026-11-02T15:01:24.6091964Z","dd_tier":"NORMAL","skip_reason":"INDEX_ANCHOR","regime":"RANGING","sym":"QQQ","dd_pct":1.868,"dry_run":false,"heat_before":1919.46}
+{"ts":"2026-11-02T15:01:24.9534666Z","dd_tier":"NORMAL","skip_reason":"NO_SETUP","regime":"RANGING","sym":"MRVL","dd_pct":1.868,"dry_run":false,"heat_before":1919.46}
+{"ts":"2026-11-02T15:01:25.0572868Z","dd_tier":"NORMAL","skip_reason":"NO_SETUP","regime":"RANGING","sym":"ORCL","dd_pct":1.868,"dry_run":false,"heat_before":1919.46}
+{"ts":"2026-11-02T15:01:25.1315436Z","dd_tier":"NORMAL","skip_reason":"NO_SETUP","regime":"RANGING","sym":"SPCX","dd_pct":1.868,"dry_run":false,"heat_before":1919.46}
+{"ts":"2026-11-02T15:01:25.1325260Z","dd_tier":"NORMAL","skip_reason":"HELD_OR_WORKING","regime":"RANGING","sym":"TSLA","dd_pct":1.868,"dry_run":false,"heat_before":1919.46}
+{"ts":"2026-11-02T15:01:25.7069587Z","dd_tier":"NORMAL","skip_reason":"NO_SETUP","regime":"RANGING","sym":"KORU","dd_pct":1.868,"dry_run":false,"heat_before":1919.46}
+{"ts":"2026-11-02T15:01:25.8241845Z","dd_tier":"NORMAL","skip_reason":"NO_SETUP","regime":"RANGING","sym":"AMZN","dd_pct":1.868,"dry_run":false,"heat_before":1919.46}
+{"ts":"2026-11-02T15:01:25.9029891Z","dd_tier":"NORMAL","skip_reason":"NO_SETUP","regime":"RANGING","sym":"CMG","dd_pct":1.868,"dry_run":false,"heat_before":1919.46}
+{"ts":"2026-11-02T15:01:26.2481926Z","dd_tier":"NORMAL","skip_reason":"NO_SETUP","regime":"RANGING","sym":"HD","dd_pct":1.868,"dry_run":false,"heat_before":1919.46}
+{"ts":"2026-11-02T15:01:26.2490101Z","dd_tier":"NORMAL","skip_reason":"HELD_OR_WORKING","regime":"RANGING","sym":"NKE","dd_pct":1.868,"dry_run":false,"heat_before":1919.46}
+{"ts":"2026-11-02T15:01:26.3852841Z","dd_tier":"NORMAL","skip_reason":"NO_SETUP","regime":"RANGING","sym":"SBUX","dd_pct":1.868,"dry_run":false,"heat_before":1919.46}
+{"ts":"2026-11-02T15:01:26.4620027Z","dd_tier":"NORMAL","skip_reason":"NO_SETUP","regime":"RANGING","sym":"OMF","dd_pct":1.868,"dry_run":false,"heat_before":1919.46}
+{"ts":"2026-11-02T15:01:26.5673378Z","dd_tier":"NORMAL","skip_reason":"NO_SETUP","regime":"RANGING","sym":"XLE","dd_pct":1.868,"dry_run":false,"heat_before":1919.46}
+{"ts":"2026-11-02T15:01:26.6943519Z","dd_tier":"NORMAL","skip_reason":"NO_SETUP","regime":"RANGING","sym":"LYB","dd_pct":1.868,"dry_run":false,"heat_before":1919.46}
+{"ts":"2026-11-02T15:01:26.7788142Z","dd_tier":"NORMAL","skip_reason":"NO_SETUP","regime":"RANGING","sym":"RIVN","dd_pct":1.868,"dry_run":false,"heat_before":1919.46}
+{"ts":"2026-11-02T15:01:27.0703559Z","dd_tier":"NORMAL","skip_reason":"NO_SETUP","regime":"RANGING","sym":"MRNA","dd_pct":1.868,"dry_run":false,"heat_before":1919.46}
+{"ts":"2026-11-02T15:01:27.1444684Z","dd_tier":"NORMAL","skip_reason":"NO_SETUP","regime":"RANGING","sym":"OXY","dd_pct":1.868,"dry_run":false,"heat_before":1919.46}
+{"ts":"2026-11-02T15:01:27.3735944Z","setup":"PULLBK","conf":80,"live_check":"STALE_SIGNAL","heat_before":1919.46,"sym":"ABBV","stale_reason":"live quote unusable: spread 4.82% (max 2%)","regime":"RANGING","rs":10.11,"dd_tier":"NORMAL","skip_reason":"STALE_SIGNAL","dd_pct":1.868,"live_mid":294.855,"quote_spread_pct":4.82,"quote_age_sec":0.0,"drift_pct":null,"dry_run":false}
+{"ts":"2026-11-02T15:01:27.4457374Z","dd_tier":"NORMAL","skip_reason":"NO_SETUP","regime":"RANGING","sym":"GOOGL","dd_pct":1.868,"dry_run":false,"heat_before":1919.46}
