@@ -553,3 +553,4 @@
 {"date":"2026-10-30","symbol":"LLY","sleeve":"B","reason":"EARNINGS_BLACKOUT","detail":"last 2026-10-29 (1 d ago)"}
 {"date":"2026-10-30","symbol":"TSM","sleeve":"A","reason":"TREND_GATE","detail":"C 431.63 EMA20 434.51 EMA50 433.93"}
 {"date":"2026-10-30","symbol":"TSM","sleeve":"B","reason":"TREND_GATE","detail":"C 431.63 EMA20 434.51 EMA50 433.93"}
+{"date":"2026-11-02","symbol":"*","sleeve":"ALL","reason":"DATA_STALE","detail":"universe stale True, earnings stale False"}
