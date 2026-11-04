@@ -555,3 +555,4 @@
 {"date":"2026-10-30","symbol":"TSM","sleeve":"B","reason":"TREND_GATE","detail":"C 431.63 EMA20 434.51 EMA50 433.93"}
 {"date":"2026-11-02","symbol":"*","sleeve":"ALL","reason":"DATA_STALE","detail":"universe stale True, earnings stale False"}
 {"date":"2026-11-03","symbol":"*","sleeve":"ALL","reason":"DATA_STALE","detail":"universe stale True, earnings stale False"}
+{"date":"2026-11-04","symbol":"*","sleeve":"ALL","reason":"DATA_STALE","detail":"universe stale True, earnings stale False"}

@@ -12,7 +12,7 @@
   "pause_until": null,
   "strategy_halted": false,
   "manual_review_required": false,
-  "last_entry_eval_date": "2026-11-03",
+  "last_entry_eval_date": "2026-11-04",
   "last_earnings_refresh": "2026-11-04",
   "reviewed_20": false,
   "golive_gates_met": false,
@@ -21,5 +21,5 @@
   "cooldown": {},
   "bar_cache": {},
   "info_logged": {},
-  "last_scan": "2026-11-04T20:23:17.9325761Z"
+  "last_scan": "2026-11-04T20:30:21.2506990Z"
 }
