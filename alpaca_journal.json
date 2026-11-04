@@ -51,19 +51,6 @@
       "confidence": 90,
       "regime": "RANGING",
       "reason": "EMA20 pullback reclaim (trendQ 1.42 ATR, RS +9.6%)"
-    },
-    {
-      "opened_at": "2026-11-02T15:10:30.7044982Z",
-      "symbol": "HD",
-      "strategy": "BRKOUT",
-      "side": "buy",
-      "entry": 334.77,
-      "stop": 320.83,
-      "qty": 45,
-      "risk_usd": 627.3,
-      "confidence": 95,
-      "regime": "RANGING",
-      "reason": "20d-high break (ext 0.01 ATR, volPace 1.2x, RS +20.9%)"
     }
   ],
   "closed": [
@@ -608,7 +595,23 @@
       "outcome": "SCRATCH"
     }
   ],
-  "orphaned": [],
+  "orphaned": [
+    {
+      "opened_at": "2026-11-02T15:10:30.7044982Z",
+      "symbol": "HD",
+      "strategy": "BRKOUT",
+      "side": "buy",
+      "entry": 334.77,
+      "stop": 320.83,
+      "qty": 45,
+      "risk_usd": 627.3,
+      "confidence": 95,
+      "regime": "RANGING",
+      "reason": "20d-high break (ext 0.01 ATR, volPace 1.2x, RS +20.9%)",
+      "orphaned_at": "2026-11-04T14:30:23.6502606Z",
+      "orphan_reason": "position not held; exit never journaled"
+    }
+  ],
   "unfilled": [
     {
       "opened_at": "2026-08-19T14:01:48.6390152Z",
