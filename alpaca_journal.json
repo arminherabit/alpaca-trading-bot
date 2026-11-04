@@ -1,19 +1,6 @@
 {
   "open": [
     {
-      "opened_at": "2026-10-27T14:01:00.9521495Z",
-      "symbol": "TSLA",
-      "strategy": "BRKOUT",
-      "side": "buy",
-      "entry": 402.34,
-      "stop": 375.63,
-      "qty": 30,
-      "risk_usd": 801.3,
-      "confidence": 100,
-      "regime": "NEUTRAL",
-      "reason": "20d-high break (ext 0.38 ATR, volPace 2.3x, RS +13.8%)"
-    },
-    {
       "opened_at": "2026-10-28T14:01:47.3232275Z",
       "symbol": "SOFI",
       "strategy": "BRKOUT",
@@ -593,6 +580,25 @@
       "r_multiple": 0.09,
       "hold_days": 12,
       "outcome": "SCRATCH"
+    },
+    {
+      "opened_at": "2026-10-27T14:01:00.9521495Z",
+      "symbol": "TSLA",
+      "strategy": "BRKOUT",
+      "side": "buy",
+      "entry": 402.34,
+      "stop": 375.63,
+      "qty": 30,
+      "risk_usd": 801.3,
+      "confidence": 100,
+      "regime": "NEUTRAL",
+      "reason": "20d-high break (ext 0.38 ATR, volPace 2.3x, RS +13.8%)",
+      "closed_at": "2026-11-04T14:40:21.7675401Z",
+      "exit": 376.58,
+      "pnl": -769.5,
+      "r_multiple": -0.96,
+      "hold_days": 6,
+      "outcome": "LOSS"
     }
   ],
   "orphaned": [
