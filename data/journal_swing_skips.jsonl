@@ -10473,3 +10473,23 @@
 {"ts":"2026-11-03T20:20:44.3391742Z","skip_reason":"NO_SETUP","sym":"SNOW","dd_pct":2.337,"dd_tier":"NORMAL","dry_run":false,"regime":"RANGING","heat_before":1982.61}
 {"ts":"2026-11-03T20:20:44.7744591Z","skip_reason":"NO_SETUP","sym":"SOXX","dd_pct":2.337,"dd_tier":"NORMAL","dry_run":false,"regime":"RANGING","heat_before":1982.61}
 {"ts":"2026-11-03T20:20:44.9800342Z","skip_reason":"NO_SETUP","sym":"NKE","dd_pct":2.337,"dd_tier":"NORMAL","dry_run":false,"regime":"RANGING","heat_before":1982.61}
+{"ts":"2026-11-04T14:50:24.3458803Z","dd_tier":"NORMAL","regime":"BULL","sym":"SPY","skip_reason":"INDEX_ANCHOR","dry_run":false,"dd_pct":2.087,"heat_before":1184.61}
+{"ts":"2026-11-04T14:50:24.3904302Z","dd_tier":"NORMAL","regime":"BULL","sym":"QQQ","skip_reason":"INDEX_ANCHOR","dry_run":false,"dd_pct":2.087,"heat_before":1184.61}
+{"ts":"2026-11-04T14:50:24.4102041Z","dd_tier":"NORMAL","regime":"BULL","sym":"PLTR","skip_reason":"COOLDOWN","dry_run":false,"dd_pct":2.087,"heat_before":1184.61}
+{"ts":"2026-11-04T14:50:24.8041993Z","dd_tier":"NORMAL","regime":"BULL","sym":"ORCL","skip_reason":"NO_SETUP","dry_run":false,"dd_pct":2.087,"heat_before":1184.61}
+{"ts":"2026-11-04T14:50:25.1867173Z","dd_tier":"NORMAL","regime":"BULL","sym":"KORU","skip_reason":"NO_SETUP","dry_run":false,"dd_pct":2.087,"heat_before":1184.61}
+{"ts":"2026-11-04T14:50:25.1928386Z","dd_tier":"NORMAL","regime":"BULL","sym":"AAPL","skip_reason":"COOLDOWN","dry_run":false,"dd_pct":2.087,"heat_before":1184.61}
+{"ts":"2026-11-04T14:50:25.4846835Z","dd_tier":"NORMAL","regime":"BULL","sym":"NVDA","skip_reason":"NO_SETUP","dry_run":false,"dd_pct":2.087,"heat_before":1184.61}
+{"ts":"2026-11-04T14:50:25.8204160Z","dd_tier":"NORMAL","regime":"BULL","sym":"INTC","skip_reason":"NO_SETUP","dry_run":false,"dd_pct":2.087,"heat_before":1184.61}
+{"ts":"2026-11-04T14:50:25.8266031Z","dd_tier":"NORMAL","regime":"BULL","sym":"TSLA","skip_reason":"COOLDOWN","dry_run":false,"dd_pct":2.087,"heat_before":1184.61}
+{"ts":"2026-11-04T14:50:26.4969179Z","live_mid":337.32,"drift_pct":null,"regime":"BULL","dd_pct":2.087,"heat_before":1184.61,"quote_age_sec":1.9,"stale_reason":"live quote unusable: spread 6.58% (max 2%)","skip_reason":"STALE_SIGNAL","rs":6.81,"pct_above_20d_high":0.56,"quote_spread_pct":6.58,"sym":"JPM","dry_run":false,"conf":85,"setup":"BRKOUT","dd_tier":"NORMAL","live_check":"STALE_SIGNAL","extension_atr":0.33}
+{"ts":"2026-11-04T14:50:26.5717073Z","dd_tier":"NORMAL","regime":"BULL","sym":"MRNA","skip_reason":"EARNINGS","dry_run":false,"dd_pct":2.087,"heat_before":1184.61}
+{"ts":"2026-11-04T14:50:26.9000112Z","dd_tier":"NORMAL","regime":"BULL","sym":"AVGO","skip_reason":"NO_SETUP","dry_run":false,"dd_pct":2.087,"heat_before":1184.61}
+{"ts":"2026-11-04T14:50:27.3000357Z","dd_tier":"NORMAL","regime":"BULL","sym":"AMAT","skip_reason":"NO_SETUP","dry_run":false,"dd_pct":2.087,"heat_before":1184.61}
+{"ts":"2026-11-04T14:50:27.6708935Z","dd_tier":"NORMAL","regime":"BULL","sym":"SPCX","skip_reason":"NO_SETUP","dry_run":false,"dd_pct":2.087,"heat_before":1184.61}
+{"ts":"2026-11-04T14:50:27.9764894Z","dd_tier":"NORMAL","regime":"BULL","sym":"KLAC","skip_reason":"NO_SETUP","dry_run":false,"dd_pct":2.087,"heat_before":1184.61}
+{"ts":"2026-11-04T14:50:28.4273731Z","dd_tier":"NORMAL","regime":"BULL","sym":"LRCX","skip_reason":"NO_SETUP","dry_run":false,"dd_pct":2.087,"heat_before":1184.61}
+{"ts":"2026-11-04T14:50:28.7686249Z","dd_tier":"NORMAL","regime":"BULL","sym":"CRWD","skip_reason":"NO_SETUP","dry_run":false,"dd_pct":2.087,"heat_before":1184.61}
+{"ts":"2026-11-04T14:50:29.1367862Z","dd_tier":"NORMAL","regime":"BULL","sym":"SNOW","skip_reason":"NO_SETUP","dry_run":false,"dd_pct":2.087,"heat_before":1184.61}
+{"ts":"2026-11-04T14:50:29.5269652Z","dd_tier":"NORMAL","regime":"BULL","sym":"SOXX","skip_reason":"NO_SETUP","dry_run":false,"dd_pct":2.087,"heat_before":1184.61}
+{"ts":"2026-11-04T14:50:31.0772065Z","riskPct":0.5688,"live_mid":39.775,"drift_pct":0.31,"risk_usd":530.4,"regime":"BULL","dd_pct":2.087,"call_skip":"NO_LIQUID_CALL","heat_before":1184.61,"quote_age_sec":-0.0,"skip_reason":"ENTERED","rs":17.39,"pct_above_20d_high":0.86,"quote_spread_pct":0.03,"sym":"NKE","dry_run":false,"conf":95,"instrument":"stock","setup":"BRKOUT","dd_tier":"NORMAL","live_check":"OK","payload":{"symbol":"NKE","qty":"255","side":"buy","type":"limit","time_in_force":"gtc","limit_price":"39.90","order_class":"bracket","take_profit":{"limit_price":"47.18"},"stop_loss":{"stop_price":"37.82"},"client_order_id":"AGSW_NKE_145030"},"extension_atr":0.33,"heat_after":1715.01}
