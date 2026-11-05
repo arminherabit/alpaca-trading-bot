@@ -1,9 +1,9 @@
 {
   "trades_today": 0,
   "wins": 0,
-  "losses": 0,
-  "pnl_today": 0.0,
-  "last_scan": "2026-11-05T15:40:22.2166082+00:00",
+  "losses": 1,
+  "pnl_today": -528.38,
+  "last_scan": "2026-11-05T15:50:21.5927608+00:00",
   "session_start": "2026-05-14T04:50:22.4733863+00:00",
   "watchlist_date": "2026-11-05",
   "active_watchlist": [
@@ -103,7 +103,8 @@
     "a3fd9c09-8107-46fe-8ea0-69402a7dff5f",
     "9813f563-dca0-484e-ab7b-6f5dcdd1f715",
     "5dabc4ee-4c0c-4b51-adc4-75201a81809c",
-    "7acfd016-ee58-4cb6-8031-1c6e998a2c22"
+    "7acfd016-ee58-4cb6-8031-1c6e998a2c22",
+    "8499ebe8-c104-4a36-9587-0d038fa2559e"
   ],
   "equity_at_open": 94191.03,
   "equity_at_open_date": "2026-11-05",
@@ -146,7 +147,6 @@
     "PFE",
     "ISRG",
     "NKE",
-    "AMZN",
     "AVGO"
   ],
   "aggr_calls": [],
