@@ -1,19 +1,6 @@
 {
   "open": [
     {
-      "opened_at": "2026-10-28T14:01:47.3232275Z",
-      "symbol": "SOFI",
-      "strategy": "BRKOUT",
-      "side": "buy",
-      "entry": 16.97,
-      "stop": 15.51,
-      "qty": 225,
-      "risk_usd": 328.5,
-      "confidence": 95,
-      "regime": "BULL",
-      "reason": "20d-high break (ext 0.30 ATR, volPace 3.9x, RS +6.9%)"
-    },
-    {
       "opened_at": "2026-10-29T13:50:42.5840589Z",
       "symbol": "PFE",
       "strategy": "PULLBK",
@@ -656,6 +643,25 @@
       "pnl": -528.38,
       "r_multiple": -1.0,
       "hold_days": 1,
+      "outcome": "LOSS"
+    },
+    {
+      "opened_at": "2026-10-28T14:01:47.3232275Z",
+      "symbol": "SOFI",
+      "strategy": "BRKOUT",
+      "side": "buy",
+      "entry": 16.97,
+      "stop": 15.51,
+      "qty": 225,
+      "risk_usd": 328.5,
+      "confidence": 95,
+      "regime": "BULL",
+      "reason": "20d-high break (ext 0.30 ATR, volPace 3.9x, RS +6.9%)",
+      "closed_at": "2026-11-05T16:20:22.7290107Z",
+      "exit": 15.49,
+      "pnl": -332.36,
+      "r_multiple": -1.01,
+      "hold_days": 6,
       "outcome": "LOSS"
     }
   ],
