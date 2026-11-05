@@ -3,7 +3,7 @@
   "wins": 0,
   "losses": 0,
   "pnl_today": 0.0,
-  "last_scan": "2026-11-05T15:20:27.0140994+00:00",
+  "last_scan": "2026-11-05T15:30:24.4977265+00:00",
   "session_start": "2026-05-14T04:50:22.4733863+00:00",
   "watchlist_date": "2026-11-05",
   "active_watchlist": [
@@ -146,7 +146,8 @@
     "PFE",
     "ISRG",
     "NKE",
-    "AMZN"
+    "AMZN",
+    "AVGO"
   ],
   "aggr_calls": [],
   "aggr_partial_failed": [],
