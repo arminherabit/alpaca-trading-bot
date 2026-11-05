@@ -64,6 +64,19 @@
       "confidence": 85,
       "regime": "BULL",
       "reason": "20d-high break (ext 0.72 ATR, volPace 7.1x, RS +5.4%)"
+    },
+    {
+      "opened_at": "2026-11-05T15:01:28.3167516Z",
+      "symbol": "NVDA",
+      "strategy": "BRKDN",
+      "side": "sell",
+      "entry": 190.09,
+      "stop": 202.95,
+      "qty": 71,
+      "risk_usd": 913.06,
+      "confidence": 95,
+      "regime": "BEAR",
+      "reason": "20d-low breakdown (ext 1.49 ATR, volPace 5.1x, RS -15.0%)"
     }
   ],
   "closed": [

@@ -29,7 +29,7 @@
         "PULLBK": 2
       },
       "last_trade": "2026-06-23T13:40:36.8884942+00:00",
-      "added_count": 327
+      "added_count": 328
     },
     "QQQ": {
       "trades": 12,
@@ -54,7 +54,7 @@
         "PULLBK": 4
       },
       "last_trade": "2026-07-08T15:31:08.1753324+00:00",
-      "added_count": 327
+      "added_count": 328
     },
     "NVDA": {
       "trades": 3,
@@ -201,7 +201,7 @@
         "VWAP": 1
       },
       "last_trade": "2026-06-16T05:30:39.6760723+00:00",
-      "added_count": 31
+      "added_count": 32
     },
     "RGTI": {
       "trades": 1,
@@ -241,7 +241,7 @@
         "AGSW": 1
       },
       "last_trade": "2026-10-30T17:50:20.2186689+00:00",
-      "added_count": 25
+      "added_count": 26
     },
     "PANW": {
       "trades": 1,
@@ -321,7 +321,7 @@
         "VWAP": 1
       },
       "last_trade": "2026-06-10T04:20:31.7186864+00:00",
-      "added_count": 47
+      "added_count": 48
     },
     "ORCL": {
       "trades": 1,
@@ -435,7 +435,7 @@
         "PULLBK": 1
       },
       "last_trade": "2026-06-17T14:30:51.3290856+00:00",
-      "added_count": 8
+      "added_count": 9
     },
     "MS": {
       "trades": 1,
@@ -770,7 +770,7 @@
         "PULLBK": 1
       },
       "last_trade": "2026-09-30T13:50:28.9239036+00:00",
-      "added_count": 10
+      "added_count": 11
     },
     "CBNK": {
       "trades": 1,
@@ -922,11 +922,11 @@
         "AGSW": 1
       },
       "last_trade": "2026-11-04T14:40:21.8717+00:00",
-      "added_count": 1
+      "added_count": 2
     }
   },
-  "last_updated": "2026-11-04T15:01:21.0940313+00:00",
-  "last_screened": "2026-11-04T15:01:21.0886176+00:00",
+  "last_updated": "2026-11-05T15:01:20.7415762+00:00",
+  "last_screened": "2026-11-05T15:01:20.7343475+00:00",
   "total_trades": 83,
   "strategy_stats": {
     "EMA": {
