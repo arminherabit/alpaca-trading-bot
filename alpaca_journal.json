@@ -77,6 +77,19 @@
       "confidence": 95,
       "regime": "BEAR",
       "reason": "20d-low breakdown (ext 1.49 ATR, volPace 5.1x, RS -15.0%)"
+    },
+    {
+      "opened_at": "2026-11-05T15:20:27.0048599Z",
+      "symbol": "AVGO",
+      "strategy": "BRKDN",
+      "side": "sell",
+      "entry": 303.96,
+      "stop": 328.89,
+      "qty": 36,
+      "risk_usd": 897.48,
+      "confidence": 95,
+      "regime": "BEAR",
+      "reason": "20d-low breakdown (ext 1.23 ATR, volPace 3.8x, RS -12.4%)"
     }
   ],
   "closed": [
