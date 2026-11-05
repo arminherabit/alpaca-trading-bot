@@ -11195,3 +11195,23 @@
 {"ts":"2026-11-05T15:01:28.3221113Z","dd_tier":"NORMAL","regime":"BEAR","dd_pct":2.106,"heat_before":3134.2,"dry_run":false,"sym":"MS","skip_reason":"ONE_PER_SCAN"}
 {"ts":"2026-11-05T15:01:28.3226549Z","dd_tier":"NORMAL","regime":"BEAR","dd_pct":2.106,"heat_before":3134.2,"dry_run":false,"sym":"TGT","skip_reason":"ONE_PER_SCAN"}
 {"ts":"2026-11-05T15:01:28.3232002Z","dd_tier":"NORMAL","regime":"BEAR","dd_pct":2.106,"heat_before":3134.2,"dry_run":false,"sym":"JPM","skip_reason":"ONE_PER_SCAN"}
+{"ts":"2026-11-05T15:10:19.4218953Z","dd_tier":"NORMAL","heat_before":2221.14,"regime":"BEAR","dry_run":false,"dd_pct":2.28,"skip_reason":"INDEX_ANCHOR","sym":"SPY"}
+{"ts":"2026-11-05T15:10:19.4474371Z","dd_tier":"NORMAL","heat_before":2221.14,"regime":"BEAR","dry_run":false,"dd_pct":2.28,"skip_reason":"INDEX_ANCHOR","sym":"QQQ"}
+{"ts":"2026-11-05T15:10:20.1089878Z","dd_tier":"NORMAL","heat_before":2221.14,"regime":"BEAR","dry_run":false,"dd_pct":2.28,"skip_reason":"NO_SETUP","sym":"CRWV"}
+{"ts":"2026-11-05T15:10:20.5503918Z","dd_tier":"NORMAL","heat_before":2221.14,"regime":"BEAR","dry_run":false,"dd_pct":2.28,"skip_reason":"NO_SETUP","sym":"SOXX"}
+{"ts":"2026-11-05T15:10:20.9042725Z","dd_tier":"NORMAL","heat_before":2221.14,"regime":"BEAR","dry_run":false,"dd_pct":2.28,"skip_reason":"NO_SETUP","sym":"DRAM"}
+{"ts":"2026-11-05T15:10:20.9200839Z","dd_tier":"NORMAL","heat_before":2221.14,"regime":"BEAR","dry_run":false,"dd_pct":2.28,"skip_reason":"COOLDOWN","sym":"PLTR"}
+{"ts":"2026-11-05T15:10:21.3559242Z","conf":95,"regime":"BEAR","rs":-8.27,"sym":"QCOM","dd_pct":2.28,"live_check":"STALE_SIGNAL","dd_tier":"NORMAL","skip_reason":"STALE_SIGNAL","drift_pct":null,"stale_reason":"live quote unusable: spread 5.62% (max 2%)","heat_before":2221.14,"setup":"BRKDN","live_mid":160.095,"quote_age_sec":0.4,"quote_spread_pct":5.62,"dry_run":false}
+{"ts":"2026-11-05T15:10:21.5813894Z","dd_tier":"NORMAL","heat_before":2221.14,"regime":"BEAR","dry_run":false,"dd_pct":2.28,"skip_reason":"NO_SETUP","sym":"MRVL"}
+{"ts":"2026-11-05T15:10:21.5891050Z","dd_tier":"NORMAL","heat_before":2221.14,"regime":"BEAR","dry_run":false,"dd_pct":2.28,"skip_reason":"COOLDOWN","sym":"TSLA"}
+{"ts":"2026-11-05T15:10:22.0997588Z","dd_tier":"NORMAL","heat_before":2221.14,"regime":"BEAR","dry_run":false,"dd_pct":2.28,"skip_reason":"NO_SETUP","sym":"GOOGL"}
+{"ts":"2026-11-05T15:10:22.4439858Z","dd_tier":"NORMAL","heat_before":2221.14,"regime":"BEAR","dry_run":false,"dd_pct":2.28,"skip_reason":"NO_SETUP","sym":"SPCX"}
+{"ts":"2026-11-05T15:10:22.9214721Z","dd_tier":"NORMAL","heat_before":2221.14,"regime":"BEAR","dry_run":false,"dd_pct":2.28,"skip_reason":"NO_SETUP","sym":"INTC"}
+{"ts":"2026-11-05T15:10:23.2415288Z","dd_tier":"NORMAL","heat_before":2221.14,"regime":"BEAR","dry_run":false,"dd_pct":2.28,"skip_reason":"NO_SETUP","sym":"AMD"}
+{"ts":"2026-11-05T15:10:23.2430735Z","dd_tier":"NORMAL","heat_before":2221.14,"regime":"BEAR","dry_run":false,"dd_pct":2.28,"skip_reason":"HELD_OR_WORKING","sym":"NVDA"}
+{"ts":"2026-11-05T15:10:23.7767522Z","dd_tier":"NORMAL","heat_before":2221.14,"regime":"BEAR","dry_run":false,"dd_pct":2.28,"skip_reason":"NO_SETUP","sym":"BAC"}
+{"ts":"2026-11-05T15:10:24.4905152Z","conf":95,"regime":"BEAR","rs":-12.19,"sym":"AVGO","dd_pct":2.28,"live_check":"STALE_SIGNAL","dd_tier":"NORMAL","skip_reason":"STALE_SIGNAL","drift_pct":null,"stale_reason":"live quote unusable: spread 2.22% (max 2%)","heat_before":2221.14,"setup":"BRKDN","live_mid":306.405,"quote_age_sec":-0.1,"quote_spread_pct":2.22,"dry_run":false}
+{"ts":"2026-11-05T15:10:24.4919886Z","dd_tier":"NORMAL","heat_before":2221.14,"regime":"BEAR","dry_run":false,"dd_pct":2.28,"skip_reason":"HELD_OR_WORKING","sym":"AMZN"}
+{"ts":"2026-11-05T15:10:24.7183928Z","dd_tier":"NORMAL","heat_before":2221.14,"regime":"BEAR","dry_run":false,"dd_pct":2.28,"skip_reason":"NO_SETUP","sym":"MS"}
+{"ts":"2026-11-05T15:10:24.9637312Z","dd_tier":"NORMAL","heat_before":2221.14,"regime":"BEAR","dry_run":false,"dd_pct":2.28,"skip_reason":"NO_SETUP","sym":"TGT"}
+{"ts":"2026-11-05T15:10:25.1944063Z","dd_tier":"NORMAL","heat_before":2221.14,"regime":"BEAR","dry_run":false,"dd_pct":2.28,"skip_reason":"NO_SETUP","sym":"JPM"}
