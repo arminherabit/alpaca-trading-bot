@@ -1,19 +1,6 @@
 {
   "open": [
     {
-      "opened_at": "2026-10-29T13:50:42.5840589Z",
-      "symbol": "PFE",
-      "strategy": "PULLBK",
-      "side": "buy",
-      "entry": 29.87,
-      "stop": 28.78,
-      "qty": 453,
-      "risk_usd": 493.77,
-      "confidence": 95,
-      "regime": "NEUTRAL",
-      "reason": "EMA20 pullback reclaim (trendQ 1.56 ATR, RS +5.8%)"
-    },
-    {
       "opened_at": "2026-11-02T14:50:29.2597391Z",
       "symbol": "ISRG",
       "strategy": "PULLBK",
@@ -661,6 +648,25 @@
       "exit": 15.49,
       "pnl": -332.36,
       "r_multiple": -1.01,
+      "hold_days": 6,
+      "outcome": "LOSS"
+    },
+    {
+      "opened_at": "2026-10-29T13:50:42.5840589Z",
+      "symbol": "PFE",
+      "strategy": "PULLBK",
+      "side": "buy",
+      "entry": 29.87,
+      "stop": 28.78,
+      "qty": 453,
+      "risk_usd": 493.77,
+      "confidence": 95,
+      "regime": "NEUTRAL",
+      "reason": "EMA20 pullback reclaim (trendQ 1.56 ATR, RS +5.8%)",
+      "closed_at": "2026-11-06T14:40:19.9074512Z",
+      "exit": 28.9,
+      "pnl": -429.97,
+      "r_multiple": -0.87,
       "hold_days": 6,
       "outcome": "LOSS"
     }
