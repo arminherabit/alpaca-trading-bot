@@ -190,3 +190,21 @@ No closed trades this week.
 
 **By regime:** BULL 1/1 $18.31 | NEUTRAL 0/3 $-986.14
 
+
+## Week ending 2026-11-08
+
+| Metric | Value |
+|---|---|
+| Trades | 5 (1W / 4L, 20%) |
+| Net P&L | $-2031.32 |
+| Profit factor | 0.01 |
+| Expectancy / trade | $-406.26 |
+| Avg R | -0.75 |
+| Avg hold | 6.2 days |
+| Best | NKE BRKOUT $28.89 (0.09R) |
+| Worst | TSLA BRKOUT $-769.5 (-0.96R) |
+
+**By strategy:** BRKOUT 1/4 $-1601.35 | PULLBK 0/1 $-429.97
+
+**By regime:** BULL 1/3 $-831.85 | NEUTRAL 0/2 $-1199.47
+
