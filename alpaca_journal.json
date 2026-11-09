@@ -27,19 +27,6 @@
       "reason": "20d-high break (ext 0.33 ATR, volPace 1.6x, RS +17.4%)"
     },
     {
-      "opened_at": "2026-11-05T15:01:28.3167516Z",
-      "symbol": "NVDA",
-      "strategy": "BRKDN",
-      "side": "sell",
-      "entry": 190.09,
-      "stop": 202.95,
-      "qty": 71,
-      "risk_usd": 913.06,
-      "confidence": 95,
-      "regime": "BEAR",
-      "reason": "20d-low breakdown (ext 1.49 ATR, volPace 5.1x, RS -15.0%)"
-    },
-    {
       "opened_at": "2026-11-05T15:20:27.0048599Z",
       "symbol": "AVGO",
       "strategy": "BRKDN",
@@ -685,6 +672,21 @@
       "regime": "RANGING",
       "reason": "20d-high break (ext 0.01 ATR, volPace 1.2x, RS +20.9%)",
       "orphaned_at": "2026-11-04T14:30:23.6502606Z",
+      "orphan_reason": "position not held; exit never journaled"
+    },
+    {
+      "opened_at": "2026-11-05T15:01:28.3167516Z",
+      "symbol": "NVDA",
+      "strategy": "BRKDN",
+      "side": "sell",
+      "entry": 190.09,
+      "stop": 202.95,
+      "qty": 71,
+      "risk_usd": 913.06,
+      "confidence": 95,
+      "regime": "BEAR",
+      "reason": "20d-low breakdown (ext 1.49 ATR, volPace 5.1x, RS -15.0%)",
+      "orphaned_at": "2026-11-09T14:30:23.9672514Z",
       "orphan_reason": "position not held; exit never journaled"
     }
   ],
