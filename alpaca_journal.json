@@ -27,19 +27,6 @@
       "reason": "20d-high break (ext 0.33 ATR, volPace 1.6x, RS +17.4%)"
     },
     {
-      "opened_at": "2026-11-05T15:20:27.0048599Z",
-      "symbol": "AVGO",
-      "strategy": "BRKDN",
-      "side": "sell",
-      "entry": 303.96,
-      "stop": 328.89,
-      "qty": 36,
-      "risk_usd": 897.48,
-      "confidence": 95,
-      "regime": "BEAR",
-      "reason": "20d-low breakdown (ext 1.23 ATR, volPace 3.8x, RS -12.4%)"
-    },
-    {
       "opened_at": "2026-11-10T14:50:20.9852901Z",
       "symbol": "SPCX",
       "strategy": "RALLYF",
@@ -668,6 +655,25 @@
       "pnl": -429.97,
       "r_multiple": -0.87,
       "hold_days": 6,
+      "outcome": "LOSS"
+    },
+    {
+      "opened_at": "2026-11-05T15:20:27.0048599Z",
+      "symbol": "AVGO",
+      "strategy": "BRKDN",
+      "side": "sell",
+      "entry": 303.96,
+      "stop": 328.89,
+      "qty": 36,
+      "risk_usd": 897.48,
+      "confidence": 95,
+      "regime": "BEAR",
+      "reason": "20d-low breakdown (ext 1.23 ATR, volPace 3.8x, RS -12.4%)",
+      "closed_at": "2026-11-10T15:00:25.5017461Z",
+      "exit": 329.14,
+      "pnl": -900.72,
+      "r_multiple": -1.0,
+      "hold_days": 3,
       "outcome": "LOSS"
     }
   ],
