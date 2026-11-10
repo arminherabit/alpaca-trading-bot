@@ -94,25 +94,25 @@
     <span class="badge" style="color:#3fb950;  border-color:#3fb950;">OPEN</span>
     <span class="badge" style="color:var(--sub); border-color:var(--border);">Closes 9:00 PM</span>
   </div>
-  <span class="gen-time">Generated: 2026-11-10 14:40:45 &nbsp;|&nbsp; Auto-refresh: 30s</span>
+  <span class="gen-time">Generated: 2026-11-10 14:50:26 &nbsp;|&nbsp; Auto-refresh: 30s</span>
 </header>
 
 <!-- Account Stats -->
 <div class="grid-top">
   <div class="stat-card">
     <div class="label">Equity</div>
-    <div class="value blue">$91,950.72</div>
+    <div class="value blue">$91,885.12</div>
     <div class="sub">Paper account</div>
   </div>
   <div class="stat-card">
     <div class="label">Day P&amp;L</div>
-    <div class="value red">$-3.06</div>
-    <div class="sub">+-0%</div>
+    <div class="value red">$-68.66</div>
+    <div class="sub">-0.07%</div>
   </div>
   <div class="stat-card">
     <div class="label">Buying Power</div>
-    <div class="value">$319,895.04</div>
-    <div class="sub">Cash: $98,348.15</div>
+    <div class="value">$298,843.96</div>
+    <div class="sub">Cash: $115,725.93</div>
   </div>
   <div class="stat-card">
     <div class="label">Trades Today</div>
@@ -121,7 +121,7 @@
   </div>
   <div class="stat-card">
     <div class="label">Open Positions</div>
-    <div class="value">4 <span style="font-size:14px;color:var(--sub)">/ 3</span></div>
+    <div class="value">5 <span style="font-size:14px;color:var(--sub)">/ 3</span></div>
     <div class="sub">Max 3 allowed</div>
   </div>
   <div class="stat-card">
@@ -157,8 +157,8 @@
 </footer>
 
 <script>
-const positions = [{"symbol":"AVGO","side":"short","qty":-36.0,"entry":304.124444,"current":323.51,"stop":328.89,"target":217.44,"rr":3.5,"unrlPnl":-697.88,"unrlPct":-6.37,"projProfit":-3120.64,"projLoss":-891.56,"pctToTarget":32.79,"pctToStop":1.66,"progress":5,"value":-11646.36},{"symbol":"ISRG","side":"long","qty":15.0,"entry":437.82,"current":456.735,"stop":413.06,"target":524.48,"rr":3.5,"unrlPnl":283.73,"unrlPct":4.32,"projProfit":1299.9,"projLoss":371.4,"pctToTarget":14.83,"pctToStop":9.56,"progress":39,"value":6851.02},{"symbol":"NKE","side":"long","qty":255.0,"entry":39.82,"current":38.87,"stop":37.82,"target":46.82,"rr":3.5,"unrlPnl":-242.25,"unrlPct":-2.39,"projProfit":1785.0,"projLoss":510.0,"pctToTarget":20.45,"pctToStop":2.7,"progress":12,"value":9911.85},{"symbol":"NVDA","side":"short","qty":-67.0,"entry":191.77,"current":171.85,"stop":0.0,"target":0.0,"rr":0,"unrlPnl":1334.64,"unrlPct":10.39,"projProfit":-0.0,"projLoss":-0.0,"pctToTarget":null,"pctToStop":null,"progress":null,"value":-11513.95}];
-const closed    = [];
+const positions = [{"symbol":"AVGO","side":"short","qty":-36.0,"entry":304.124444,"current":325.7002,"stop":328.89,"target":217.44,"rr":3.5,"unrlPnl":-776.73,"unrlPct":-7.09,"projProfit":-3120.64,"projLoss":-891.56,"pctToTarget":33.24,"pctToStop":0.98,"progress":3,"value":-11725.21},{"symbol":"ISRG","side":"long","qty":15.0,"entry":437.82,"current":454.2835,"stop":413.06,"target":524.48,"rr":3.5,"unrlPnl":246.95,"unrlPct":3.76,"projProfit":1299.9,"projLoss":371.4,"pctToTarget":15.45,"pctToStop":9.07,"progress":37,"value":6814.25},{"symbol":"NKE","side":"long","qty":255.0,"entry":39.82,"current":38.78,"stop":37.82,"target":46.82,"rr":3.5,"unrlPnl":-265.2,"unrlPct":-2.61,"projProfit":1785.0,"projLoss":510.0,"pctToTarget":20.73,"pctToStop":2.48,"progress":11,"value":9888.9},{"symbol":"NVDA","side":"short","qty":-67.0,"entry":191.77,"current":170.71,"stop":0.0,"target":0.0,"rr":0,"unrlPnl":1411.02,"unrlPct":10.98,"projProfit":-0.0,"projLoss":-0.0,"pctToTarget":null,"pctToStop":null,"progress":null,"value":-11437.57},{"symbol":"SPCX","side":"short","qty":-123.0,"entry":141.282764,"current":141.29,"stop":148.32,"target":115.47,"rr":3.67,"unrlPnl":-0.89,"unrlPct":-0.0,"projProfit":-3174.97,"projLoss":-865.58,"pctToTarget":18.27,"pctToStop":4.98,"progress":21,"value":-17378.67}];
+const closed    = [{"symbol":"SPCX","side":"sell","qty":"123","fillPrice":141.28,"filledAt":"14:50:24","orderType":"limit"}];
 function fmt(n, d=2) {
   return (n >= 0 ? '+' : '') + Number(n).toFixed(d);
 }

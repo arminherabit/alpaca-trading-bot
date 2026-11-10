@@ -38,6 +38,19 @@
       "confidence": 95,
       "regime": "BEAR",
       "reason": "20d-low breakdown (ext 1.23 ATR, volPace 3.8x, RS -12.4%)"
+    },
+    {
+      "opened_at": "2026-11-10T14:50:20.9852901Z",
+      "symbol": "SPCX",
+      "strategy": "RALLYF",
+      "side": "sell",
+      "entry": 141.02,
+      "stop": 148.32,
+      "qty": 123,
+      "risk_usd": 897.9,
+      "confidence": 83,
+      "regime": "BEAR",
+      "reason": "EMA20 rally rejection (trendQ 0.41 ATR, RS -6.2%)"
     }
   ],
   "closed": [
