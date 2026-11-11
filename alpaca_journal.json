@@ -14,19 +14,6 @@
       "reason": "EMA20 pullback reclaim (trendQ 1.42 ATR, RS +9.6%)"
     },
     {
-      "opened_at": "2026-11-04T14:50:31.0706087Z",
-      "symbol": "NKE",
-      "strategy": "BRKOUT",
-      "side": "buy",
-      "entry": 39.9,
-      "stop": 37.82,
-      "qty": 255,
-      "risk_usd": 530.4,
-      "confidence": 95,
-      "regime": "BULL",
-      "reason": "20d-high break (ext 0.33 ATR, volPace 1.6x, RS +17.4%)"
-    },
-    {
       "opened_at": "2026-11-10T14:50:20.9852901Z",
       "symbol": "SPCX",
       "strategy": "RALLYF",
@@ -674,6 +661,25 @@
       "pnl": -900.72,
       "r_multiple": -1.0,
       "hold_days": 3,
+      "outcome": "LOSS"
+    },
+    {
+      "opened_at": "2026-11-04T14:50:31.0706087Z",
+      "symbol": "NKE",
+      "strategy": "BRKOUT",
+      "side": "buy",
+      "entry": 39.9,
+      "stop": 37.82,
+      "qty": 255,
+      "risk_usd": 530.4,
+      "confidence": 95,
+      "regime": "BULL",
+      "reason": "20d-high break (ext 0.33 ATR, volPace 1.6x, RS +17.4%)",
+      "closed_at": "2026-11-11T16:30:24.4241222Z",
+      "exit": 37.8,
+      "pnl": -515.1,
+      "r_multiple": -0.97,
+      "hold_days": 5,
       "outcome": "LOSS"
     }
   ],
