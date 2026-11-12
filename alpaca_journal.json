@@ -25,6 +25,19 @@
       "confidence": 83,
       "regime": "BEAR",
       "reason": "EMA20 rally rejection (trendQ 0.41 ATR, RS -6.2%)"
+    },
+    {
+      "opened_at": "2026-11-12T15:00:55.8149086Z",
+      "symbol": "GLD",
+      "strategy": "BRKDN",
+      "side": "sell",
+      "entry": 354.6,
+      "stop": 368.25,
+      "qty": 64,
+      "risk_usd": 873.6,
+      "confidence": 100,
+      "regime": "BEAR",
+      "reason": "20d-low breakdown (ext 0.01 ATR, volPace 1.7x, RS -5.5%)"
     }
   ],
   "closed": [
