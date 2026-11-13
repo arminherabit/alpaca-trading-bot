@@ -51,6 +51,19 @@
       "confidence": 90,
       "regime": "BEAR",
       "reason": "EMA20 rally rejection (trendQ 1.16 ATR, RS -8.1%)"
+    },
+    {
+      "opened_at": "2026-11-13T15:01:29.5629044Z",
+      "symbol": "IBIT",
+      "strategy": "BRKDN",
+      "side": "sell",
+      "entry": 38.94,
+      "stop": 41.49,
+      "qty": 356,
+      "risk_usd": 907.8,
+      "confidence": 95,
+      "regime": "BEAR",
+      "reason": "20d-low breakdown (ext 1.02 ATR, volPace 2.3x, RS -14.4%)"
     }
   ],
   "closed": [
