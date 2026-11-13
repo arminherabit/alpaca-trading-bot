@@ -91,27 +91,27 @@
   <h1>&#9650; ALPACA TRADING DASHBOARD</h1>
   <div class="badges">
     <span class="badge" style="color:#d29922; border-color:#d29922;">PAPER TRADING</span>
-    <span class="badge" style="color:#8b949e;  border-color:#8b949e;">CLOSED</span>
-    <span class="badge" style="color:var(--sub); border-color:var(--border);">Opens Fri 2:30 PM</span>
+    <span class="badge" style="color:#3fb950;  border-color:#3fb950;">OPEN</span>
+    <span class="badge" style="color:var(--sub); border-color:var(--border);">Closes 9:00 PM</span>
   </div>
-  <span class="gen-time">Generated: 2026-11-13 14:20:23 &nbsp;|&nbsp; Auto-refresh: 30s</span>
+  <span class="gen-time">Generated: 2026-11-13 14:30:33 &nbsp;|&nbsp; Auto-refresh: 30s</span>
 </header>
 
 <!-- Account Stats -->
 <div class="grid-top">
   <div class="stat-card">
     <div class="label">Equity</div>
-    <div class="value blue">$91,389.03</div>
+    <div class="value blue">$91,592.91</div>
     <div class="sub">Paper account</div>
   </div>
   <div class="stat-card">
     <div class="label">Day P&amp;L</div>
-    <div class="value red">$-330.65</div>
-    <div class="sub">-0.36%</div>
+    <div class="value red">$-126.77</div>
+    <div class="sub">-0.14%</div>
   </div>
   <div class="stat-card">
     <div class="label">Buying Power</div>
-    <div class="value">$285,070.76</div>
+    <div class="value">$286,127.85</div>
     <div class="sub">Cash: $145,171.06</div>
   </div>
   <div class="stat-card">
@@ -157,7 +157,7 @@
 </footer>
 
 <script>
-const positions = [{"symbol":"GLD","side":"short","qty":-64.0,"entry":354.6,"current":356.11,"stop":368.25,"target":306.83,"rr":3.5,"unrlPnl":-96.64,"unrlPct":-0.43,"projProfit":-3057.28,"projLoss":-873.6,"pctToTarget":13.84,"pctToStop":3.41,"progress":20,"value":-22791.04},{"symbol":"ISRG","side":"long","qty":15.0,"entry":437.82,"current":442.97,"stop":413.06,"target":524.48,"rr":3.5,"unrlPnl":77.25,"unrlPct":1.18,"projProfit":1299.9,"projLoss":371.4,"pctToTarget":18.4,"pctToStop":6.75,"progress":27,"value":6644.55},{"symbol":"NVDA","side":"short","qty":-67.0,"entry":191.77,"current":169.88,"stop":0.0,"target":0.0,"rr":0,"unrlPnl":1466.63,"unrlPct":11.42,"projProfit":-0.0,"projLoss":-0.0,"pctToTarget":null,"pctToStop":null,"progress":null,"value":-11381.96},{"symbol":"SOXX","side":"short","qty":-58.0,"entry":154.520345,"current":154.29,"stop":169.83,"target":100.94,"rr":3.5,"unrlPnl":13.36,"unrlPct":0.15,"projProfit":-3107.66,"projLoss":-887.96,"pctToTarget":34.58,"pctToStop":10.07,"progress":23,"value":-8948.82},{"symbol":"SPCX","side":"short","qty":-123.0,"entry":141.282764,"current":140.7,"stop":148.32,"target":116.65,"rr":3.5,"unrlPnl":71.68,"unrlPct":0.41,"projProfit":-3029.83,"projLoss":-865.58,"pctToTarget":17.09,"pctToStop":5.42,"progress":24,"value":-17306.1}];
+const positions = [{"symbol":"GLD","side":"short","qty":-64.0,"entry":354.6,"current":356.29,"stop":368.25,"target":306.83,"rr":3.5,"unrlPnl":-108.16,"unrlPct":-0.48,"projProfit":-3057.28,"projLoss":-873.6,"pctToTarget":13.88,"pctToStop":3.36,"progress":20,"value":-22802.56},{"symbol":"ISRG","side":"long","qty":15.0,"entry":437.82,"current":443.055,"stop":413.06,"target":524.48,"rr":3.5,"unrlPnl":78.53,"unrlPct":1.2,"projProfit":1299.9,"projLoss":371.4,"pctToTarget":18.38,"pctToStop":6.77,"progress":27,"value":6645.82},{"symbol":"NVDA","side":"short","qty":-67.0,"entry":191.77,"current":168.41,"stop":0.0,"target":0.0,"rr":0,"unrlPnl":1565.12,"unrlPct":12.18,"projProfit":-0.0,"projLoss":-0.0,"pctToTarget":null,"pctToStop":null,"progress":null,"value":-11283.47},{"symbol":"SOXX","side":"short","qty":-58.0,"entry":154.520345,"current":153.27,"stop":169.83,"target":100.94,"rr":3.5,"unrlPnl":72.52,"unrlPct":0.81,"projProfit":-3107.66,"projLoss":-887.96,"pctToTarget":34.14,"pctToStop":10.8,"progress":24,"value":-8889.66},{"symbol":"SPCX","side":"short","qty":-123.0,"entry":141.282764,"current":140.23,"stop":148.32,"target":116.65,"rr":3.5,"unrlPnl":129.49,"unrlPct":0.74,"projProfit":-3029.83,"projLoss":-865.58,"pctToTarget":16.82,"pctToStop":5.77,"progress":26,"value":-17248.29}];
 const closed    = [];
 function fmt(n, d=2) {
   return (n >= 0 ? '+' : '') + Number(n).toFixed(d);
