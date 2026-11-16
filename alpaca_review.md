@@ -208,3 +208,21 @@ No closed trades this week.
 
 **By regime:** BULL 1/3 $-831.85 | NEUTRAL 0/2 $-1199.47
 
+
+## Week ending 2026-11-15
+
+| Metric | Value |
+|---|---|
+| Trades | 2 (0W / 2L, 0%) |
+| Net P&L | $-1415.82 |
+| Profit factor | 0 |
+| Expectancy / trade | $-707.91 |
+| Avg R | -0.98 |
+| Avg hold | 4 days |
+| Best | NKE BRKOUT $-515.1 (-0.97R) |
+| Worst | AVGO BRKDN $-900.72 (-1R) |
+
+**By strategy:** BRKDN 0/1 $-900.72 | BRKOUT 0/1 $-515.1
+
+**By regime:** BEAR 0/1 $-900.72 | BULL 0/1 $-515.1
+
