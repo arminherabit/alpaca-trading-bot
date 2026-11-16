@@ -66,17 +66,17 @@
       "reason": "20d-low breakdown (ext 1.02 ATR, volPace 2.3x, RS -14.4%)"
     },
     {
-      "opened_at": "2026-11-13T15:10:26.5928850Z",
+      "opened_at": "2026-11-16T14:50:29.8253123Z",
       "symbol": "GOOGL",
       "strategy": "RALLYF",
       "side": "sell",
-      "entry": 298.67,
-      "stop": 318.93,
-      "qty": 45,
-      "risk_usd": 911.7,
+      "entry": 288.96,
+      "stop": 309.42,
+      "qty": 44,
+      "risk_usd": 900.24,
       "confidence": 95,
       "regime": "BEAR",
-      "reason": "EMA20 rally rejection (trendQ 1.79 ATR, RS -10.8%)"
+      "reason": "EMA20 rally rejection (trendQ 1.75 ATR, RS -13.7%)"
     }
   ],
   "closed": [
