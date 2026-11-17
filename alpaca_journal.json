@@ -77,6 +77,19 @@
       "confidence": 95,
       "regime": "BEAR",
       "reason": "EMA20 rally rejection (trendQ 1.75 ATR, RS -13.7%)"
+    },
+    {
+      "opened_at": "2026-11-17T15:10:30.4973067Z",
+      "symbol": "OXY",
+      "strategy": "RALLYF",
+      "side": "sell",
+      "entry": 57.63,
+      "stop": 59.78,
+      "qty": 410,
+      "risk_usd": 881.5,
+      "confidence": 80,
+      "regime": "BEAR",
+      "reason": "EMA20 rally rejection (trendQ 0.16 ATR, RS -4.2%)"
     }
   ],
   "closed": [
