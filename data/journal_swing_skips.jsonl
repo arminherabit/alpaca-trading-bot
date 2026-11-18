@@ -17262,3 +17262,4 @@
 {"ts":"2026-11-17T20:20:22.4040422Z","dry_run":false,"regime":"BEAR","dd_tier":"NORMAL","sym":"DDOG","dd_pct":0.298,"heat_before":5671.77,"skip_reason":"TRADES_PER_DAY"}
 {"ts":"2026-11-17T20:20:22.4057868Z","dry_run":false,"regime":"BEAR","dd_tier":"NORMAL","sym":"SBUX","dd_pct":0.298,"heat_before":5671.77,"skip_reason":"TRADES_PER_DAY"}
 {"ts":"2026-11-17T20:20:22.4076269Z","dry_run":false,"regime":"BEAR","dd_tier":"NORMAL","sym":"KLAC","dd_pct":0.298,"heat_before":5671.77,"skip_reason":"TRADES_PER_DAY"}
+{"ts":"2026-11-18T14:30:25.3561329Z","new_tp":317.36,"r_per_share":20.4219,"current_stop":409.26,"qty":27,"event":"MIGRATE","sym":"UNH","skip_reason":"MIGRATED","current_tp":316.56}
