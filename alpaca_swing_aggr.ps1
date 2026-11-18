@@ -740,6 +740,10 @@ function Get-AggrOwnedSymbols($cfg) {
         if ($null -eq $o -or -not (Test-OrderHasFill $o) -or -not $o.client_order_id) { continue }
         if (Test-AggrOwnedCoid $o.client_order_id) { $owned[$o.symbol] = $true }
     }
+    # Held AGSW/SWCALL positions whose entry is older than the 20-day window stay aggr-owned.
+    $owned = Add-OlderOwnedSymbols $cfg $owned `
+        { param($coid) Test-AggrOwnedCoid $coid } `
+        { param($c, $m, $p) Invoke-AggrApi $c $m $p }
     return $owned
 }
 

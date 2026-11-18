@@ -84,6 +84,10 @@ if ($null -ne $recent) {
         $tag = ($o.client_order_id -split "_")[0]
         if ($MY_ENTRY_PREFIXES -contains $tag) { $owned[$o.symbol] = $true }
     }
+    # Held positions whose entry is older than the 40-day window stay ours.
+    $owned = Add-OlderOwnedSymbols $cfg $owned `
+        { param($coid) $MY_ENTRY_PREFIXES -contains (([string]$coid -split "_")[0]) } `
+        { param($c, $m, $p) Invoke-AlpacaApi $c $m $p }
 }
 $positions = @($allPositions | Where-Object { $owned.ContainsKey($_.symbol) })
 

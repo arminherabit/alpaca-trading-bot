@@ -23,6 +23,20 @@ BeforeAll {
         [pscustomobject]@{ id = "id-$coid"; symbol = $sym; client_order_id = $coid; status = $status; filled_qty = "$filled"; side = $side
                            submitted_at = '2026-11-05T15:01:28Z'; created_at = '2026-11-05T15:01:28Z' }
     }
+    # Broker double: /v2/positions -> $script:Held, per-symbol history (no `after`) -> $script:Hist[sym], windowed list -> OrderBook.
+    function Broker($held = @(), $hist = @{}, [bool]$histFails = $false) {
+        $script:Held = $held; $script:Hist = $hist; $script:HistFails = $histFails; $script:HistCalls = @()
+    }
+    function RouteApi($path) {
+        if ($path -eq '/v2/positions') { return $script:Held }
+        if ($path -like '/v2/orders?status=all&symbols=*') {
+            $sym = ($path -replace '.*symbols=([^&]+).*', '$1'); $script:HistCalls += $sym
+            if ($script:HistFails) { return $null }
+            return @($script:Hist[$sym])
+        }
+        return OrderBook
+    }
+    function HeldPos($sym, $side = 'long') { [pscustomobject]@{ symbol = $sym; asset_class = 'us_equity'; side = $side; qty = '10'; avg_entry_price = '100' } }
     # The Nov 2026 book: NVDA canceled with 67 filled; UNH canceled with 0 (Oct 15); a filled legacy HD; a foreign fill.
     function OrderBook {
         @( (Ord 'NVDA' 'AGSW_NVDA_150128' 'canceled' 67)
@@ -59,7 +73,7 @@ Describe 'Get-PartialFillEntries' {
 }
 
 Describe 'Get-AggrOwnedSymbols' {
-    BeforeEach { Mock Invoke-AggrApi { OrderBook } }
+    BeforeEach { Broker; Mock Invoke-AggrApi { param($cfg, $method, $path, $body = $null) RouteApi $path } }
     It 'AGSW canceled with 67 filled is aggr-owned (NVDA); filled AGSW still owned' {
         $o = Get-AggrOwnedSymbols $Cfg
         $o.ContainsKey('NVDA') | Should -BeTrue
@@ -79,7 +93,7 @@ Describe 'Get-AggrOwnedSymbols' {
 }
 
 Describe 'Get-MyOpenSymbols (both bots)' {
-    BeforeEach { Mock Invoke-AlpacaApi { OrderBook } }
+    BeforeEach { Broker; Mock Invoke-AlpacaApi { param($cfg, $method, $path, $body = $null) RouteApi $path } }
     It 'NVDA (AGSW partial) and ABC (legacy BRKOUT partial) are mine; UNH zero-fill and foreign are not' {
         $m = Get-MyOpenSymbols $Cfg
         $m.ContainsKey('NVDA') | Should -BeTrue
@@ -98,7 +112,8 @@ Describe 'Get-MyOpenSymbols (both bots)' {
 Describe 'Ownership split after the fix' {
     It 'NVDA is aggr-owned, so the legacy loop still skips it (one owner)' {
         $held = @([pscustomobject]@{ symbol = 'NVDA'; asset_class = 'us_equity' }, [pscustomobject]@{ symbol = 'ABC'; asset_class = 'us_equity' })
-        Mock Invoke-AggrApi { OrderBook }
+        Broker
+        Mock Invoke-AggrApi { param($cfg, $method, $path, $body = $null) RouteApi $path }
         $aggr = Get-AggrOwnedSymbols $Cfg
         @(Select-LegacyManagedPositions $held $aggr | ForEach-Object symbol) | Should -Be @('ABC')   # legacy-tag partial -> legacy-managed
     }
@@ -182,5 +197,67 @@ Describe 'Protect-NakedAggrPositions (the missing-stop fallback for aggr-owned s
         $p = NvdaShort; $p.unrealized_pl = '-300'; $p.current_price = '195.00'
         Protect-NakedAggrPositions $Cfg @($p) $Owned 6>$null
         $Posts.Count | Should -Be 1; $Posts[0].stop_price | Should -Be '195.61'
+    }
+}
+
+Describe 'Ownership of HELD positions does not expire with the 20-day order window (ISRG case)' {
+    BeforeAll {
+        # ISRG: legacy PULLBK long, entry filled Nov 2 -> outside the window on Nov 22. AGSW SOXX-style short: AGSW entry 30 days old.
+        $script:IsrgOld = Ord 'ISRG' 'PULLBK_ISRG_150100' 'filled' 15 'buy'; $script:IsrgOld.submitted_at = '2026-11-02T15:01:00Z'
+        $script:AgswOld = Ord 'SOXX' 'AGSW_SOXX_150100'   'filled' 58 'sell'; $script:AgswOld.submitted_at = '2026-10-20T15:01:00Z'
+    }
+    Context 'legacy (Get-MyOpenSymbols)' {
+        BeforeEach { Mock Invoke-AlpacaApi { param($cfg, $method, $path, $body = $null) RouteApi $path } }
+        It 'ISRG: not in the 20-day list, but held + old filled PULLBK buy -> mine' {
+            Broker @((HeldPos 'ISRG' 'long')) @{ ISRG = @($IsrgOld) }
+            (Get-MyOpenSymbols $Cfg).ContainsKey('ISRG') | Should -BeTrue
+            $script:HistCalls | Should -Contain 'ISRG'
+        }
+        It 'old tagged AGSW short entry keeps a held short mine' {
+            Broker @((HeldPos 'SOXX' 'short')) @{ SOXX = @($AgswOld) }
+            (Get-MyOpenSymbols $Cfg).ContainsKey('SOXX') | Should -BeTrue
+        }
+        It 'a held position with NO tagged entry anywhere stays foreign' {
+            Broker @((HeldPos 'FRGN' 'long')) @{ FRGN = @((Ord 'FRGN' 'some-uuid' 'filled' 10 'buy')) }
+            (Get-MyOpenSymbols $Cfg).ContainsKey('FRGN') | Should -BeFalse
+        }
+        It 'an old tagged entry on the OPPOSITE side of the position does not claim it' {
+            Broker @((HeldPos 'ISRG' 'short')) @{ ISRG = @($IsrgOld) }
+            (Get-MyOpenSymbols $Cfg).ContainsKey('ISRG') | Should -BeFalse
+        }
+        It 'an old tagged order with zero fill does not claim it' {
+            $z = Ord 'ISRG' 'PULLBK_ISRG_150100' 'canceled' 0 'buy'
+            Broker @((HeldPos 'ISRG' 'long')) @{ ISRG = @($z) }
+            (Get-MyOpenSymbols $Cfg).ContainsKey('ISRG') | Should -BeFalse
+        }
+        It 'only HELD symbols not already owned are looked up (no history call for owned or flat symbols)' {
+            Broker @((HeldPos 'NVDA' 'short'), (HeldPos 'GLD' 'short')) @{}
+            $null = Get-MyOpenSymbols $Cfg
+            $script:HistCalls.Count | Should -Be 0     # NVDA and GLD already owned from the 20-day list; nothing else held
+        }
+        It 'history lookup failure leaves ownership unchanged (no throw, not owned)' {
+            Broker @((HeldPos 'ISRG' 'long')) @{} $true
+            (Get-MyOpenSymbols $Cfg).ContainsKey('ISRG') | Should -BeFalse
+        }
+        It 'positions API failure leaves the 20-day result untouched' {
+            Broker; Mock Invoke-AlpacaApi { param($cfg, $method, $path, $body = $null) if ($path -eq '/v2/positions') { return $null }; RouteApi $path }
+            $m = Get-MyOpenSymbols $Cfg
+            $m.ContainsKey('NVDA') | Should -BeTrue
+        }
+    }
+    Context 'aggr (Get-AggrOwnedSymbols) and the one-owner rule' {
+        BeforeEach { Mock Invoke-AggrApi { param($cfg, $method, $path, $body = $null) RouteApi $path } }
+        It 'old AGSW short stays aggr-owned' {
+            Broker @((HeldPos 'SOXX' 'short')) @{ SOXX = @($AgswOld) }
+            (Get-AggrOwnedSymbols $Cfg).ContainsKey('SOXX') | Should -BeTrue
+        }
+        It 'old LEGACY-tagged ISRG is NOT aggr-owned, so the legacy loop keeps managing it (one owner)' {
+            Broker @((HeldPos 'ISRG' 'long')) @{ ISRG = @($IsrgOld) }
+            $aggr = Get-AggrOwnedSymbols $Cfg
+            $aggr.ContainsKey('ISRG') | Should -BeFalse
+            $held = @([pscustomobject]@{ symbol = 'ISRG'; asset_class = 'us_equity' }, [pscustomobject]@{ symbol = 'SOXX'; asset_class = 'us_equity' })
+            Broker @((HeldPos 'ISRG' 'long'), (HeldPos 'SOXX' 'short')) @{ ISRG = @($IsrgOld); SOXX = @($AgswOld) }
+            @(Select-LegacyManagedPositions $held (Get-AggrOwnedSymbols $Cfg) | ForEach-Object symbol) | Should -Be @('ISRG')
+        }
     }
 }
