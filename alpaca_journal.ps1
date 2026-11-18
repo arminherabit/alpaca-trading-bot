@@ -162,6 +162,32 @@ function Set-JournalUnfilled([string]$symbol, $orderCreatedAt, [string]$reason =
     return $rec
 }
 
+# An entry that filled in part and was then canceled/expired (NVDA 67 of 71,
+# 2026-11-06) leaves a journal row at the PLANNED qty. Corrects the matching open
+# row (same symbol, opened within $windowMin minutes of the order) to the qty that
+# actually filled, scales risk_usd by the same fraction, and keeps the planned
+# values. The row stays OPEN (the position is held), never orphaned. Idempotent.
+function Set-JournalPartialFill([string]$symbol, [double]$filledQty, $orderCreatedAt, [int]$windowMin = 15) {
+    if ($filledQty -le 0) { return $null }
+    $j = Load-Journal
+    $t = $null; try { $t = _Journal-AsUtc $orderCreatedAt } catch {}
+    $cands = @($j.open | Where-Object { $_.symbol -eq $symbol })
+    if ($null -ne $t) { $cands = @($cands | Where-Object { [Math]::Abs(((_Journal-AsUtc $_.opened_at) - $t).TotalMinutes) -le $windowMin }) }
+    $rec = $cands | Sort-Object { _Journal-AsUtc $_.opened_at } -Descending | Select-Object -First 1
+    if ($null -eq $rec) { return $null }
+    $planned = [double]$rec.qty
+    if ($planned -le 0 -or $filledQty -ge $planned) { return $null }
+    $plannedRisk = [double]$rec.risk_usd
+    $rec | Add-Member -NotePropertyName planned_qty      -NotePropertyValue ([int]$planned) -Force
+    $rec | Add-Member -NotePropertyName planned_risk_usd -NotePropertyValue $plannedRisk -Force
+    $rec | Add-Member -NotePropertyName partial_fill     -NotePropertyValue $true -Force
+    $rec.qty      = [int]$filledQty
+    $rec.risk_usd = [Math]::Round($plannedRisk * $filledQty / $planned, 2)
+    Save-Journal $j
+    Write-Host ("  [JOURNAL] {0,-6} {1} partial fill: qty {2} -> {3} (entry order ended with a partial fill)" -f $symbol, $rec.strategy, [int]$planned, [int]$filledQty) -ForegroundColor DarkCyan
+    return $rec
+}
+
 # Records on the newest open row of a symbol that its entry filled away from
 # plan and the stop was moved to keep the planned distance from the fill.
 # entry / risk_usd stay as planned (the distance, hence the risk, is unchanged).
