@@ -103,6 +103,19 @@
       "confidence": 85,
       "regime": "BEAR",
       "reason": "20d-low breakdown (ext 0.00 ATR, volPace 1.7x, RS -2.1%)"
+    },
+    {
+      "opened_at": "2026-11-18T19:20:24.2489665Z",
+      "symbol": "CVX",
+      "strategy": "BRKDN",
+      "side": "sell",
+      "entry": 205.9,
+      "stop": 215.31,
+      "qty": 102,
+      "risk_usd": 959.82,
+      "confidence": 85,
+      "regime": "BEAR",
+      "reason": "20d-low breakdown (ext 0.05 ATR, volPace 1.2x, RS -3.7%)"
     }
   ],
   "closed": [
