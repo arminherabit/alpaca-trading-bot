@@ -359,6 +359,30 @@ function Convert-ToTrailingStop($cfg, $position, [double]$trailPct) {
     return Invoke-AlpacaApi $cfg "POST" "/v2/orders" $body
 }
 
+# AGSW-owned stocks have ONE owner (the aggr module) and the legacy loop skips
+# them (Select-LegacyManagedPositions), so the "no stop leg -> plant a protective
+# stop" fallback in Manage-OpenPositions never sees them. A bracket that was
+# canceled after a partial fill (NVDA, 2026-11-06) leaves such a position naked.
+# This applies the SAME fallback (New-ProtectiveStop, idempotent: it re-checks for
+# an existing stop and never stacks) to aggr-owned stock positions with no live
+# stop. Run AFTER the aggr cycle so Invoke-AggrProtectRestore gets first call.
+function Protect-NakedAggrPositions($cfg, $myAllPositions, $aggrOwnedSyms) {
+    if ($null -eq $aggrOwnedSyms) { return }
+    foreach ($pos in @($myAllPositions)) {
+        if ($null -eq $pos -or $pos.asset_class -eq "us_option") { continue }
+        if (-not $aggrOwnedSyms.ContainsKey($pos.symbol)) { continue }
+        if ($null -ne (Get-StopLegForPosition $cfg $pos)) { continue }
+        $unrealized = [double]$pos.unrealized_pl
+        if ($unrealized -gt 0) {
+            Write-Host ("    [AGGR][PROTECT] {0,-6} aggr-owned, no stop leg AND pnl=`${1:F2} > 0 -- planting BE protective stop" -f $pos.symbol, $unrealized) -ForegroundColor Yellow
+            New-ProtectiveStop $cfg $pos -Mode "BREAKEVEN" | Out-Null
+        } else {
+            Write-Host ("    [AGGR][PROTECT] {0,-6} aggr-owned, no stop leg AND pnl=`${1:F2} <= 0 -- planting MAX-LOSS stop" -f $pos.symbol, $unrealized) -ForegroundColor Red
+            New-ProtectiveStop $cfg $pos -Mode "MAXLOSS" | Out-Null
+        }
+    }
+}
+
 function Manage-OpenPositions($cfg, $positions, $state = $null) {
     if ($null -eq $positions -or $positions.Count -eq 0) { return }
 
@@ -782,8 +806,11 @@ function Cancel-StaleEntries($cfg, $heldSyms = $null) {
 # Another bot trades this account. We identify OUR positions by the strategy
 # prefix on our entry orders' client_order_id ($MY_ENTRY_PREFIXES, defined in
 # alpaca_screener.ps1). Returns a hashtable {symbol=$true} of symbols we entered
-# via a filled, strategy-tagged order in the lookback window -- or $null if the
-# orders API call fails (caller treats $null as "unknown, act on nothing").
+# via a filled (or partially filled, then canceled/expired) strategy-tagged order
+# in the lookback window -- or $null if the orders API call fails (caller treats
+# $null as "unknown, act on nothing").
+# Side output: $script:MyPartialFillEntries = tagged entries that ended with a
+# partial fill (Get-PartialFillEntries), for the journal qty correction.
 function Get-MyOpenSymbols($cfg) {
     $lookback = (Get-Date).ToUniversalTime().AddDays(-20).ToString("yyyy-MM-ddTHH:mm:ssZ")
     $orders = Invoke-AlpacaApi $cfg "GET" "/v2/orders?status=all&after=$lookback&direction=desc&limit=500"
@@ -791,10 +818,15 @@ function Get-MyOpenSymbols($cfg) {
     $arr = if ($orders -is [System.Array]) { $orders } else { @($orders) }
     $owned = @{}
     foreach ($o in $arr) {
-        if ($null -eq $o -or $o.status -ne "filled" -or -not $o.client_order_id) { continue }
+        if ($null -eq $o -or -not (Test-OrderHasFill $o) -or -not $o.client_order_id) { continue }
         $tag = ($o.client_order_id -split "_")[0]
         if ($MY_ENTRY_PREFIXES -contains $tag) { $owned[$o.symbol] = $true }
     }
+    $script:MyPartialFillEntries = @(Get-PartialFillEntries $arr)
+    # Held positions whose entry is older than the 20-day window stay ours.
+    $owned = Add-OlderOwnedSymbols $cfg $owned `
+        { param($coid) $MY_ENTRY_PREFIXES -contains (([string]$coid -split "_")[0]) } `
+        { param($c, $m, $p) Invoke-AlpacaApi $c $m $p }
     return $owned
 }
 
@@ -1053,6 +1085,12 @@ function Run-Scan($cfg, $state) {
     # Journal reconcile needs ALL our held stocks (legacy + AGSW) so AGSW open
     # rows are not orphaned when legacy management skips them.
     $heldForJournal = @($myAllPositions | Where-Object { $_ -and $_.asset_class -ne "us_option" } | ForEach-Object { $_.symbol })
+    # Entries that ended (canceled/expired) after a PARTIAL fill: record the qty that
+    # actually filled on the still-open journal row (held symbols are never orphaned).
+    foreach ($pf in @($script:MyPartialFillEntries)) {
+        if ($null -eq $pf -or $heldForJournal -notcontains $pf.Symbol) { continue }
+        try { Set-JournalPartialFill -symbol $pf.Symbol -filledQty $pf.FilledQty -orderCreatedAt $pf.CreatedAt | Out-Null } catch {}
+    }
     Reconcile-Journal $heldForJournal | Out-Null
 
     # Show + manage LEGACY-owned open stocks only
@@ -1109,6 +1147,8 @@ function Run-Scan($cfg, $state) {
             Write-Host ("  [AGGR] cycle error: {0}" -f $_.Exception.Message) -ForegroundColor Red
         }
         if (-not (Test-AggrDryRun $cfg)) {
+            try { Protect-NakedAggrPositions $cfg $myAllPositions $aggrOwnedForLegacy }
+            catch { Write-Host ("  [AGGR] protect pass error: {0}" -f $_.Exception.Message) -ForegroundColor Red }
             $state.last_scan = (Get-Date).ToString("o"); Save-State $state
             return
         }

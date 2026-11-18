@@ -52,6 +52,66 @@ $LEVERAGED_BLOCKLIST = @(
 # Select-LegacyManagedPositions / Get-AggrOwnedSymbols (one owner per position).
 $MY_ENTRY_PREFIXES = @("BRKOUT","PULLBK","BRKDN","RALLYF","ORB","VWAP","EMA","PYRA","SWCALL","AGSW")
 
+# An entry order puts shares on the book when it filled OR when it filled in part
+# and then ended: status 'filled', or any status (partially_filled, canceled,
+# expired, done_for_day...) with filled_qty > 0. Ownership checks used to look at
+# status 'filled' only, so an entry that filled 67 of 71 and was then canceled
+# (NVDA, Nov 6) was treated as another bot's position and never got a fallback stop.
+function Get-OrderFilledQty($o) {
+    if ($null -eq $o -or $null -eq $o.filled_qty -or "$($o.filled_qty)" -eq "") { return 0.0 }
+    $q = 0.0
+    if ([double]::TryParse("$($o.filled_qty)", [System.Globalization.NumberStyles]::Float, [System.Globalization.CultureInfo]::InvariantCulture, [ref]$q)) { return $q }
+    return 0.0
+}
+function Test-OrderHasFill($o) {
+    if ($null -eq $o) { return $false }
+    if ([string]$o.status -eq "filled") { return $true }
+    return ((Get-OrderFilledQty $o) -gt 0)
+}
+# Ownership of a position we currently HOLD must not expire. The 20-day order
+# window in Get-MyOpenSymbols / Get-AggrOwnedSymbols drops a long-held position's
+# entry order (ISRG, opened Nov 2, falls out on Nov 22), which would make it look
+# like another bot's and leave it unmanaged. For each held position NOT already
+# found owned, look up that symbol's whole order history (no `after`), and mark it
+# owned if a tagged entry ($isOurs gets the client_order_id) that filled (or
+# partially filled) is on the SAME side as the position (buy->long, sell->short).
+# Held symbols only, so the extra calls scale with foreign positions, not history.
+# Any API failure leaves $owned as it was (conservative: act on nothing extra).
+# $api = { param($cfg, $method, $path) ... } (Invoke-AlpacaApi / Invoke-AggrApi).
+function Add-OlderOwnedSymbols($cfg, [hashtable]$owned, [scriptblock]$isOurs, [scriptblock]$api) {
+    $pos = & $api $cfg "GET" "/v2/positions"
+    if ($null -eq $pos) { return $owned }
+    foreach ($p in @($pos)) {
+        if ($null -eq $p -or -not $p.symbol -or $owned.ContainsKey($p.symbol)) { continue }
+        $entrySide = if ([string]$p.side -eq "short") { "sell" } else { "buy" }
+        $hist = & $api $cfg "GET" ("/v2/orders?status=all&symbols={0}&direction=desc&limit=500" -f $p.symbol)
+        if ($null -eq $hist) { continue }
+        foreach ($o in @($hist)) {
+            if ($null -eq $o -or -not $o.client_order_id -or [string]$o.side -ne $entrySide) { continue }
+            if (-not (Test-OrderHasFill $o)) { continue }
+            if (& $isOurs ([string]$o.client_order_id)) { $owned[$p.symbol] = $true; break }
+        }
+    }
+    return $owned
+}
+
+# Our tagged entry orders that ENDED (canceled/expired/done_for_day) with a partial
+# fill. Pure. Used to correct the journal row's qty to what actually filled.
+function Get-PartialFillEntries($orders) {
+    $out = @()
+    foreach ($o in @($orders)) {
+        if ($null -eq $o -or -not $o.client_order_id) { continue }
+        if (@("canceled","expired","done_for_day") -notcontains [string]$o.status) { continue }
+        $fq = Get-OrderFilledQty $o
+        if ($fq -le 0) { continue }
+        $tag = ([string]$o.client_order_id -split "_")[0]
+        if ($MY_ENTRY_PREFIXES -notcontains $tag) { continue }
+        $out += [pscustomobject]@{ Symbol = [string]$o.symbol; Coid = [string]$o.client_order_id; Status = [string]$o.status
+                                   FilledQty = $fq; CreatedAt = $(if ($o.submitted_at) { $o.submitted_at } else { $o.created_at }) }
+    }
+    return $out
+}
+
 # ── Correlated ticker groups ──────────────────────────────────────────────────
 # Tickers in the same group are the same underlying exposure.
 # The bot must never hold conflicting positions on the same group,

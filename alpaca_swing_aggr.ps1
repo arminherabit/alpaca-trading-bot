@@ -729,16 +729,21 @@ function Test-AggrOwnedCoid([string]$coid) {
     return ($tag -eq 'AGSW' -or $tag -eq 'SWCALL')
 }
 # Returns hashtable {symbol=$true} of symbols this module opened (AGSW/SWCALL
-# filled orders in the lookback), or $null if the orders API failed.
+# orders in the lookback that filled, or partially filled and were then
+# canceled/expired -- Test-OrderHasFill), or $null if the orders API failed.
 function Get-AggrOwnedSymbols($cfg) {
     $lookback = (Get-Date).ToUniversalTime().AddDays(-20).ToString("yyyy-MM-ddTHH:mm:ssZ")
     $orders = Invoke-AggrApi $cfg "GET" "/v2/orders?status=all&after=$lookback&direction=desc&limit=500"
     if ($null -eq $orders) { return $null }
     $owned = @{}
     foreach ($o in @($orders)) {
-        if ($null -eq $o -or $o.status -ne "filled" -or -not $o.client_order_id) { continue }
+        if ($null -eq $o -or -not (Test-OrderHasFill $o) -or -not $o.client_order_id) { continue }
         if (Test-AggrOwnedCoid $o.client_order_id) { $owned[$o.symbol] = $true }
     }
+    # Held AGSW/SWCALL positions whose entry is older than the 20-day window stay aggr-owned.
+    $owned = Add-OlderOwnedSymbols $cfg $owned `
+        { param($coid) Test-AggrOwnedCoid $coid } `
+        { param($c, $m, $p) Invoke-AggrApi $c $m $p }
     return $owned
 }
 
