@@ -1,19 +1,6 @@
 {
   "open": [
     {
-      "opened_at": "2026-11-02T14:50:29.2597391Z",
-      "symbol": "ISRG",
-      "strategy": "PULLBK",
-      "side": "buy",
-      "entry": 437.88,
-      "stop": 413.06,
-      "qty": 15,
-      "risk_usd": 372.3,
-      "confidence": 90,
-      "regime": "RANGING",
-      "reason": "EMA20 pullback reclaim (trendQ 1.42 ATR, RS +9.6%)"
-    },
-    {
       "opened_at": "2026-11-10T14:50:20.9852901Z",
       "symbol": "SPCX",
       "strategy": "RALLYF",
@@ -771,6 +758,25 @@
       "pnl": -515.1,
       "r_multiple": -0.97,
       "hold_days": 5,
+      "outcome": "LOSS"
+    },
+    {
+      "opened_at": "2026-11-02T14:50:29.2597391Z",
+      "symbol": "ISRG",
+      "strategy": "PULLBK",
+      "side": "buy",
+      "entry": 437.88,
+      "stop": 413.06,
+      "qty": 15,
+      "risk_usd": 372.3,
+      "confidence": 90,
+      "regime": "RANGING",
+      "reason": "EMA20 pullback reclaim (trendQ 1.42 ATR, RS +9.6%)",
+      "closed_at": "2026-11-19T17:10:20.6145111Z",
+      "exit": 412.92,
+      "pnl": -373.53,
+      "r_multiple": -1.0,
+      "hold_days": 13,
       "outcome": "LOSS"
     }
   ],
