@@ -13,7 +13,7 @@
   "strategy_halted": false,
   "manual_review_required": false,
   "last_entry_eval_date": "2026-11-18",
-  "last_earnings_refresh": "2026-11-18",
+  "last_earnings_refresh": "2026-11-19",
   "reviewed_20": false,
   "golive_gates_met": false,
   "positions": [],
@@ -21,5 +21,5 @@
   "cooldown": {},
   "bar_cache": {},
   "info_logged": {},
-  "last_scan": "2026-11-19T04:50:25.6650788Z"
+  "last_scan": "2026-11-19T05:00:36.4346286Z"
 }
