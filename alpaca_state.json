@@ -3,7 +3,7 @@
   "wins": 0,
   "losses": 0,
   "pnl_today": 0.0,
-  "last_scan": "2026-11-20T14:20:24.9806683+00:00",
+  "last_scan": "2026-11-20T14:30:29.0536380+00:00",
   "session_start": "2026-05-14T04:50:22.4733863+00:00",
   "watchlist_date": "2026-11-19",
   "active_watchlist": [
@@ -111,8 +111,8 @@
     "61804855-8d56-4985-b49a-08f62453a8af",
     "d6a2da1f-4f82-4ef8-abb2-e925e1570050"
   ],
-  "equity_at_open": 96218.46,
-  "equity_at_open_date": "2026-11-19",
+  "equity_at_open": 102054.5,
+  "equity_at_open_date": "2026-11-20",
   "last_review_week": "2026-W47",
   "pyramided_syms": [],
   "aggr_halted": false,
