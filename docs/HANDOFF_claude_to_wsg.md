@@ -8,6 +8,20 @@ Written 2026-11-22 (Sat), about 02:30 UTC, by Claude. The market was closed thro
 
 ---
 
+## Trading authority (standing rule from Armin, effective 2026-11-21)
+
+**Wall Street Guy (WSG) owns all order placement, strategy enforcement and reporting**, running the bot from its own computer. **Claude has no trading authority** on the Alpaca paper or live account:
+
+1. Claude does not place, modify, cancel or replace any order (manual stops, OCOs, brackets or "fixes" included), and does not close any position.
+2. Claude does not trigger, re-enable or schedule the trading bot: no `workflow_dispatch`, no re-enabling `.github/workflows/alpaca_bot.yml` (**disabled on purpose**), no cron-job.org changes, and no running `alpaca_bot.ps1`, `alpaca_swing_aggr.ps1` or any order-capable script locally against Alpaca keys, not even in test mode.
+3. Claude does not push to `master` or merge PRs. WSG's runs update the state and journal files on `master` about every 10 minutes, so local edits to `alpaca_state.json` or the journals would conflict. Claude may open PRs for Armin's review only.
+4. Claude may still do read-only checks (Alpaca GET calls, repo reads), code review, tests (Pester with mocks), and PRs that Armin reviews.
+5. If Claude spots something urgent (a position without a stop, a wrong order, a rule breach), it does not act. It tells Armin the exact symbol, order id, prices and a suggested action, so WSG can handle it.
+
+**Effect on this document:** where the sections below say "the bot" places, cancels or protects orders, or describe running, pausing or manually trading (§8), those are now **WSG's** actions. Claude no longer performs any of them. The findings in §0 and §1.2 that "no bot run since 2026-11-21 07:50 UTC" and that cron-job.org is the trigger reflect the setup *before* this change: `alpaca_bot.yml` is now disabled on purpose and WSG runs the bot itself.
+
+---
+
 ## 0. TL;DR: what needs attention first
 
 1. **NVDA short −67 (avg $191.77) is about to lose its only stop.**
