@@ -192,7 +192,10 @@ function Get-AggrCallExitDecision($x, $a) {
     if ([bool]$x.EarningsBeforeNextSession)                                               { return [pscustomobject]@{ Action = "EXIT_ALL"; Qty = $n; Reason = "EARNINGS" } }
     $r = [double]$x.R
     $rMult = if ($r -gt 0) { ([double]$x.UnderPx - [double]$x.UnderEntry) / $r } else { 0 }
-    if (-not [bool]$x.PartialDone -and $rMult -ge [double]$a.call_partial_r) {
+    # No partials anywhere (approved Opus rule): call_partial_r <= 0 or absent
+    # disables the call partial, mirroring partial_exit_r for stocks.
+    $callPartialOn = ($null -ne $a.call_partial_r -and [double]$a.call_partial_r -gt 0)
+    if ($callPartialOn -and -not [bool]$x.PartialDone -and $rMult -ge [double]$a.call_partial_r) {
         $q = [int][Math]::Max(1, [Math]::Floor($n * [double]$a.call_partial_fraction))
         $act = if ($q -ge $n) { "EXIT_ALL" } else { "SELL_PARTIAL" }
         return [pscustomobject]@{ Action = $act; Qty = $q; Reason = "PARTIAL_2R" }

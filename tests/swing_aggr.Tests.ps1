@@ -131,8 +131,28 @@ Describe 'Exits' {
     It 'DTE 21' { (Get-AggrCallExitDecision (X @{Dte=21}) $A).Reason | Should -Be 'DTE' }
     It '12 days' { (Get-AggrCallExitDecision (X @{DaysHeld=12}) $A).Reason | Should -Be 'MAX_HOLD' }
     It 'earnings' { (Get-AggrCallExitDecision (X @{EarningsBeforeNextSession=$true}) $A).Reason | Should -Be 'EARNINGS' }
-    It 'half at +2R' { $d = Get-AggrCallExitDecision (X @{UnderPx=110}) $A; $d.Action | Should -Be 'SELL_PARTIAL'; $d.Qty | Should -Be 1 }
-    It '1 contract at +2R exits all' { (Get-AggrCallExitDecision (X @{UnderPx=110; Contracts=1}) $A).Action | Should -Be 'EXIT_ALL' }
+    # Live config: no partials anywhere (call_partial_r = 0).
+    It 'config ships with call partials OFF' { [double]$A.call_partial_r | Should -Be 0 }
+    It 'live config: +2R holds (no call partial)' { $d = Get-AggrCallExitDecision (X @{UnderPx=110}) $A; $d.Action | Should -Be 'HOLD'; $d.Qty | Should -Be 0 }
+    It 'live config: +5R still holds, 1 contract' { (Get-AggrCallExitDecision (X @{UnderPx=125; Contracts=1}) $A).Action | Should -Be 'HOLD' }
+    It 'call_partial_r absent -> no partial' {
+        $a0 = $A | ConvertTo-Json -Depth 4 | ConvertFrom-Json; $a0.PSObject.Properties.Remove('call_partial_r')
+        (Get-AggrCallExitDecision (X @{UnderPx=110}) $a0).Action | Should -Be 'HOLD'
+    }
+    It 'negative call_partial_r -> no partial' {
+        $an = $A | ConvertTo-Json -Depth 4 | ConvertFrom-Json; $an.call_partial_r = -1
+        (Get-AggrCallExitDecision (X @{UnderPx=100}) $an).Action | Should -Be 'HOLD'
+    }
+    It 'hard exits still fire with partials off' { (Get-AggrCallExitDecision (X @{UnderPx=125; Dte=21}) $A).Reason | Should -Be 'DTE' }
+    # Partial machinery kept for a future re-enable: tested against an explicit copy.
+    It 're-enabled copy: half at +2R' {
+        $ap = $A | ConvertTo-Json -Depth 4 | ConvertFrom-Json; $ap.call_partial_r = 2.0
+        $d = Get-AggrCallExitDecision (X @{UnderPx=110}) $ap; $d.Action | Should -Be 'SELL_PARTIAL'; $d.Qty | Should -Be 1
+    }
+    It 're-enabled copy: 1 contract at +2R exits all' {
+        $ap = $A | ConvertTo-Json -Depth 4 | ConvertFrom-Json; $ap.call_partial_r = 2.0
+        (Get-AggrCallExitDecision (X @{UnderPx=110; Contracts=1}) $ap).Action | Should -Be 'EXIT_ALL'
+    }
     It 'trail after partial' {
         (Get-AggrCallExitDecision (X @{PartialDone=$true; UnderPx=112; LastClose=112; HighestClose=118}) $A).Reason | Should -Be 'TRAIL'   # trail = max(105,114)
         (Get-AggrCallExitDecision (X @{PartialDone=$true; UnderPx=115; LastClose=115; HighestClose=118}) $A).Action | Should -Be 'HOLD'
