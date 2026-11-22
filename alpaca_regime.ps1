@@ -158,7 +158,7 @@ function Get-MarketRegime($cfg) {
 # trade on.
 #
 #   BULL     close > EMA20 > EMA50           longs on, full size
-#   NEUTRAL  close > EMA50, EMAs mixed       longs on, reduced size
+#   NEUTRAL  close > EMA50, EMAs mixed       longs on, HALF size (x0.50, approved Opus rule)
 #   BEAR     close < EMA20 < EMA50           shorts on, longs off
 #   RANGING  everything else                 reduced size, both sides weak
 #
@@ -167,7 +167,7 @@ function Get-MarketRegime($cfg) {
 
 function Get-SwingRegime($cfg, $spyDaily) {
     $default = [pscustomobject]@{
-        Regime   = "NEUTRAL"; SizeMult = 0.75
+        Regime   = "NEUTRAL"; SizeMult = 0.50   # NEUTRAL = half size (approved Opus rule)
         Reason   = "Insufficient SPY daily data"
         VIX      = $null;     HighVol  = $false
     }
@@ -187,7 +187,7 @@ function Get-SwingRegime($cfg, $spyDaily) {
         $regime = "BEAR"; $sizeMult = 0.75
         $reason = "SPY daily: close < EMA20 < EMA50 -- primary downtrend, shorts only"
     } elseif ($last -gt $ema50) {
-        $regime = "NEUTRAL"; $sizeMult = 0.75
+        $regime = "NEUTRAL"; $sizeMult = 0.50   # approved Opus rule: half size in NEUTRAL
         $reason = "SPY daily: above EMA50, EMAs mixed -- cautious longs"
     } else {
         $reason = "SPY daily: chopping around EMA50 -- no primary trend"

@@ -63,7 +63,7 @@
 
   "cycle_screener_enabled":  true,
 
-  "//aggr": "Swing Aggressive Mode, spec v1.2 (Opus Aggressive Swing). enabled+dry_run=false => live PAPER orders for stocks (AGSW_*) and calls (SWCALL_*). Legacy entry loop skipped while dry_run=false; legacy exits still manage legacy-held stocks. Legacy-held stocks do NOT consume aggr stock slots; they DO count toward portfolio heat. bp_cap_divisor left at 5 (undecided).",
+  "//aggr": "Swing Aggressive Mode, spec v1.2 (Opus Aggressive Swing). enabled+dry_run=false => live PAPER orders for stocks (AGSW_*) and calls (SWCALL_*). Legacy entry loop skipped while dry_run=false; legacy exits still manage legacy-held stocks. Legacy-held stocks do NOT consume aggr stock slots; they DO count toward portfolio heat. bp_cap_divisor left at 5 (undecided). No partials anywhere: partial_exit_r=0 (stocks) and call_partial_r=0 (calls) disable them. NEUTRAL regime = half size (alpaca_regime.ps1).",
   "aggr": {
     "enabled": true,
     "dry_run": false,
@@ -111,7 +111,7 @@
     "call_max_spread_abs": 0.40,
     "call_premium_stop_pct": 0.50,
     "call_exit_dte": 21,
-    "call_partial_r": 2.0,
+    "call_partial_r": 0,
     "call_partial_fraction": 0.5,
     "call_entry_prefix": "SWCALL",
     "options_feed": "indicative"
