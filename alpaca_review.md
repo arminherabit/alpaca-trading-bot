@@ -226,3 +226,21 @@ No closed trades this week.
 
 **By regime:** BEAR 0/1 $-900.72 | BULL 0/1 $-515.1
 
+
+## Week ending 2026-11-22
+
+| Metric | Value |
+|---|---|
+| Trades | 1 (0W / 1L, 0%) |
+| Net P&L | $-373.53 |
+| Profit factor | 0 |
+| Expectancy / trade | $-373.53 |
+| Avg R | -1 |
+| Avg hold | 13 days |
+| Best | ISRG PULLBK $-373.53 (-1R) |
+| Worst | ISRG PULLBK $-373.53 (-1R) |
+
+**By strategy:** PULLBK 0/1 $-373.53
+
+**By regime:** RANGING 0/1 $-373.53
+
