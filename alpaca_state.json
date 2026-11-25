@@ -3,7 +3,7 @@
   "wins": 1,
   "losses": 0,
   "pnl_today": 3169.91,
-  "last_scan": "2026-11-25T06:40:31.8942410-08:00",
+  "last_scan": "2026-11-25T06:55:31.2727084-08:00",
   "session_start": "2026-05-13T21:50:22.4733863-07:00",
   "watchlist_date": "2026-11-24",
   "active_watchlist": [
@@ -117,7 +117,7 @@
   "last_review_week": "2026-W48",
   "pyramided_syms": [],
   "aggr_halted": false,
-  "aggr_day": "2026-11-24",
+  "aggr_day": "2026-11-25",
   "aggr_trades_today": 0,
   "aggr_dry_entered": [],
   "aggr_watchlist": [
