@@ -1,19 +1,6 @@
 {
   "open": [
     {
-      "opened_at": "2026-11-10T14:50:20.9852901Z",
-      "symbol": "SPCX",
-      "strategy": "RALLYF",
-      "side": "sell",
-      "entry": 141.02,
-      "stop": 148.32,
-      "qty": 123,
-      "risk_usd": 897.9,
-      "confidence": 83,
-      "regime": "BEAR",
-      "reason": "EMA20 rally rejection (trendQ 0.41 ATR, RS -6.2%)"
-    },
-    {
       "opened_at": "2026-11-12T15:00:55.8149086Z",
       "symbol": "GLD",
       "strategy": "BRKDN",
@@ -791,6 +778,25 @@
       "r_multiple": -1.0,
       "hold_days": 13,
       "outcome": "LOSS"
+    },
+    {
+      "opened_at": "2026-11-10T14:50:20.9852901Z",
+      "symbol": "SPCX",
+      "strategy": "RALLYF",
+      "side": "sell",
+      "entry": 141.02,
+      "stop": 148.32,
+      "qty": 123,
+      "risk_usd": 897.9,
+      "confidence": 83,
+      "regime": "BEAR",
+      "reason": "EMA20 rally rejection (trendQ 0.41 ATR, RS -6.2%)",
+      "closed_at": "2026-11-25T14:36:14.5304159Z",
+      "exit": 115.51,
+      "pnl": 3169.91,
+      "r_multiple": 3.53,
+      "hold_days": 11,
+      "outcome": "WIN"
     }
   ],
   "orphaned": [
